@@ -404,7 +404,7 @@ const confirmDelete = () => {
 .bsp-dashboard { min-height: 100vh; background: #f8fafc; font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; color: #1e293b; }
 .dashboard-body { display: flex; min-height: 100vh; }
 
-.sidebar { width: 260px; background: white; border-right: 1px solid #e2e8f0; padding: 1.5rem 0; flex-shrink: 0; position: sticky; top: 0; height: 100vh; overflow-y: auto; }
+.sidebar { width: 260px; background: white; border-right: 1px solid #e2e8f0; padding: 1.5rem 0; flex-shrink: 0; position: sticky; top: 0; height: 100vh; max-height: 100vh; overflow-y: auto; }
 .nav-section { margin-bottom: 1.5rem; }
 .nav-section-title { font-size: 0.7rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.08em; color: #94a3b8; padding: 0 1.5rem; margin-bottom: 0.5rem; }
 .nav-item { display: flex; align-items: center; gap: 0.75rem; padding: 0.875rem 1.5rem; color: #64748b; text-decoration: none; font-weight: 500; font-size: 0.9rem; transition: all 0.2s; border-left: 3px solid transparent; }
@@ -441,7 +441,6 @@ const confirmDelete = () => {
   display: grid;
   grid-template-columns: minmax(100px, 1fr) 2.5fr minmax(110px, 1fr) minmax(140px, 1fr) 1.5fr minmax(100px, 1fr) minmax(120px, 1fr) minmax(100px, 1fr) minmax(130px, 1fr);
   gap: 1rem;
-  min-width: 980px;
   align-items: center;
 }
 .table-header { background: #f8fafc; border-radius: 6px; padding: 0.75rem 1rem; font-size: 0.75rem; font-weight: 600; color: #64748b; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 0.5rem; }
