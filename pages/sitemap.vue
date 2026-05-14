@@ -81,7 +81,7 @@
 
       <!-- BSP Operations Portal -->
       <div class="sitemap-section">
-        <h2>⚙️ BSP Operations Portal</h2>
+        <h2>⚙️ BSP Admin Portal</h2>
         <ul>
           <li><span class="status done">✅</span> <NuxtLink to="/BSP/dashboard">BSP Dashboard</NuxtLink> <span class="note">(Overview)</span></li>
           <li><span class="status done">✅</span> <NuxtLink to="/BSP/new-account-applications">New Account Applications</NuxtLink></li>
