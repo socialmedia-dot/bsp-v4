@@ -36,7 +36,7 @@
               <span class="nav-icon">💳</span>
               <span>Payments</span>
             </NuxtLink>
-<NuxtLink to="/BSP/promo-codes" class="nav-item">
+            <NuxtLink to="/BSP/promo-codes" class="nav-item">
               <span class="nav-icon">🎟️</span>
               <span>Promo Codes</span>
             </NuxtLink>
@@ -107,6 +107,7 @@
         <div class="settings-section">
           <div class="section-header">
             <h2 class="section-title">Role Permissions</h2>
+            <button class="btn btn-secondary" @click="openEditPermissions">✏️ Edit Permissions</button>
           </div>
           <div class="permissions-grid">
             <div v-for="role in roles" :key="role.name" class="permission-card">
@@ -122,6 +123,37 @@
         </div>
       </main>
     </div>
+
+    <!-- Edit Permissions Modal -->
+    <div v-if="showEditPermissions" class="modal-overlay" @click.self="closeEditPermissions">
+      <div class="modal-box modal-lg">
+        <div class="modal-header">
+          <h3>✏️ Edit Role Permissions</h3>
+          <button class="modal-close" @click="closeEditPermissions">×</button>
+        </div>
+        <div class="modal-body">
+          <p class="modal-note">Only admin (Master) can edit role permissions. Changes apply immediately.</p>
+          <div class="edit-roles-grid">
+            <div v-for="(role, idx) in editRoles" :key="role.name" class="edit-role-card">
+              <div class="edit-role-header">
+                <h4>{{ role.name }}</h4>
+                <span class="edit-role-count">{{ role.permissions.filter(p => p.enabled).length }} / {{ role.permissions.length }}</span>
+              </div>
+              <div class="edit-permission-list">
+                <label v-for="perm in role.permissions" :key="perm.key" class="edit-permission-item">
+                  <input type="checkbox" v-model="perm.enabled" />
+                  <span>{{ perm.label }}</span>
+                </label>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button class="btn btn-secondary" @click="closeEditPermissions">Cancel</button>
+          <button class="btn btn-primary" @click="savePermissions">Save Changes</button>
+        </div>
+      </div>
+    </div>
   </div>
 </template>
 
@@ -133,6 +165,24 @@ const staffList = ref([
   { id: 4, name: 'Lisa Wong', email: 'lisa@britishschoolportal.com', role: 'staff', status: 'active', lastLogin: '2026-05-02 09:20' },
 ])
 
+const allPermissionKeys = [
+  'Full Access',
+  'Manage Staff',
+  'Financial Control',
+  'System Settings',
+  'User Management',
+  'Content Editing',
+  'Manage Users',
+  'Approve Applications',
+  'View Payments',
+  'Edit Content',
+  'Export Reports',
+  'Review Applications',
+  'View Users',
+  'Send Notifications',
+  'Reset Passwords',
+]
+
 const roles = ref([
   { name: 'Master (Owner)', permissions: ['Full Access', 'Manage Staff', 'Financial Control', 'System Settings', 'User Management', 'Content Editing'] },
   { name: 'Manager', permissions: ['Manage Users', 'Approve Applications', 'View Payments', 'Edit Content', 'Export Reports'] },
@@ -140,11 +190,39 @@ const roles = ref([
 ])
 
 const showAddStaff = ref(false)
+const showEditPermissions = ref(false)
+const editRoles = ref<{ name: string; permissions: { key: string; label: string; enabled: boolean }[] }[]>([])
+
 const editStaff = (member: typeof staffList.value[0]) => { /* edit */ }
 const removeStaff = (id: number) => {
   if (confirm('Remove this staff member?')) {
     staffList.value = staffList.value.filter(s => s.id !== id)
   }
+}
+
+function openEditPermissions() {
+  editRoles.value = roles.value.map(role => ({
+    name: role.name,
+    permissions: allPermissionKeys.map(key => ({
+      key,
+      label: key,
+      enabled: role.permissions.includes(key),
+    })),
+  }))
+  showEditPermissions.value = true
+}
+
+function closeEditPermissions() {
+  showEditPermissions.value = false
+  editRoles.value = []
+}
+
+function savePermissions() {
+  roles.value = editRoles.value.map(role => ({
+    name: role.name,
+    permissions: role.permissions.filter(p => p.enabled).map(p => p.label),
+  }))
+  closeEditPermissions()
 }
 </script>
 
@@ -163,7 +241,7 @@ const removeStaff = (id: number) => {
 .page-title { font-size: 1.5rem; font-weight: 700; color: #212E54; margin-bottom: 0.25rem; }
 .page-subtitle { font-size: 0.9rem; color: #64748b; }
 .settings-section { background: white; border-radius: 10px; padding: 1.5rem; margin-bottom: 1.5rem; box-shadow: 0 1px 3px rgba(0,0,0,0.08); }
-.section-header { margin-bottom: 1.25rem; }
+.section-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.25rem; }
 .section-title { font-size: 1.1rem; font-weight: 600; color: #1e293b; }
 .staff-table-wrapper { overflow-x: auto; }
 .staff-table { width: 100%; border-collapse: collapse; font-size: 0.9rem; }
@@ -187,6 +265,8 @@ const removeStaff = (id: number) => {
 .btn { padding: 0.6rem 1.25rem; border-radius: 6px; font-size: 0.85rem; font-weight: 600; cursor: pointer; border: 1px solid transparent; transition: all 0.2s; }
 .btn-primary { background: #3b82f6; color: white; }
 .btn-primary:hover { background: #2563eb; }
+.btn-secondary { background: #f1f5f9; color: #374151; border-color: #e2e8f0; }
+.btn-secondary:hover { background: #e2e8f0; }
 .permissions-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 1rem; }
 .permission-card { background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px; padding: 1rem; }
 .permission-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.75rem; }
@@ -195,11 +275,40 @@ const removeStaff = (id: number) => {
 .permission-list { list-style: none; padding: 0; margin: 0; }
 .permission-list li { padding: 0.35rem 0; font-size: 0.85rem; color: #475569; border-bottom: 1px solid #f1f5f9; }
 .permission-list li:last-child { border-bottom: none; }
-@media (max-width: 1024px) { .permissions-grid { grid-template-columns: repeat(2, 1fr); } }
+
+/* Modal */
+.modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.5); z-index: 200; display: flex; align-items: center; justify-content: center; padding: 1rem; }
+.modal-box { background: white; border-radius: 12px; width: 100%; max-width: 520px; max-height: 90vh; overflow-y: auto; box-shadow: 0 20px 25px -5px rgba(0,0,0,0.1); }
+.modal-lg { max-width: 800px; }
+.modal-header { display: flex; justify-content: space-between; align-items: center; padding: 1.25rem; border-bottom: 1px solid #e2e8f0; }
+.modal-header h3 { font-size: 1.1rem; font-weight: 600; }
+.modal-close { background: none; border: none; font-size: 1.5rem; cursor: pointer; color: #64748b; }
+.modal-body { padding: 1.25rem; }
+.modal-footer { display: flex; justify-content: flex-end; gap: 0.75rem; padding: 1rem 1.25rem; border-top: 1px solid #e2e8f0; }
+.modal-note { font-size: 0.85rem; color: #64748b; margin-bottom: 1rem; background: #f0f9ff; border: 1px solid #bae6fd; border-radius: 6px; padding: 0.75rem; }
+
+/* Edit Roles */
+.edit-roles-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 1rem; }
+.edit-role-card { background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px; padding: 1rem; }
+.edit-role-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.75rem; padding-bottom: 0.5rem; border-bottom: 1px solid #e2e8f0; }
+.edit-role-header h4 { font-size: 0.95rem; font-weight: 600; color: #1e293b; margin: 0; }
+.edit-role-count { font-size: 0.75rem; color: #94a3b8; }
+.edit-permission-list { display: flex; flex-direction: column; gap: 0.5rem; }
+.edit-permission-item { display: flex; align-items: center; gap: 0.5rem; font-size: 0.85rem; color: #475569; cursor: pointer; padding: 0.25rem; border-radius: 4px; }
+.edit-permission-item:hover { background: #f1f5f9; }
+.edit-permission-item input { width: 16px; height: 16px; accent-color: #3b82f6; flex-shrink: 0; }
+
+@media (max-width: 1024px) {
+  .permissions-grid { grid-template-columns: repeat(2, 1fr); }
+  .edit-roles-grid { grid-template-columns: repeat(2, 1fr); }
+}
 @media (max-width: 768px) {
   .sidebar { display: none; }
   .main-content { padding: 1rem; }
   .permissions-grid { grid-template-columns: 1fr; }
+  .edit-roles-grid { grid-template-columns: 1fr; }
   .page-header { flex-direction: column; gap: 1rem; align-items: flex-start; }
+  .section-header { flex-direction: column; gap: 0.75rem; align-items: flex-start; }
+  .modal-lg { max-width: 100%; }
 }
 </style>
