@@ -439,8 +439,9 @@ const confirmDelete = () => {
 .users-table { display: flex; flex-direction: column; overflow-x: auto; }
 .promo-grid {
   display: grid;
-  grid-template-columns: minmax(100px, 1fr) 2.5fr minmax(110px, 1fr) minmax(140px, 1fr) 1.5fr minmax(100px, 1fr) minmax(120px, 1fr) minmax(100px, 1fr) minmax(130px, 1fr);
-  gap: 1rem;
+  grid-template-columns: 110px 2fr 100px 130px 1.5fr 90px 110px 90px 110px;
+  gap: 0.75rem;
+  min-width: 860px;
   align-items: center;
 }
 .table-header { background: #f8fafc; border-radius: 6px; padding: 0.75rem 1rem; font-size: 0.75rem; font-weight: 600; color: #64748b; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 0.5rem; }
