@@ -1,0 +1,134 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>BSP v3 - British School Portal</title>
+  <style>
+    :root {
+      --bsp-primary: #212E54;
+      --bsp-secondary: #3b82f6;
+      --bsp-accent: #C1AA78;
+      --bsp-dark: #1e293b;
+      --bsp-light: #f8fafc;
+    }
+
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      background: linear-gradient(135deg, var(--bsp-primary) 0%, #2d3f6b 100%);
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      color: #ffffff;
+      text-align: center;
+      padding: 2rem;
+    }
+    .logo {
+      width: 120px;
+      height: 120px;
+      border-radius: 50%;
+      margin-bottom: 1.5rem;
+      object-fit: cover;
+      border: 4px solid var(--bsp-accent);
+      box-shadow: 0 8px 32px rgba(0,0,0,0.3);
+    }
+    h1 {
+      font-size: 3rem;
+      font-weight: 700;
+      margin-bottom: 0.5rem;
+      letter-spacing: -0.02em;
+    }
+    .subtitle {
+      font-size: 1.25rem;
+      color: rgba(255,255,255,0.85);
+      margin-bottom: 0.5rem;
+    }
+    .tagline {
+      font-size: 1rem;
+      color: var(--bsp-accent);
+      margin-bottom: 2rem;
+      font-weight: 500;
+    }
+    .badge {
+      display: inline-block;
+      background: rgba(59, 130, 246, 0.25);
+      border: 1px solid rgba(59, 130, 246, 0.5);
+      color: #93c5fd;
+      padding: 0.5rem 1.25rem;
+      border-radius: 9999px;
+      font-size: 0.875rem;
+      font-weight: 500;
+      margin-bottom: 2.5rem;
+    }
+    .portal-preview {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 1rem;
+      max-width: 480px;
+      margin-bottom: 3rem;
+    }
+    .portal-card {
+      background: rgba(255, 255, 255, 0.08);
+      border: 1px solid rgba(255, 255, 255, 0.15);
+      border-radius: 12px;
+      padding: 1.25rem;
+      text-align: left;
+      transition: transform 0.3s, background 0.3s;
+    }
+    .portal-card:hover {
+      transform: translateY(-3px);
+      background: rgba(255, 255, 255, 0.12);
+    }
+    .portal-card h3 {
+      font-size: 0.95rem;
+      margin-bottom: 0.25rem;
+      color: #fff;
+    }
+    .portal-card p {
+      font-size: 0.8rem;
+      color: rgba(255,255,255,0.65);
+    }
+    .footer {
+      font-size: 0.875rem;
+      color: rgba(255,255,255,0.4);
+    }
+    .footer a {
+      color: var(--bsp-accent);
+      text-decoration: none;
+    }
+  </style>
+</head>
+<body>
+  <img src="/logo-bsp.jpg" alt="BSP Logo" class="logo">
+  <h1>BSP v3</h1>
+  <p class="subtitle">British School Portal</p>
+  <p class="tagline">AI-Powered School Admissions Platform</p>
+  <span class="badge">Coming Soon</span>
+
+  <div class="portal-preview">
+    <div class="portal-card">
+      <h3>🎓 Student Portal</h3>
+      <p>Apply to schools, track status</p>
+    </div>
+    <div class="portal-card">
+      <h3>🏫 School Portal</h3>
+      <p>Manage applications & offers</p>
+    </div>
+    <div class="portal-card">
+      <h3>💼 Consultant Portal</h3>
+      <p>Help clients with applications</p>
+    </div>
+    <div class="portal-card">
+      <h3>⚙️ Admin Dashboard</h3>
+      <p>Analytics & billing</p>
+    </div>
+  </div>
+
+  <p class="footer">
+    Powered by <strong>BS Portal Limited</strong>
+  </p>
+</body>
+</html>

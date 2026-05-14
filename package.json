@@ -1,0 +1,23 @@
+{
+  "name": "bsp-v02",
+  "version": "1.0.0",
+  "private": true,
+  "description": "British School Portal - New Version",
+  "scripts": {
+    "dev": "nuxt dev",
+    "build": "nuxt build",
+    "generate": "nuxt generate",
+    "preview": "nuxt preview"
+  },
+  "dependencies": {
+    "@types/leaflet": "^1.9.21",
+    "leaflet": "^1.9.4",
+    "nuxt": "3.5.0",
+    "vue": "3.3.8",
+    "vue-router": "4.2.5"
+  },
+  "devDependencies": {
+    "@nuxt/image": "1.0.0",
+    "nuxt-icon": "0.6.5"
+  }
+}
