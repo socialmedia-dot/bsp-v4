@@ -108,6 +108,7 @@
           <div class="section-header">
             <h2 class="section-title">Role Permissions</h2>
             <button class="btn btn-secondary" @click="openEditPermissions">✏️ Edit Permissions</button>
+            <button class="btn btn-secondary" @click="openAddRole">+ Add Role</button>
           </div>
           <div class="permissions-grid">
             <div v-for="role in roles" :key="role.name" class="permission-card">
@@ -154,6 +155,34 @@
         </div>
       </div>
     </div>
+    <!-- Add Role Modal -->
+    <div v-if="showAddRole" class="modal-overlay" @click.self="closeRoleModal">
+      <div class="modal-box">
+        <div class="modal-header">
+          <h3>Add New Role</h3>
+          <button class="modal-close" @click="closeRoleModal">×</button>
+        </div>
+        <div class="modal-body">
+          <div class="form-group">
+            <label>Role Name *</label>
+            <input v-model="newRole.name" type="text" class="form-input" placeholder="e.g. Finance Admin" />
+          </div>
+          <div class="form-group">
+            <label>Permissions</label>
+            <div class="permissions-checklist">
+              <label v-for="perm in allPermissionKeys" :key="perm" class="perm-checkbox">
+                <input v-model="newRole.permissions" type="checkbox" :value="perm" />
+                <span>{{ perm }}</span>
+              </label>
+            </div>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button class="btn btn-secondary" @click="closeRoleModal">Cancel</button>
+          <button class="btn btn-primary" @click="saveRole">Save Role</button>
+        </div>
+      </div>
+    </div>
   </div>
 </template>
 
@@ -192,6 +221,33 @@ const roles = ref([
 const showAddStaff = ref(false)
 const showEditPermissions = ref(false)
 const editRoles = ref<{ name: string; permissions: { key: string; label: string; enabled: boolean }[] }[]>([])
+
+// Add Role
+const showAddRole = ref(false)
+const newRole = reactive({ name: '', permissions: [] as string[] })
+
+function openAddRole() {
+  newRole.name = ''
+  newRole.permissions = []
+  showAddRole.value = true
+}
+
+function closeRoleModal() {
+  showAddRole.value = false
+}
+
+function saveRole() {
+  if (!newRole.name.trim()) {
+    alert('Role name is required')
+    return
+  }
+  if (roles.value.some(r => r.name.toLowerCase() === newRole.name.trim().toLowerCase())) {
+    alert('A role with this name already exists')
+    return
+  }
+  roles.value.push({ name: newRole.name.trim(), permissions: [...newRole.permissions] })
+  closeRoleModal()
+}
 
 const editStaff = (member: typeof staffList.value[0]) => { /* edit */ }
 const removeStaff = (id: number) => {
@@ -297,6 +353,16 @@ function savePermissions() {
 .edit-permission-item { display: flex; align-items: center; gap: 0.5rem; font-size: 0.85rem; color: #475569; cursor: pointer; padding: 0.25rem; border-radius: 4px; }
 .edit-permission-item:hover { background: #f1f5f9; }
 .edit-permission-item input { width: 16px; height: 16px; accent-color: #3b82f6; flex-shrink: 0; }
+
+/* Add Role Modal */
+.modal-box .form-group { margin-bottom: 1.25rem; }
+.modal-box .form-group label { display: block; font-size: 0.875rem; font-weight: 600; color: #1e293b; margin-bottom: 0.5rem; }
+.modal-box .form-input { width: 100%; padding: 0.5rem 0.75rem; border: 1px solid #d1d5db; border-radius: 6px; font-size: 0.9rem; box-sizing: border-box; }
+.modal-box .form-input:focus { outline: none; border-color: #3b82f6; box-shadow: 0 0 0 3px rgba(59,130,246,0.1); }
+.permissions-checklist { display: grid; grid-template-columns: repeat(2, 1fr); gap: 0.5rem; max-height: 300px; overflow-y: auto; padding: 0.5rem; background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px; }
+.perm-checkbox { display: flex; align-items: center; gap: 0.5rem; font-size: 0.875rem; color: #475569; cursor: pointer; padding: 0.375rem 0.5rem; border-radius: 4px; }
+.perm-checkbox:hover { background: #e2e8f0; }
+.perm-checkbox input { width: 16px; height: 16px; accent-color: #3b82f6; flex-shrink: 0; }
 
 @media (max-width: 1024px) {
   .permissions-grid { grid-template-columns: repeat(2, 1fr); }
