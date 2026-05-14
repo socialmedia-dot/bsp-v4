@@ -38,6 +38,10 @@
               <span class="nav-icon">💳</span>
               <span>Payments</span>
             </NuxtLink>
+<NuxtLink to="/BSP/promo-codes" class="nav-item">
+              <span class="nav-icon">🎟️</span>
+              <span>Promo Codes</span>
+            </NuxtLink>
           </div>
 
           <div class="nav-section">
@@ -64,6 +68,7 @@
           <div class="page-title-area">
             <h1 class="page-title">💰 Annual Fee Settings</h1>
             <p class="page-subtitle">Manage membership fees for all user types</p>
+            <NuxtLink to="/BSP/promo-codes" class="link-action">🎟️ Manage Promo Codes</NuxtLink>
           </div>
         </div>
 
@@ -554,6 +559,8 @@ const saveSettings = () => {
 .page-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 2rem; }
 .page-title { font-size: 1.5rem; font-weight: 700; color: var(--bsp-primary, #212E54); margin-bottom: 0.25rem; }
 .page-subtitle { font-size: 0.9rem; color: #64748b; }
+.link-action { display: inline-flex; align-items: center; gap: 0.25rem; color: #3b82f6; text-decoration: none; font-size: 0.875rem; font-weight: 500; margin-top: 0.35rem; }
+.link-action:hover { text-decoration: underline; }
 
 /* Settings Section */
 .settings-section { background: white; border-radius: 10px; padding: 1.5rem; margin-bottom: 1.5rem; box-shadow: 0 1px 3px rgba(0,0,0,0.08); }

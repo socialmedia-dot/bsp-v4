@@ -1,153 +1,212 @@
 <template>
   <div class="bsp-dashboard">
     <div class="dashboard-body">
+      <!-- Sidebar Navigation -->
       <aside class="sidebar">
         <nav class="sidebar-nav">
           <div class="nav-section">
             <div class="nav-section-title">User Categories</div>
             <NuxtLink to="/BSP/users/personal" class="nav-item">
-              <span class="nav-icon">👤</span><span>Personal</span>
+              <span class="nav-icon">👤</span>
+              <span>Personal</span>
+              <span class="nav-count">12</span>
             </NuxtLink>
             <NuxtLink to="/BSP/users/school" class="nav-item">
-              <span class="nav-icon">🏫</span><span>School</span>
+              <span class="nav-icon">🏫</span>
+              <span>School</span>
+              <span class="nav-count">24</span>
             </NuxtLink>
             <NuxtLink to="/BSP/users/consultant" class="nav-item">
-              <span class="nav-icon">💼</span><span>Consultant</span>
+              <span class="nav-icon">💼</span>
+              <span>Consultant</span>
+              <span class="nav-count">8</span>
             </NuxtLink>
             <NuxtLink to="/BSP/users/bspstaff" class="nav-item">
-              <span class="nav-icon">👔</span><span>BSP Staff</span>
+              <span class="nav-icon">👔</span>
+              <span>BSP Staff</span>
+              <span class="nav-count">3</span>
             </NuxtLink>
           </div>
 
           <div class="nav-section">
             <div class="nav-section-title">Management</div>
             <NuxtLink to="/BSP/dashboard" class="nav-item">
-              <span class="nav-icon">📊</span><span>Overview</span>
+              <span class="nav-icon">📊</span>
+              <span>Overview</span>
             </NuxtLink>
             <NuxtLink to="/BSP/new-account-applications" class="nav-item">
-              <span class="nav-icon">📋</span><span>Account Applications</span>
+              <span class="nav-icon">📋</span>
+              <span>New Account Applications</span>
             </NuxtLink>
             <NuxtLink to="/BSP/payments" class="nav-item">
-              <span class="nav-icon">💳</span><span>Payments</span>
+              <span class="nav-icon">💳</span>
+              <span>Payments</span>
             </NuxtLink>
             <NuxtLink to="/BSP/promo-codes" class="nav-item active">
-              <span class="nav-icon">🎟️</span><span>Promo Codes</span>
+              <span class="nav-icon">🎟️</span>
+              <span>Promo Codes</span>
             </NuxtLink>
           </div>
 
           <div class="nav-section">
             <div class="nav-section-title">Settings</div>
             <NuxtLink to="/BSP/settings/fees" class="nav-item">
-              <span class="nav-icon">💰</span><span>Annual Fee</span>
+              <span class="nav-icon">💰</span>
+              <span>Annual Fee</span>
             </NuxtLink>
             <NuxtLink to="/BSP/settings/website" class="nav-item">
-              <span class="nav-icon">🌐</span><span>Website Settings</span>
+              <span class="nav-icon">🌐</span>
+              <span>Website Settings</span>
             </NuxtLink>
             <NuxtLink to="/BSP/settings/staff" class="nav-item">
-              <span class="nav-icon">👔</span><span>Staff</span>
+              <span class="nav-icon">👔</span>
+              <span>Staff</span>
             </NuxtLink>
           </div>
         </nav>
       </aside>
 
+      <!-- Main Content Area -->
       <main class="main-content">
+        <!-- Page Header -->
         <div class="page-header">
           <div class="page-title-area">
             <h1 class="page-title">🎟️ Promo Code Management</h1>
             <p class="page-subtitle">Create and manage discount codes for membership payments</p>
           </div>
-          <button class="btn btn-primary" @click="openCreateModal">+ New Promo Code</button>
+          <div class="page-actions">
+            <NuxtLink to="/BSP/settings/fees" class="link-back">← Back to Fee Settings</NuxtLink>
+            <button class="btn btn-primary" @click="openCreateModal">+ New Promo Code</button>
+          </div>
         </div>
 
+        <!-- Summary Cards -->
         <div class="summary-cards">
           <div class="summary-card">
-            <span class="summary-label">Active Codes</span>
-            <span class="summary-value">{{ activeCodes }}</span>
+            <div class="summary-icon summary-icon-green">🎟️</div>
+            <div class="summary-info">
+              <div class="summary-value">{{ activeCodes }}</div>
+              <div class="summary-label">Active Codes</div>
+            </div>
           </div>
           <div class="summary-card">
-            <span class="summary-label">Inactive</span>
-            <span class="summary-value">{{ inactiveCodes }}</span>
+            <div class="summary-icon summary-icon-gray">😴</div>
+            <div class="summary-info">
+              <div class="summary-value">{{ inactiveCodes }}</div>
+              <div class="summary-label">Inactive</div>
+            </div>
           </div>
           <div class="summary-card">
-            <span class="summary-label">Total Uses</span>
-            <span class="summary-value">{{ totalUses }}</span>
+            <div class="summary-icon summary-icon-blue">✅</div>
+            <div class="summary-info">
+              <div class="summary-value">{{ totalUses }}</div>
+              <div class="summary-label">Total Uses</div>
+            </div>
           </div>
           <div class="summary-card">
-            <span class="summary-label">Expiring Soon</span>
-            <span class="summary-value" :class="{ pending: expiringSoon > 0 }">{{ expiringSoon }}</span>
+            <div class="summary-icon summary-icon-orange">⚠️</div>
+            <div class="summary-info">
+              <div class="summary-value">{{ expiringSoon }}</div>
+              <div class="summary-label">Expiring Soon</div>
+            </div>
           </div>
         </div>
 
-        <div class="panel">
-          <div class="panel-header">
-            <h3 class="panel-title">All Promo Codes</h3>
-            <div class="panel-actions">
-              <input v-model="searchQuery" type="text" placeholder="Search by code or description..." class="search-input" />
+        <!-- Promo Codes Table Card -->
+        <div class="content-card">
+          <div class="card-header">
+            <h2 class="card-title">All Promo Codes</h2>
+            <div class="card-controls">
+              <input
+                v-model="searchQuery"
+                type="text"
+                class="search-input"
+                placeholder="Search by code..."
+              />
               <select v-model="filterStatus" class="filter-select">
-                <option value="all">All Status</option>
+                <option value="">All Status</option>
                 <option value="active">Active</option>
                 <option value="inactive">Inactive</option>
-                <option value="expired">Expired</option>
               </select>
               <select v-model="filterType" class="filter-select">
-                <option value="all">All Types</option>
+                <option value="">All Types</option>
                 <option value="percentage">Percentage</option>
                 <option value="fixed">Fixed Amount</option>
               </select>
             </div>
           </div>
 
-          <div class="users-table" style="overflow-x: auto;">
-            <div class="table-header promo-grid">
-              <span>Code</span>
-              <span>Description</span>
-              <span>Type</span>
-              <span>Value</span>
-              <span>Applies To</span>
-              <span>Uses</span>
-              <span>Expires</span>
-              <span>Status</span>
-              <span>Actions</span>
-            </div>
-            <div v-for="code in filteredCodes" :key="code.id" class="table-row promo-grid">
-              <span data-label="Code"><span class="code-badge">{{ code.code }}</span></span>
-              <span data-label="Description" class="user-email">{{ code.description }}</span>
-              <span data-label="Type"><span class="role-tag" :class="'type-' + code.type">{{ code.type === 'percentage' ? '% Percentage' : '£ Fixed' }}</span></span>
-              <span data-label="Value" class="user-name">{{ code.type === 'percentage' ? code.value + '%' : '£' + code.value }}<span v-if="code.maxDiscount" class="max-cap"> (max £{{ code.maxDiscount }})</span></span>
-              <span data-label="Applies To">
-                <span v-for="t in code.appliesTo" :key="t" class="applies-tag">{{ t }}</span>
-              </span>
-              <span data-label="Uses"><span class="uses-count">{{ code.used }}</span><span class="uses-max"> / {{ code.maxUses === Infinity ? 'Unlimited' : code.maxUses }}</span></span>
-              <span data-label="Expires" :class="'expiry-' + getExpiryClass(code.expires)">{{ formatDate(code.expires) }}</span>
-              <span data-label="Status"><span class="status-badge" :class="'status-' + code.status">{{ code.status }}</span></span>
-              <span data-label="Actions" class="action-cell">
-                <button class="btn-action" @click="editCode(code)" title="Edit">✏️</button>
-                <button class="btn-action" @click="toggleStatus(code)" :title="code.status === 'active' ? 'Deactivate' : 'Activate'">{{ code.status === 'active' ? '🔒' : '🔓' }}</button>
-                <button class="btn-action btn-danger" @click="deleteCode(code.id)" title="Delete">🗑️</button>
-              </span>
-            </div>
-            <div v-if="filteredCodes.length === 0" class="empty-state">
-              <p>No promo codes found</p>
-            </div>
+          <div class="table-responsive">
+            <table class="data-table">
+              <thead>
+                <tr>
+                  <th>Code</th>
+                  <th>Type</th>
+                  <th>Value</th>
+                  <th>Applies To</th>
+                  <th>Uses</th>
+                  <th>Expires</th>
+                  <th>Status</th>
+                  <th>Actions</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr v-if="filteredPromos.length === 0">
+                  <td colspan="8" class="empty-cell">No promo codes found</td>
+                </tr>
+                <tr v-for="promo in filteredPromos" :key="promo.id">
+                  <td><span class="code-badge">{{ promo.code }}</span></td>
+                  <td>
+                    <span :class="['type-badge', 'type-' + promo.type]">
+                      {{ promo.type === 'percentage' ? '% Percentage' : '£ Fixed' }}
+                    </span>
+                  </td>
+                  <td>
+                    <span class="value-text">
+                      {{ promo.type === 'percentage' ? promo.value + '%' : '£' + promo.value }}
+                      <span v-if="promo.maxDiscount" class="max-cap">(max £{{ promo.maxDiscount }})</span>
+                    </span>
+                  </td>
+                  <td>
+                    <span v-for="type in promo.appliesTo" :key="type" class="applies-tag">{{ type }}</span>
+                  </td>
+                  <td>
+                    <span class="uses-count">{{ promo.uses }}</span>
+                    <span class="uses-sep"> / </span>
+                    <span class="uses-max">{{ promo.maxUses === 999 ? '∞' : promo.maxUses }}</span>
+                  </td>
+                  <td>
+                    <span :class="getExpiryClass(promo.expires)">{{ formatExpiry(promo.expires) }}</span>
+                  </td>
+                  <td>
+                    <span :class="['status-badge', 'status-' + promo.status]">{{ promo.status }}</span>
+                  </td>
+                  <td>
+                    <button class="action-btn" @click="openEditModal(promo)" title="Edit">✏️</button>
+                    <button class="action-btn" @click="toggleStatus(promo)" :title="promo.status === 'active' ? 'Deactivate' : 'Activate'">
+                      {{ promo.status === 'active' ? '🔒' : '🔓' }}
+                    </button>
+                    <button class="action-btn action-btn-danger" @click="deletePromo(promo.id)" title="Delete">🗑️</button>
+                  </td>
+                </tr>
+              </tbody>
+            </table>
           </div>
         </div>
       </main>
     </div>
 
+    <!-- Create/Edit Modal -->
     <div v-if="showModal" class="modal-overlay" @click.self="closeModal">
       <div class="modal-box">
         <div class="modal-header">
-          <h2 class="modal-title">{{ editingId ? '✏️ Edit' : '🎟️ New' }} Promo Code</h2>
+          <h3>{{ editingPromo ? 'Edit' : 'Create' }} Promo Code</h3>
           <button class="modal-close" @click="closeModal">×</button>
         </div>
         <div class="modal-body">
           <div class="form-group">
             <label>Code *</label>
             <input v-model="form.code" type="text" class="form-input" placeholder="e.g. SUMMER20" />
-          </div>
-          <div class="form-group">
-            <label>Description</label>
-            <input v-model="form.description" type="text" class="form-input" placeholder="e.g. Summer launch – 20% off" />
           </div>
           <div class="form-row">
             <div class="form-group">
@@ -159,257 +218,245 @@
             </div>
             <div class="form-group">
               <label>Value *</label>
-              <input v-model.number="form.value" type="number" class="form-input" :placeholder="form.type === 'percentage' ? 'e.g. 20' : 'e.g. 50'" />
+              <input v-model.number="form.value" type="number" class="form-input" placeholder="20" />
             </div>
           </div>
-          <div class="form-group" v-if="form.type === 'percentage'">
-            <label>Max Discount Cap (£)</label>
-            <input v-model.number="form.maxDiscount" type="number" class="form-input" placeholder="Optional max amount" />
+          <div v-if="form.type === 'percentage'" class="form-group">
+            <label>Max Discount (£)</label>
+            <input v-model.number="form.maxDiscount" type="number" class="form-input" placeholder="100" />
           </div>
           <div class="form-group">
             <label>Applies To *</label>
             <div class="checkbox-group">
-              <label class="checkbox-label"><input type="checkbox" v-model="form.appliesTo" value="School" /> School</label>
-              <label class="checkbox-label"><input type="checkbox" v-model="form.appliesTo" value="Consultant" /> Consultant</label>
-              <label class="checkbox-label"><input type="checkbox" v-model="form.appliesTo" value="Personal" /> Personal</label>
+              <label v-for="type in ['School', 'Consultant', 'Personal']" :key="type" class="checkbox-label">
+                <input v-model="form.appliesTo" type="checkbox" :value="type" />
+                <span>{{ type }}</span>
+              </label>
             </div>
           </div>
           <div class="form-row">
             <div class="form-group">
-              <label>Max Uses</label>
-              <input v-model.number="form.maxUses" type="number" class="form-input" placeholder="Leave empty for unlimited" />
+              <label>Uses Limit</label>
+              <input v-model.number="form.maxUses" type="number" class="form-input" placeholder="0 = unlimited" />
             </div>
             <div class="form-group">
               <label>Expires</label>
               <input v-model="form.expires" type="date" class="form-input" />
             </div>
           </div>
-          <div class="preview-box" v-if="form.code">
-            Preview: <span class="code-badge">{{ form.code }}</span> — {{ form.type === 'percentage' ? form.value + '% off' : '£' + form.value + ' off' }}
-            {{ form.appliesTo.length > 0 ? 'for ' + form.appliesTo.join(', ') : '' }}
+          <div class="form-group">
+            <label>Status</label>
+            <select v-model="form.status" class="form-select">
+              <option value="active">Active</option>
+              <option value="inactive">Inactive</option>
+            </select>
           </div>
+          <div v-if="previewText" class="preview-box">{{ previewText }}</div>
         </div>
         <div class="modal-footer">
           <button class="btn btn-secondary" @click="closeModal">Cancel</button>
-          <button class="btn btn-primary" @click="saveCode">{{ editingId ? 'Save Changes' : 'Create Code' }}</button>
-        </div>
-      </div>
-    </div>
-
-    <div v-if="showDeleteConfirm" class="modal-overlay" @click.self="showDeleteConfirm = false">
-      <div class="modal-box modal-sm">
-        <div class="modal-header">
-          <h2 class="modal-title">🗑️ Delete Promo Code</h2>
-          <button class="modal-close" @click="showDeleteConfirm = false">×</button>
-        </div>
-        <div class="modal-body">
-          <p>Are you sure you want to delete <strong>{{ codeToDelete?.code }}</strong>?</p>
-          <p class="user-email">This action cannot be undone.</p>
-        </div>
-        <div class="modal-footer">
-          <button class="btn btn-secondary" @click="showDeleteConfirm = false">Cancel</button>
-          <button class="btn btn-danger" @click="confirmDelete">Delete</button>
+          <button class="btn btn-primary" @click="savePromo">{{ editingPromo ? 'Update' : 'Create' }}</button>
         </div>
       </div>
     </div>
   </div>
 </template>
 
-<script setup lang="ts">
-const { setMeta } = useSEO()
-setMeta({
-  title: 'Promo Codes — BSP Admin',
-  description: 'Manage discount codes for BSP membership payments',
-  path: '/BSP/promo-codes',
-  type: 'website'
+<script setup>
+const searchQuery = ref('')
+const filterStatus = ref('')
+const filterType = ref('')
+const showModal = ref(false)
+const editingPromo = ref(null)
+
+const form = reactive({
+  code: '',
+  type: 'percentage',
+  value: null,
+  maxDiscount: null,
+  appliesTo: [],
+  maxUses: 0,
+  expires: '',
+  status: 'active'
 })
 
-interface PromoCode {
-  id: number
-  code: string
-  description: string
-  type: 'percentage' | 'fixed'
-  value: number
-  maxDiscount?: number
-  appliesTo: string[]
-  used: number
-  maxUses: number
-  expires: string
-  status: 'active' | 'inactive' | 'expired'
-}
-
-const promoCodes = ref<PromoCode[]>([
-  { id: 1, code: 'SUMMER20', description: 'Summer launch – 20% off all memberships', type: 'percentage', value: 20, maxDiscount: 100, appliesTo: ['School', 'Consultant', 'Personal'], used: 12, maxUses: 100, expires: '2026-08-31', status: 'active' },
-  { id: 2, code: 'FREE2026', description: '100% off — partner promotion', type: 'percentage', value: 100, appliesTo: ['Consultant'], used: 3, maxUses: 50, expires: '2026-12-31', status: 'active' },
-  { id: 3, code: 'FLAT50', description: '£50 off annual fee', type: 'fixed', value: 50, appliesTo: ['School'], used: 7, maxUses: Infinity, expires: '', status: 'active' },
-  { id: 4, code: 'EARLYBIRD', description: 'Early bird – 15% off', type: 'percentage', value: 15, maxDiscount: 75, appliesTo: ['School', 'Consultant'], used: 45, maxUses: 200, expires: '2026-06-30', status: 'active' },
-  { id: 5, code: 'EXPIRED10', description: 'Expired code (test)', type: 'percentage', value: 10, appliesTo: ['School'], used: 0, maxUses: Infinity, expires: '2026-01-31', status: 'inactive' },
+const promos = ref([
+  { id: 1, code: 'SUMMER20', type: 'percentage', value: 20, maxDiscount: 100, appliesTo: ['School', 'Consultant', 'Personal'], uses: 12, maxUses: 100, expires: '2026-08-31', status: 'active' },
+  { id: 2, code: 'CONSULT50', type: 'percentage', value: 100, maxDiscount: null, appliesTo: ['Consultant'], uses: 3, maxUses: 50, expires: '2026-12-31', status: 'active' },
+  { id: 3, code: 'FLAT50', type: 'fixed', value: 50, maxDiscount: null, appliesTo: ['School'], uses: 7, maxUses: 999, expires: null, status: 'active' },
+  { id: 4, code: 'SCHOOL15', type: 'percentage', value: 15, maxDiscount: 75, appliesTo: ['School', 'Consultant'], uses: 45, maxUses: 200, expires: '2026-06-30', status: 'active' },
+  { id: 5, code: 'NEWYEAR10', type: 'percentage', value: 10, maxDiscount: null, appliesTo: ['School'], uses: 0, maxUses: 999, expires: '2026-01-31', status: 'inactive' }
 ])
 
-const searchQuery = ref('')
-const filterStatus = ref('all')
-const filterType = ref('all')
-
-const activeCodes = computed(() => promoCodes.value.filter(c => c.status === 'active').length)
-const inactiveCodes = computed(() => promoCodes.value.filter(c => c.status !== 'active').length)
-const totalUses = computed(() => promoCodes.value.reduce((sum, c) => sum + c.used, 0))
+const activeCodes = computed(() => promos.value.filter(p => p.status === 'active').length)
+const inactiveCodes = computed(() => promos.value.filter(p => p.status === 'inactive').length)
+const totalUses = computed(() => promos.value.reduce((sum, p) => sum + p.uses, 0))
 const expiringSoon = computed(() => {
-  const soon = new Date(); soon.setDate(soon.getDate() + 14)
-  return promoCodes.value.filter(c => {
-    if (!c.expires || c.status !== 'active') return false
-    const d = new Date(c.expires)
-    return d <= soon && d >= new Date()
-  }).length
+  const thirty = new Date()
+  thirty.setDate(thirty.getDate() + 30)
+  return promos.value.filter(p => p.expires && new Date(p.expires) <= thirty && p.status === 'active').length
 })
 
-const filteredCodes = computed(() => {
-  let result = promoCodes.value
-  if (filterStatus.value !== 'all') result = result.filter(c => c.status === filterStatus.value)
-  if (filterType.value !== 'all') result = result.filter(c => c.type === filterType.value)
-  if (searchQuery.value) {
-    const q = searchQuery.value.toLowerCase()
-    result = result.filter(c => c.code.toLowerCase().includes(q) || c.description.toLowerCase().includes(q))
-  }
-  return result
+const filteredPromos = computed(() => {
+  return promos.value.filter(p => {
+    const matchSearch = !searchQuery.value || p.code.toLowerCase().includes(searchQuery.value.toLowerCase())
+    const matchStatus = !filterStatus.value || p.status === filterStatus.value
+    const matchType = !filterType.value || p.type === filterType.value
+    return matchSearch && matchStatus && matchType
+  })
 })
 
-const getExpiryClass = (expires: string): string => {
-  if (!expires) return 'none'
-  const d = new Date(expires)
-  const now = new Date()
-  const days = Math.ceil((d.getTime() - now.getTime()) / (1000 * 60 * 60 * 24))
-  if (days < 0) return 'expired'
-  if (days <= 7) return 'critical'
-  if (days <= 30) return 'warning'
-  return 'ok'
-}
+const previewText = computed(() => {
+  if (!form.code || !form.value) return ''
+  const type = form.type === 'percentage' ? `${form.value}%` : `£${form.value}`
+  const max = form.maxDiscount ? ` (max £${form.maxDiscount})` : ''
+  const applies = form.appliesTo.length ? form.appliesTo.join(', ') : 'all users'
+  return `${form.code} — ${type}${max} for ${applies}`
+})
 
-const formatDate = (date: string): string => {
+function formatExpiry(date) {
   if (!date) return 'Never'
-  const d = new Date(date)
-  return d.toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' })
+  return new Date(date).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' })
 }
 
-const showModal = ref(false)
-const editingId = ref<number | null>(null)
-const form = ref({ code: '', description: '', type: 'percentage' as 'percentage' | 'fixed', value: 0, maxDiscount: undefined as number | undefined, appliesTo: [] as string[], maxUses: undefined as number | undefined, expires: '' })
+function getExpiryClass(date) {
+  if (!date) return 'expiry-never'
+  const now = new Date()
+  const exp = new Date(date)
+  const diff = (exp - now) / (1000 * 60 * 60 * 24)
+  if (diff < 0) return 'expiry-expired'
+  if (diff < 7) return 'expiry-critical'
+  if (diff < 30) return 'expiry-warning'
+  return 'expiry-ok'
+}
 
-const openCreateModal = () => {
-  editingId.value = null
-  form.value = { code: '', description: '', type: 'percentage', value: 0, maxDiscount: undefined, appliesTo: [], maxUses: undefined, expires: '' }
+function openCreateModal() {
+  editingPromo.value = null
+  Object.assign(form, { code: '', type: 'percentage', value: null, maxDiscount: null, appliesTo: [], maxUses: 0, expires: '', status: 'active' })
   showModal.value = true
 }
 
-const editCode = (code: PromoCode) => {
-  editingId.value = code.id
-  form.value = { code: code.code, description: code.description, type: code.type, value: code.value, maxDiscount: code.maxDiscount, appliesTo: [...code.appliesTo], maxUses: code.maxUses === Infinity ? undefined : code.maxUses, expires: code.expires }
+function openEditModal(promo) {
+  editingPromo.value = promo
+  Object.assign(form, { ...promo })
   showModal.value = true
 }
 
-const closeModal = () => { showModal.value = false; editingId.value = null }
+function closeModal() {
+  showModal.value = false
+  editingPromo.value = null
+}
 
-const saveCode = () => {
-  if (!form.value.code || form.value.value <= 0 || form.value.appliesTo.length === 0) {
-    alert('Please fill in all required fields'); return
-  }
-  if (editingId.value) {
-    const c = promoCodes.value.find(x => x.id === editingId.value)
-    if (c) Object.assign(c, { ...form.value, maxUses: form.value.maxUses || Infinity })
+function savePromo() {
+  if (!form.code || !form.value || !form.appliesTo.length) return
+  if (editingPromo.value) {
+    const idx = promos.value.findIndex(p => p.id === editingPromo.value.id)
+    if (idx !== -1) promos.value[idx] = { ...promos.value[idx], ...form }
   } else {
-    promoCodes.value.push({
-      id: Date.now(), code: form.value.code.toUpperCase(), description: form.value.description,
-      type: form.value.type, value: form.value.value, maxDiscount: form.value.maxDiscount,
-      appliesTo: form.value.appliesTo, used: 0, maxUses: form.value.maxUses || Infinity,
-      expires: form.value.expires, status: 'active'
-    })
+    promos.value.push({ id: Date.now(), ...form })
   }
   closeModal()
 }
 
-const toggleStatus = (code: PromoCode) => { code.status = code.status === 'active' ? 'inactive' : 'active' }
+function toggleStatus(promo) {
+  promo.status = promo.status === 'active' ? 'inactive' : 'active'
+}
 
-const showDeleteConfirm = ref(false)
-const codeToDelete = ref<PromoCode | null>(null)
-const deleteCode = (id: number) => { codeToDelete.value = promoCodes.value.find(c => c.id === id) || null; showDeleteConfirm.value = true }
-const confirmDelete = () => { if (codeToDelete.value) promoCodes.value = promoCodes.value.filter(c => c.id !== codeToDelete.value!.id); showDeleteConfirm.value = false; codeToDelete.value = null }
+function deletePromo(id) {
+  if (confirm('Delete this promo code?')) {
+    promos.value = promos.value.filter(p => p.id !== id)
+  }
+}
 </script>
 
 <style scoped>
-:root { --bsp-primary: #212E54; --bsp-secondary: #3b82f6; --bsp-accent: #C1AA78; --bsp-dark: #1e293b; --bsp-light: #f8fafc; --bsp-success: #10b981; --bsp-danger: #ef4444; }
-* { margin: 0; padding: 0; box-sizing: border-box; }
 .bsp-dashboard { min-height: 100vh; background: #f8fafc; font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; color: #1e293b; }
 .dashboard-body { display: flex; min-height: 100vh; }
 
-.sidebar { width: 260px; background: white; border-right: 1px solid #e2e8f0; padding: 1.5rem 0; flex-shrink: 0; position: sticky; top: 0; height: 100vh; overflow-y: auto; }
+/* Sidebar */
+.sidebar { width: 260px; background: white; border-right: 1px solid #e2e8f0; padding: 1.5rem 0; flex-shrink: 0; position: sticky; top: 0; height: 100vh; max-height: 100vh; overflow-y: auto; }
 .nav-section { margin-bottom: 1.5rem; }
 .nav-section-title { font-size: 0.7rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.08em; color: #94a3b8; padding: 0 1.5rem; margin-bottom: 0.5rem; }
 .nav-item { display: flex; align-items: center; gap: 0.75rem; padding: 0.875rem 1.5rem; color: #64748b; text-decoration: none; font-weight: 500; font-size: 0.9rem; transition: all 0.2s; border-left: 3px solid transparent; }
 .nav-item:hover { background: #f1f5f9; color: #212E54; }
 .nav-item.active { background: #eff6ff; color: #212E54; border-left-color: #3b82f6; font-weight: 600; }
 .nav-icon { font-size: 1.1rem; }
+.nav-count { margin-left: auto; background: #f1f5f9; color: #64748b; font-size: 0.75rem; font-weight: 600; padding: 2px 8px; border-radius: 9999px; }
 
-.main-content { flex: 1; padding: 1.5rem 2rem; overflow-y: auto; }
-.page-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem; }
+/* Main Content */
+.main-content { flex: 1; padding: 1.5rem 2rem; overflow-y: auto; min-width: 0; }
+.page-header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 1.5rem; flex-wrap: wrap; gap: 1rem; }
 .page-title { font-size: 1.5rem; font-weight: 700; color: #212E54; margin-bottom: 0.25rem; }
 .page-subtitle { font-size: 0.9rem; color: #64748b; }
+.page-actions { display: flex; align-items: center; gap: 0.75rem; flex-wrap: wrap; }
+.link-back { color: #3b82f6; text-decoration: none; font-size: 0.875rem; font-weight: 500; }
+.link-back:hover { text-decoration: underline; }
 
-.summary-cards { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 1rem; margin-bottom: 1.5rem; }
-.summary-card { background: white; padding: 1.25rem; border-radius: 10px; box-shadow: 0 1px 3px rgba(0,0,0,0.08); display: flex; flex-direction: column; }
-.summary-label { font-size: 0.8rem; color: #64748b; margin-bottom: 0.5rem; }
+/* Summary Cards */
+.summary-cards { display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 1rem; margin-bottom: 1.5rem; }
+.summary-card { background: white; padding: 1.25rem; border-radius: 10px; box-shadow: 0 1px 3px rgba(0,0,0,0.08); display: flex; align-items: center; gap: 1rem; }
+.summary-icon { font-size: 1.5rem; width: 48px; height: 48px; border-radius: 10px; display: flex; align-items: center; justify-content: center; }
+.summary-icon-green { background: #d1fae5; }
+.summary-icon-gray { background: #f1f5f9; }
+.summary-icon-blue { background: #dbeafe; }
+.summary-icon-orange { background: #fed7aa; }
 .summary-value { font-size: 1.5rem; font-weight: 700; color: #212E54; }
-.summary-value.pending { color: #f59e0b; }
+.summary-label { font-size: 0.85rem; color: #64748b; }
 
-.panel { background: white; border-radius: 10px; padding: 1.5rem; box-shadow: 0 1px 3px rgba(0,0,0,0.08); }
-.panel-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem; padding-bottom: 0.75rem; border-bottom: 1px solid #e2e8f0; flex-wrap: wrap; gap: 0.75rem; }
-.panel-title { font-size: 1rem; font-weight: 600; color: #1e293b; }
-.panel-actions { display: flex; gap: 0.75rem; align-items: center; flex-wrap: wrap; }
-.search-input { padding: 0.5rem 0.75rem; border: 1px solid #e2e8f0; border-radius: 6px; font-size: 0.85rem; width: 220px; }
+/* Content Card */
+.content-card { background: white; border-radius: 10px; padding: 1.5rem; box-shadow: 0 1px 3px rgba(0,0,0,0.08); }
+.card-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem; flex-wrap: wrap; gap: 0.75rem; }
+.card-title { font-size: 1.1rem; font-weight: 600; color: #212E54; }
+.card-controls { display: flex; gap: 0.75rem; align-items: center; flex-wrap: wrap; }
+.search-input { padding: 0.5rem 0.75rem; border: 1px solid #e2e8f0; border-radius: 6px; font-size: 0.85rem; width: 200px; }
 .search-input:focus { outline: none; border-color: #3b82f6; }
 .filter-select { padding: 0.5rem 0.75rem; border: 1px solid #e2e8f0; border-radius: 6px; font-size: 0.85rem; background: white; cursor: pointer; }
 
-.users-table { display: flex; flex-direction: column; overflow-x: auto; }
-.promo-grid { display: grid; grid-template-columns: 110px 2fr 100px 130px 1.5fr 90px 110px 90px 110px; gap: 0.75rem; min-width: 860px; align-items: center; }
-.table-header { background: #f8fafc; border-radius: 6px; padding: 0.75rem 1rem; font-size: 0.75rem; font-weight: 600; color: #64748b; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 0.5rem; }
-.table-row { padding: 0.875rem 1rem; border-bottom: 1px solid #f1f5f9; font-size: 0.875rem; }
-.table-row:last-child { border-bottom: none; }
+/* Table */
+.table-responsive { overflow-x: auto; }
+.data-table { width: 100%; border-collapse: collapse; font-size: 0.875rem; }
+.data-table th { text-align: left; padding: 0.75rem 0.5rem; border-bottom: 2px solid #e2e8f0; font-size: 0.7rem; font-weight: 700; color: #64748b; text-transform: uppercase; letter-spacing: 0.05em; white-space: nowrap; }
+.data-table td { padding: 0.875rem 0.5rem; border-bottom: 1px solid #f1f5f9; white-space: nowrap; vertical-align: middle; }
+.data-table tbody tr:hover { background: #f8fafc; }
+.empty-cell { text-align: center; padding: 2rem; color: #64748b; }
 
 .code-badge { background: #f1f5f9; border-radius: 5px; color: #1e3a5f; font-family: monospace; font-size: 0.85rem; font-weight: 700; letter-spacing: 0.05em; padding: 3px 8px; }
-.role-tag { background: #eff6ff; color: #3b82f6; padding: 0.2rem 0.5rem; border-radius: 4px; font-size: 0.75rem; font-weight: 600; text-transform: capitalize; }
-.role-tag.type-fixed { background: #dcfce7; color: #166534; }
-.applies-tag { background: #f1f5f9; border-radius: 3px; color: #475569; font-size: 0.75rem; padding: 2px 6px; margin-right: 4px; }
+.type-badge { padding: 0.2rem 0.5rem; border-radius: 4px; font-size: 0.75rem; font-weight: 600; white-space: nowrap; }
+.type-percentage { background: #eff6ff; color: #3b82f6; }
+.type-fixed { background: #dcfce7; color: #166534; }
+.applies-tag { background: #f1f5f9; border-radius: 3px; color: #475569; font-size: 0.75rem; padding: 2px 6px; margin-right: 4px; display: inline-block; }
+.value-text { font-weight: 600; color: #1e293b; }
+.max-cap { color: #94a3b8; font-size: 0.8rem; font-weight: 400; }
 .uses-count { color: #1e3a5f; font-weight: 700; }
-.uses-max { color: #94a3b8; font-size: 0.8rem; }
+.uses-sep { color: #94a3b8; }
+.uses-max { color: #94a3b8; font-size: 0.85rem; }
 
 .expiry-expired { color: #dc2626; font-weight: 600; }
 .expiry-critical { color: #ea580c; font-weight: 600; }
 .expiry-warning { color: #d97706; }
 .expiry-ok { color: #16a34a; }
-.expiry-none { color: #94a3b8; }
+.expiry-never { color: #94a3b8; }
 
 .status-badge { padding: 0.2rem 0.5rem; border-radius: 9999px; font-size: 0.75rem; font-weight: 600; text-transform: capitalize; }
 .status-active { background: #d1fae5; color: #047857; }
 .status-inactive { background: #f1f5f9; color: #64748b; }
-.status-expired { background: #fee2e2; color: #b91c1c; }
 
-.action-cell { display: flex; gap: 0.35rem; }
-.btn-action { background: none; border: none; font-size: 1rem; cursor: pointer; padding: 0.35rem; border-radius: 4px; }
-.btn-action:hover { background: #f1f5f9; }
-.btn-action.btn-danger:hover { background: #fee2e2; }
-.empty-state { text-align: center; padding: 2rem; color: #64748b; }
+.action-btn { background: none; border: none; font-size: 1rem; cursor: pointer; padding: 0.35rem; border-radius: 4px; }
+.action-btn:hover { background: #f1f5f9; }
+.action-btn-danger:hover { background: #fee2e2; }
 
+/* Buttons */
 .btn { padding: 0.5rem 1rem; border-radius: 6px; font-weight: 600; font-size: 0.85rem; cursor: pointer; border: none; transition: all 0.2s; }
 .btn-primary { background: #3b82f6; color: white; }
 .btn-primary:hover { background: #2563eb; }
 .btn-secondary { background: #f1f5f9; color: #374151; border: 1px solid #e2e8f0; }
 .btn-secondary:hover { background: #e2e8f0; }
-.btn-danger { background: #dc2626; color: white; }
-.btn-danger:hover { background: #b91c1c; }
 
+/* Modal */
 .modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.5); z-index: 200; display: flex; align-items: center; justify-content: center; padding: 1rem; }
 .modal-box { background: white; border-radius: 12px; width: 100%; max-width: 520px; max-height: 90vh; overflow-y: auto; box-shadow: 0 20px 25px -5px rgba(0,0,0,0.1); }
-.modal-sm { max-width: 380px; }
 .modal-header { display: flex; justify-content: space-between; align-items: center; padding: 1.25rem; border-bottom: 1px solid #e2e8f0; }
-.modal-title { font-size: 1.1rem; font-weight: 600; }
+.modal-header h3 { font-size: 1.1rem; font-weight: 600; }
 .modal-close { background: none; border: none; font-size: 1.5rem; cursor: pointer; color: #64748b; }
 .modal-body { padding: 1.25rem; }
 .modal-footer { display: flex; justify-content: flex-end; gap: 0.75rem; padding: 1rem 1.25rem; border-top: 1px solid #e2e8f0; }
@@ -421,56 +468,17 @@ const confirmDelete = () => { if (codeToDelete.value) promoCodes.value = promoCo
 .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; }
 .checkbox-group { display: flex; flex-wrap: wrap; gap: 1rem; }
 .checkbox-label { display: flex; align-items: center; gap: 0.35rem; font-size: 0.9rem; color: #334155; cursor: pointer; }
-.preview-box { background: #f0f9ff; border: 1px solid #bae6fd; border-radius: 8px; color: #0369a1; font-size: 0.85rem; padding: 0.75rem 1rem; }
-.user-email { color: #64748b; font-size: 0.85rem; }
-.user-name { font-weight: 600; }
-.max-cap { color: #94a3b8; font-size: 0.8rem; font-weight: 400; }
+.preview-box { background: #f0f9ff; border: 1px solid #bae6fd; border-radius: 8px; color: #0369a1; font-size: 0.85rem; padding: 0.75rem 1rem; margin-top: 0.5rem; }
 
 @media (max-width: 768px) {
   .sidebar { display: none; }
-  .summary-cards { grid-template-columns: 1fr; gap: 0.75rem; }
-  .summary-card { padding: 1rem; flex-direction: row; align-items: center; justify-content: space-between; }
-  .summary-label { margin-bottom: 0; font-size: 0.85rem; }
-  .summary-value { font-size: 1.25rem; }
-  .page-header { flex-direction: column; align-items: flex-start; gap: 0.75rem; }
-  .page-header .btn { width: 100%; }
-  .panel-header { flex-direction: column; align-items: stretch; gap: 0.75rem; }
-  .panel-actions { flex-direction: column; align-items: stretch; gap: 0.5rem; }
+  .summary-cards { grid-template-columns: 1fr 1fr; }
+  .page-header { flex-direction: column; }
+  .card-header { flex-direction: column; align-items: stretch; }
+  .card-controls { flex-direction: column; }
   .search-input { width: 100%; }
   .filter-select { width: 100%; }
   .form-row { grid-template-columns: 1fr; }
-
-  .users-table { overflow-x: visible; }
-  .table-header { display: none; }
-  .promo-grid, .table-row {
-    display: grid !important;
-    grid-template-columns: 1fr !important;
-    min-width: auto !important;
-    background: white;
-    border-radius: 10px;
-    padding: 1rem;
-    margin-bottom: 0.75rem;
-    border: 1px solid #e2e8f0;
-    box-shadow: 0 1px 3px rgba(0,0,0,0.06);
-    gap: 0.5rem !important;
-  }
-  .table-row > span {
-    display: flex;
-    align-items: center;
-    gap: 0.75rem;
-    padding: 0.25rem 0;
-  }
-  .table-row > span::before {
-    content: attr(data-label);
-    font-weight: 600;
-    color: #64748b;
-    font-size: 0.7rem;
-    text-transform: uppercase;
-    letter-spacing: 0.05em;
-    min-width: 80px;
-    flex-shrink: 0;
-  }
-  .table-row > span[data-label="Actions"]::before { display: none; }
-  .table-row > span[data-label="Actions"] { justify-content: flex-end; border-top: 1px solid #f1f5f9; padding-top: 0.5rem; margin-top: 0.25rem; }
+  .data-table th, .data-table td { white-space: normal; }
 }
 </style>
