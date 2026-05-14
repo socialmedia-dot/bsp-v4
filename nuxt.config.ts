@@ -173,6 +173,20 @@ export default defineNuxtConfig({
         '/BSP/settings/website/',
         '/BSP/settings/staff',
         '/BSP/settings/staff/',
+        // Operations Portal pages
+        '/operations/dashboard',
+        '/operations/dashboard/',
+        '/operations/applications',
+        '/operations/applications/',
+        '/operations/users',
+        '/operations/users/',
+        '/operations/payments',
+        '/operations/payments/',
+        '/operations/reports',
+        '/operations/reports/',
+        // Payment & Registration
+        '/payment',
+        '/payment/',
         // News articles
         '/news/uk-school-admissions-2026',
         '/news/boarding-school-life-guide',

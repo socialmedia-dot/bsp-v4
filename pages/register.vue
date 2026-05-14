@@ -342,7 +342,56 @@ const nextStep = () => {
 }
 
 const handleRegister = () => {
-  currentStep.value = 4
+  const { addApplication } = usePendingApps()
+
+  // Map role value to display label
+  const typeMap = {
+    student: 'Personal',
+    consultant: 'Consultant',
+    school: 'School',
+    business: 'Business'
+  }
+
+  // Determine plan and amount based on role
+  const planAmounts = {
+    school: { plan: 'Annual', amount: 299 },
+    consultant: { plan: 'Annual', amount: 199 },
+    business: { plan: 'Annual', amount: 199 },
+    student: { plan: 'Free', amount: 0 }
+  }
+
+  const { plan, amount } = planAmounts[activeRole.value] || { plan: 'Free', amount: 0 }
+
+  // For School/Consultant/Business: save to pending and go to payment
+  // For Personal: auto-approve
+  if (['school', 'consultant', 'business'].includes(activeRole.value)) {
+    addApplication({
+      name: form.value.name,
+      email: form.value.email,
+      password: form.value.password,
+      type: typeMap[activeRole.value],
+      company: form.value.company,
+      role: form.value.role,
+      schoolName: form.value.schoolName,
+      schoolRole: form.value.schoolRole,
+      documentName: form.value.schoolFile?.name || form.value.consultantFile?.name,
+      plan,
+      amountPaid: 0,
+    })
+    // Redirect to payment page
+    navigateTo('/payment')
+  } else {
+    // Personal: auto-create (no payment needed)
+    addApplication({
+      name: form.value.name,
+      email: form.value.email,
+      password: form.value.password,
+      type: 'Personal',
+      plan: 'Free',
+      amountPaid: 0,
+    })
+    currentStep.value = 4
+  }
 }
 </script>
 
