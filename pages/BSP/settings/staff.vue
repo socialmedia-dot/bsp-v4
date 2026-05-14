@@ -65,7 +65,7 @@
             <p class="page-subtitle">Manage BSP staff accounts and permissions</p>
           </div>
           <div class="page-actions">
-            <button class="btn btn-primary" @click="showAddStaff = true">+ Add Staff</button>
+            <button class="btn btn-primary add-staff-btn" @click="showAddStaff = true">+ Add Staff</button>
           </div>
         </div>
         <div class="settings-section">
@@ -371,10 +371,17 @@ function savePermissions() {
 @media (max-width: 768px) {
   .sidebar { display: none; }
   .main-content { padding: 1rem; }
-  .permissions-grid { grid-template-columns: 1fr; }
+  .permissions-grid { grid-template-columns: 1fr; gap: 0.75rem; }
+  .permission-card { padding: 0.875rem; }
+  .permission-title { font-size: 0.9rem; }
+  .permission-list li { font-size: 0.8rem; padding: 0.25rem 0; }
   .edit-roles-grid { grid-template-columns: 1fr; }
-  .page-header { flex-direction: column; gap: 1rem; align-items: flex-start; }
-  .section-header { flex-direction: column; gap: 0.75rem; align-items: flex-start; }
+  .page-header { flex-direction: column; gap: 0.75rem; align-items: flex-start; }
+  .section-header { flex-direction: column; gap: 0.5rem; align-items: flex-start; }
+  .section-header .btn { width: 100%; justify-content: center; font-size: 0.875rem; padding: 0.5rem 1rem; }
   .modal-lg { max-width: 100%; }
+  .staff-table-wrapper { overflow-x: auto; -webkit-overflow-scrolling: touch; }
+  .staff-table-wrapper table { min-width: 600px; }
+  .add-staff-btn { width: 100%; justify-content: center; }
 }
 </style>
