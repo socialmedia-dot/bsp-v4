@@ -47,7 +47,7 @@
               <span class="nav-icon">💳</span>
               <span>Payments</span>
             </NuxtLink>
-            <NuxtLink to="/operations/discounts" class="nav-item active">
+            <NuxtLink to="/operations/promotions" class="nav-item active">
               <span class="nav-icon">🎟️</span>
               <span>Promo Codes</span>
             </NuxtLink>
@@ -245,7 +245,7 @@ const { setMeta } = useSEO()
 setMeta({
   title: 'Promo Codes — BSP Operations Portal',
   description: 'Manage discount codes for BSP membership payments',
-  path: '/operations/discounts',
+  path: '/operations/promotions',
   type: 'website'
 })
 
