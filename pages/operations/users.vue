@@ -39,10 +39,6 @@
               <span class="nav-icon">💳</span>
               <span>Payments</span>
             </NuxtLink>
-            <NuxtLink to="/operations/promotions" class="nav-item">
-              <span class="nav-icon">🎟️</span>
-              <span>Promo Codes</span>
-            </NuxtLink>
             <NuxtLink to="/operations/reports" class="nav-item">
               <span class="nav-icon">📈</span>
               <span>Reports</span>
