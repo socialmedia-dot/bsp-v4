@@ -48,7 +48,7 @@
               <span class="nav-icon">💳</span>
               <span>Payments</span>
             </NuxtLink>
-<NuxtLink to="/BSP/promo-codes" class="nav-item">
+            <NuxtLink to="/BSP/promo-codes" class="nav-item">
               <span class="nav-icon">🎟️</span>
               <span>Promo Codes</span>
             </NuxtLink>
