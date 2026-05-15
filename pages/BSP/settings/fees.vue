@@ -43,7 +43,7 @@
               <span class="nav-icon">💳</span>
               <span>Payments</span>
             </NuxtLink>
-<NuxtLink to="/BSP/promo-codes" class="nav-item">
+            <NuxtLink to="/BSP/promo-codes" class="nav-item">
               <span class="nav-icon">🎟️</span>
               <span>Promo Codes</span>
             </NuxtLink>
@@ -551,7 +551,8 @@ const saveSettings = () => {
 .dashboard-body { display: flex; min-height: 100vh; }
 
 /* Sidebar */
-.sidebar { width: 260px; background: white; border-right: 1px solid #e2e8f0; padding: 1.5rem 0; flex-shrink: 0; position: sticky; top: 0; height: 100vh; overflow-y: auto; }
+.sidebar { width: 260px; background: white; border-right: 1px solid #e2e8f0; flex-shrink: 0; height: 100vh; overflow-y: auto; position: sticky; top: 0; padding: 0; }
+.sidebar-nav { padding: 1.5rem 1rem; }
 .nav-section { margin-bottom: 1.5rem; }
 .nav-section-title { font-size: 0.7rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.08em; color: #94a3b8; padding: 0 1.5rem; margin-bottom: 0.5rem; }
 .nav-item { display: flex; align-items: center; gap: 0.75rem; padding: 0.875rem 1.5rem; color: #64748b; text-decoration: none; font-weight: 500; font-size: 0.9rem; transition: all 0.2s; border-left: 3px solid transparent; }

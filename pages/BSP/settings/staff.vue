@@ -8,14 +8,17 @@
             <NuxtLink to="/BSP/users/personal" class="nav-item">
               <span class="nav-icon">👤</span>
               <span>Personal</span>
+              <span class="nav-count">12</span>
             </NuxtLink>
             <NuxtLink to="/BSP/users/school" class="nav-item">
               <span class="nav-icon">🏫</span>
               <span>School</span>
+              <span class="nav-count">24</span>
             </NuxtLink>
             <NuxtLink to="/BSP/users/consultant" class="nav-item">
               <span class="nav-icon">💼</span>
               <span>Consultant</span>
+              <span class="nav-count">8</span>
             </NuxtLink>
             <NuxtLink to="/BSP/users/business" class="nav-item">
               <span class="nav-icon">🏢</span>
@@ -25,8 +28,10 @@
             <NuxtLink to="/BSP/users/bspstaff" class="nav-item">
               <span class="nav-icon">👔</span>
               <span>BSP Staff</span>
+              <span class="nav-count">3</span>
             </NuxtLink>
           </div>
+
           <div class="nav-section">
             <div class="nav-section-title">Management</div>
             <NuxtLink to="/BSP/dashboard" class="nav-item">
@@ -46,6 +51,7 @@
               <span>Promo Codes</span>
             </NuxtLink>
           </div>
+
           <div class="nav-section">
             <div class="nav-section-title">Settings</div>
             <NuxtLink to="/BSP/settings/fees" class="nav-item">
@@ -290,7 +296,8 @@ function savePermissions() {
 <style scoped>
 .bsp-dashboard { min-height: 100vh; background: #f8fafc; font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; color: #1e293b; }
 .dashboard-body { display: flex; min-height: 100vh; }
-.sidebar { width: 260px; background: white; border-right: 1px solid #e2e8f0; padding: 1.5rem 0; flex-shrink: 0; position: sticky; top: 0; height: 100vh; overflow-y: auto; }
+.sidebar { width: 260px; background: white; border-right: 1px solid #e2e8f0; flex-shrink: 0; height: 100vh; overflow-y: auto; position: sticky; top: 0; padding: 0; }
+.sidebar-nav { padding: 1.5rem 1rem; }
 .nav-section { margin-bottom: 1.5rem; }
 .nav-section-title { font-size: 0.7rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.08em; color: #94a3b8; padding: 0 1.5rem; margin-bottom: 0.5rem; }
 .nav-item { display: flex; align-items: center; gap: 0.75rem; padding: 0.875rem 1.5rem; color: #64748b; text-decoration: none; font-weight: 500; font-size: 0.9rem; transition: all 0.2s; border-left: 3px solid transparent; }
