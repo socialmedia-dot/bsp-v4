@@ -81,6 +81,10 @@
             <input v-model="form.company" type="text" placeholder="e.g. EduConnect Ltd." />
           </div>
           <div v-if="activeRole === 'consultant' || activeRole === 'business'" class="form-group">
+            <label>📍 Company Address <span style="color: #ef4444;">*</span></label>
+            <input v-model="form.companyAddress" type="text" placeholder="e.g. Hong Kong, Central" required />
+          </div>
+          <div v-if="activeRole === 'consultant' || activeRole === 'business'" class="form-group">
             <label>💼 Your Role</label>
             <input v-model="form.role" type="text" placeholder="e.g. Senior Education Consultant" />
           </div>
@@ -167,13 +171,13 @@
               <p style="color: #64748b; font-size: 0.75rem; margin: 0;">Email</p>
               <p style="font-weight: 600; color: #1e293b; font-size: 0.85rem; margin: 0.2rem 0 0;">{{ form.email }}</p>
             </div>
-            <div v-if="form.schoolName" style="grid-column: 1 / -1;">
+            <div v-if="form.schoolName || form.company" style="grid-column: 1 / -1;">
               <p style="color: #64748b; font-size: 0.75rem; margin: 0;">School / Company</p>
               <p style="font-weight: 600; color: #1e293b; font-size: 0.85rem; margin: 0.2rem 0 0;">{{ form.schoolName || form.company }}</p>
             </div>
-            <div v-if="form.schoolAddress" style="grid-column: 1 / -1;">
-              <p style="color: #64748b; font-size: 0.75rem; margin: 0;">School Address</p>
-              <p style="font-weight: 600; color: #1e293b; font-size: 0.85rem; margin: 0.2rem 0 0;">{{ form.schoolAddress }}</p>
+            <div v-if="form.schoolAddress || form.companyAddress" style="grid-column: 1 / -1;">
+              <p style="color: #64748b; font-size: 0.75rem; margin: 0;">{{ form.schoolAddress ? 'School Address' : 'Company Address' }}</p>
+              <p style="font-weight: 600; color: #1e293b; font-size: 0.85rem; margin: 0.2rem 0 0;">{{ form.schoolAddress || form.companyAddress }}</p>
             </div>
             <div v-if="form.schoolRole || form.role" style="grid-column: 1 / -1;">
               <p style="color: #64748b; font-size: 0.75rem; margin: 0;">Role</p>
@@ -306,6 +310,7 @@ const isStep1Valid = computed(() => {
   if (form.value.password !== form.value.confirmPassword) return false
   if (form.value.password.length < 8) return false
   if (activeRole.value === 'school' && (!form.value.schoolName || !form.value.schoolAddress)) return false
+  if ((activeRole.value === 'consultant' || activeRole.value === 'business') && (!form.value.company || !form.value.companyAddress)) return false
   return true
 })
 
@@ -319,6 +324,7 @@ const form = ref({
   schoolRole: '',
   schoolFile: null,
   company: '',
+  companyAddress: '',
   role: '',
   consultantFile: null,
   terms: false
