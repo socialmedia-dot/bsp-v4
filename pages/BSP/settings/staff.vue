@@ -17,6 +17,11 @@
               <span class="nav-icon">💼</span>
               <span>Consultant</span>
             </NuxtLink>
+            <NuxtLink to="/BSP/users/business" class="nav-item">
+              <span class="nav-icon">🏢</span>
+              <span>Business</span>
+              <span class="nav-count">8</span>
+            </NuxtLink>
             <NuxtLink to="/BSP/users/bspstaff" class="nav-item">
               <span class="nav-icon">👔</span>
               <span>BSP Staff</span>
