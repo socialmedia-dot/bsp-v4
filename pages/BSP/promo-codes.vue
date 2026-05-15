@@ -389,7 +389,7 @@ function deletePromo(id) {
 .nav-count { margin-left: auto; background: #f1f5f9; color: #64748b; font-size: 0.75rem; font-weight: 600; padding: 2px 8px; border-radius: 9999px; }
 
 /* Main Content */
-.main-content { flex: 1; padding: 1.5rem 2rem; overflow-y: auto; min-width: 0; }
+.main-content { flex: 1; min-height: 100vh; padding: 1.5rem 2rem; overflow-y: auto; min-width: 0; }
 .page-header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 1.5rem; flex-wrap: wrap; gap: 1rem; }
 .page-title { font-size: 1.5rem; font-weight: 700; color: #212E54; margin-bottom: 0.25rem; }
 .page-subtitle { font-size: 0.9rem; color: #64748b; }

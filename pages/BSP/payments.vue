@@ -642,7 +642,7 @@ watch(filterType, () => { currentPage.value = 1 })
 
 /* Main Content */
 .main-content {
-  flex: 1;
+  flex: 1; min-height: 100vh;
   padding: 1.5rem 2rem;
   overflow-x: auto;
   overflow-y: auto;

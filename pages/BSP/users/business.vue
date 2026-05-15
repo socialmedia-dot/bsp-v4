@@ -686,7 +686,7 @@ const exportBusinesses = () => {
 .nav-item.active { background: #1e3a5f; color: #fff; }
 .nav-icon { font-size: 1rem; }
 .nav-count { color: #94a3b8; font-size: 0.8rem; margin-left: auto; }
-.main-content { flex: 1; overflow: auto; padding: 2rem; }
+.main-content { flex: 1; min-height: 100vh; overflow: auto; padding: 2rem; }
 .page-header { align-items: flex-start; display: flex; justify-content: space-between; margin-bottom: 2rem; }
 .page-title { color: #1e3a5f; font-size: 1.5rem; font-weight: 700; margin: 0; }
 .page-subtitle { color: #64748b; font-size: 0.875rem; margin: 0.25rem 0 0; }

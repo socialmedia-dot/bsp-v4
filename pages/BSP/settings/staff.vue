@@ -297,7 +297,7 @@ function savePermissions() {
 .nav-item:hover { background: #f1f5f9; color: #212E54; }
 .nav-item.active { background: #eff6ff; color: #212E54; border-left-color: #3b82f6; font-weight: 600; }
 .nav-icon { font-size: 1.1rem; }
-.main-content { flex: 1; padding: 2rem; max-width: 1200px; }
+.main-content { flex: 1; min-height: 100vh; padding: 2rem; max-width: 1200px; }
 .page-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 2rem; }
 .page-title { font-size: 1.5rem; font-weight: 700; color: #212E54; margin-bottom: 0.25rem; }
 .page-subtitle { font-size: 0.9rem; color: #64748b; }
