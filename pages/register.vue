@@ -69,6 +69,10 @@
             <input v-model="form.schoolName" type="text" placeholder="e.g. Westminster School" />
           </div>
           <div v-if="activeRole === 'school'" class="form-group">
+            <label>📍 School Address <span style="color: #ef4444;">*</span></label>
+            <input v-model="form.schoolAddress" type="text" placeholder="e.g. Hong Kong, Kowloon" required />
+          </div>
+          <div v-if="activeRole === 'school'" class="form-group">
             <label>💼 Your Role</label>
             <input v-model="form.schoolRole" type="text" placeholder="e.g. Admissions Officer" />
           </div>
@@ -166,6 +170,10 @@
             <div v-if="form.schoolName" style="grid-column: 1 / -1;">
               <p style="color: #64748b; font-size: 0.75rem; margin: 0;">School / Company</p>
               <p style="font-weight: 600; color: #1e293b; font-size: 0.85rem; margin: 0.2rem 0 0;">{{ form.schoolName || form.company }}</p>
+            </div>
+            <div v-if="form.schoolAddress" style="grid-column: 1 / -1;">
+              <p style="color: #64748b; font-size: 0.75rem; margin: 0;">School Address</p>
+              <p style="font-weight: 600; color: #1e293b; font-size: 0.85rem; margin: 0.2rem 0 0;">{{ form.schoolAddress }}</p>
             </div>
             <div v-if="form.schoolRole || form.role" style="grid-column: 1 / -1;">
               <p style="color: #64748b; font-size: 0.75rem; margin: 0;">Role</p>
@@ -297,7 +305,7 @@ const isStep1Valid = computed(() => {
   if (!form.value.name || !form.value.email || !form.value.password) return false
   if (form.value.password !== form.value.confirmPassword) return false
   if (form.value.password.length < 8) return false
-  if (activeRole.value === 'school' && !form.value.schoolName) return false
+  if (activeRole.value === 'school' && (!form.value.schoolName || !form.value.schoolAddress)) return false
   return true
 })
 
@@ -307,6 +315,7 @@ const form = ref({
   password: '',
   confirmPassword: '',
   schoolName: '',
+  schoolAddress: '',
   schoolRole: '',
   schoolFile: null,
   company: '',
