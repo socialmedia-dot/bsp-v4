@@ -159,6 +159,8 @@ export default defineNuxtConfig({
         '/BSP/users/school/',
         '/BSP/users/consultant',
         '/BSP/users/consultant/',
+        '/BSP/users/business',
+        '/BSP/users/business/',
         '/BSP/dashboard',
         '/BSP/dashboard/',
         '/BSP/new-account-applications',
