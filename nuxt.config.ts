@@ -149,6 +149,10 @@ export default defineNuxtConfig({
         '/privacy',
         // SEO pages
         '/search',
+        '/sitemap',
+        '/sitemap/',
+        '/roadmap',
+        '/roadmap/',
         '/sitemap.xml',
         '/robots.txt',
         // BSP Admin pages
