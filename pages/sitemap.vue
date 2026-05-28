@@ -4,7 +4,7 @@
       <h1>🗺️ BSP v4 Sitemap & Progress</h1>
       <p>British School Portal — Real-time Development Progress</p>
       <p class="updated">
-        Version: v4-{{ meta.commit }} | Updated: {{ meta.updated }}
+        Version: v4-{{ commitHash }} | Updated: {{ meta.updated }}
       </p>
       <div class="progress-bar">
         <div class="progress-fill" :style="{ width: overallPercent + '%' }"></div>
@@ -129,10 +129,13 @@
 <script setup>
 import roadmapData from '~/assets/data/roadmap.json'
 
+const config = useRuntimeConfig()
 const meta = roadmapData.meta
 const modules = roadmapData.modules
 const recentUpdates = roadmapData.recentUpdates
 const milestones = roadmapData.milestones
+
+const commitHash = config.public.gitCommit || 'unknown'
 
 const allItems = modules.flatMap(m => m.items)
 const completedCount = allItems.filter(i => i.status === 'done').length

@@ -1,3 +1,13 @@
+import { execSync } from 'child_process'
+
+const gitCommit = (() => {
+  try {
+    return execSync('git rev-parse --short HEAD').toString().trim()
+  } catch {
+    return 'unknown'
+  }
+})()
+
 // https://nuxt.com/docs/api/configuration/nuxt-config
 export default defineNuxtConfig({
   compatibilityDate: '2024-11-01',
@@ -109,7 +119,8 @@ export default defineNuxtConfig({
   // Runtime config
   runtimeConfig: {
     public: {
-      apiBase: process.env.NUXT_PUBLIC_API_BASE || 'https://www.britishschoolportal.co.uk/api/v1'
+      apiBase: process.env.NUXT_PUBLIC_API_BASE || 'https://www.britishschoolportal.co.uk/api/v1',
+      gitCommit
     }
   },
 
