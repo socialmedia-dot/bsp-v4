@@ -1,0 +1,5 @@
+name = "bsp-v4"
+compatibility_date = "2024-01-01"
+
+[env.production]
+name = "bsp-v4"
