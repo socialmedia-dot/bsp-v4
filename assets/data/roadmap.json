@@ -1,12 +1,13 @@
 {
   "meta": {
     "version": "v4",
-    "updated": "2026-05-28",
+    "updated": "2026-05-31",
     "deployedUrl": "https://bsp-v4.pages.dev",
-    "totalVueFiles": 34,
-    "portals": ["Public", "Auth", "Student", "Operations", "Admin", "Consultant", "School", "Legal"]
+    "totalVueFiles": 35,
+    "portals": ["Public", "Auth", "Student", "Operations", "Admin", "School", "Consultant", "AI Services", "Legal"]
   },
   "recentUpdates": [
+    { "date": "2026-05-31", "text": "Update roadmap.json to follow v4 brief: AI Smart Matching, Schools Directory, AI Agent" },
     { "date": "2026-05-28", "text": "Redesign Sitemap with real v4 progress & per-portal progress bars" },
     { "date": "2026-05-28", "text": "Add Roadmap page with three-column kanban-style board" },
     { "date": "2026-05-21", "text": "Unify Settings sidebar CSS & fix Promo Codes indentation" },
@@ -15,8 +16,7 @@
     { "date": "2026-05-20", "text": "Add company address field for Consultant & Business registration" },
     { "date": "2026-05-19", "text": "Add school address field to School registration form" },
     { "date": "2026-05-18", "text": "New registration flow: payment + Manager approval workflow" },
-    { "date": "2026-05-16", "text": "Add /operations/applications Manager approval page" },
-    { "date": "2026-05-15", "text": "Add Add Role modal & permission editing in BSP Staff Settings" }
+    { "date": "2026-05-16", "text": "Add /operations/applications Manager approval page" }
   ],
   "modules": [
     {
@@ -57,7 +57,9 @@
         { "status": "done", "label": "Student Registration", "path": "/student/register", "date": "2026-04" },
         { "status": "done", "label": "Apply to School", "path": "/student/apply/:schoolId", "date": "2026-04" },
         { "status": "done", "label": "My Applications", "path": "/student/applications", "date": "2026-04" },
-        { "status": "planned", "label": "Student Profile", "path": "/student/profile", "date": null }
+        { "status": "planned", "label": "Student Profile", "path": "/student/profile", "date": null },
+        { "status": "planned", "label": "AI Consultant Chat", "path": "/student/ai-chat", "date": null },
+        { "status": "planned", "label": "School Recommendations", "path": "/student/recommendations", "date": null }
       ]
     },
     {
@@ -106,6 +108,7 @@
         { "status": "planned", "label": "Application Detail", "path": "/school/applications/:id", "date": null },
         { "status": "planned", "label": "School Profile", "path": "/school/profile", "date": null },
         { "status": "planned", "label": "AI Agent", "path": "/school/ai-agent", "date": null },
+        { "status": "planned", "label": "AI Match Reviews", "path": "/school/match-reviews", "date": null },
         { "status": "planned", "label": "Admissions Reports", "path": "/school/reports", "date": null }
       ]
     },
@@ -118,7 +121,21 @@
         { "status": "planned", "label": "Consultant Dashboard", "path": "/consultant/dashboard", "date": null },
         { "status": "planned", "label": "Student List", "path": "/consultant/students", "date": null },
         { "status": "planned", "label": "Student Detail", "path": "/consultant/students/:id", "date": null },
-        { "status": "planned", "label": "Consultant Profile (Portal)", "path": "/consultant/profile", "date": null }
+        { "status": "planned", "label": "Consultant Profile (Portal)", "path": "/consultant/profile", "date": null },
+        { "status": "planned", "label": "AI Match Recommendations", "path": "/consultant/recommendations", "date": null }
+      ]
+    },
+    {
+      "key": "ai",
+      "label": "AI Services (v4 Core)",
+      "emoji": "🤖",
+      "items": [
+        { "status": "planned", "label": "AI Consultant Chat (Student)", "path": "/ai/chat", "date": null },
+        { "status": "planned", "label": "Student Profile Builder", "path": "/ai/profile-builder", "date": null },
+        { "status": "planned", "label": "AI School Matching Engine", "path": "/ai/matching", "date": null },
+        { "status": "planned", "label": "Match Results (Student)", "path": "/ai/my-matches", "date": null },
+        { "status": "planned", "label": "School AI Agent Dashboard", "path": "/school/ai-agent", "date": null },
+        { "status": "planned", "label": "AI Analytics", "path": "/ai/analytics", "date": null }
       ]
     },
     {
@@ -135,6 +152,7 @@
     }
   ],
   "milestones": [
+    { "date": "2026-05-31", "label": "v4 Roadmap Update", "desc": "Updated sitemap & roadmap to follow v4 brief: AI Smart Matching, Schools Directory, v4 AI Services module" },
     { "date": "2026-05-28", "label": "Sitemap & Roadmap Redesign", "desc": "Real-time progress tracking with per-portal completion rates" },
     { "date": "2026-05-20", "label": "Business Users & Address Fields", "desc": "Business user management + company/school address in registration" },
     { "date": "2026-05-16", "label": "Manager Approval Workflow", "desc": "Payment + Manager approval for new registrations" },
