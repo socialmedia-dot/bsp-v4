@@ -490,7 +490,7 @@ const saveSettings = () => {
 /* Sidebar */
 
 /* Main Content */
-.main-content { flex: 1; min-height: 100vh; padding: 2rem; max-width: 1200px; }
+.main-content { flex: 1; min-height: 100vh; padding: 2rem; }
 .page-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 2rem; }
 .page-title { font-size: 1.5rem; font-weight: 700; color: var(--bsp-primary, #212E54); margin-bottom: 0.25rem; }
 .page-subtitle { font-size: 0.9rem; color: #64748b; }

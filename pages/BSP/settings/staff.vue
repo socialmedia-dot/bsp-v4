@@ -230,7 +230,7 @@ function savePermissions() {
 .bsp-dashboard { min-height: 100vh; background: #f8fafc; font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; color: #1e293b; }
 .dashboard-body { display: flex; min-height: 100vh; }
 
-.main-content { flex: 1; min-height: 100vh; padding: 2rem; max-width: 1200px; }
+.main-content { flex: 1; min-height: 100vh; padding: 2rem; }
 .page-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 2rem; }
 .page-title { font-size: 1.5rem; font-weight: 700; color: #212E54; margin-bottom: 0.25rem; }
 .page-subtitle { font-size: 0.9rem; color: #64748b; }
