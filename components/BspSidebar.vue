@@ -87,7 +87,7 @@ defineProps<{
   width: 260px;
 }
 .sidebar-nav {
-  padding: 1.5rem 1rem;
+  padding: 1.5rem 0;
 }
 .nav-section {
   margin-bottom: 1.5rem;
@@ -98,7 +98,7 @@ defineProps<{
   font-weight: 700;
   letter-spacing: 0.05em;
   margin-bottom: 0.5rem;
-  padding-left: 0.75rem;
+  padding: 0 1.5rem;
   text-transform: uppercase;
 }
 .nav-item {
