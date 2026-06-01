@@ -608,13 +608,52 @@ const exportBusinesses = () => {
 </script>
 
 <style scoped>
-.bsp-dashboard { background: #f0f4f8; font-family: Inter, -apple-system, BlinkMacSystemFont, sans-serif; min-height: 100vh; }
-.dashboard-body { display: flex; min-height: 100vh; }
+:root {
+  --bsp-primary: #212E54;
+  --bsp-secondary: #3b82f6;
+  --bsp-accent: #C1AA78;
+  --bsp-dark: #1e293b;
+  --bsp-light: #f8fafc;
+  --bsp-success: #10b981;
+  --bsp-warning: #f59e0b;
+  --bsp-danger: #ef4444;
+}
 
-.main-content { flex: 1; min-height: 100vh; overflow: auto; padding: 2rem; }
-.page-header { align-items: flex-start; display: flex; justify-content: space-between; margin-bottom: 2rem; }
-.page-title { color: #1e3a5f; font-size: 1.5rem; font-weight: 700; margin: 0; }
-.page-subtitle { color: #64748b; font-size: 0.875rem; margin: 0.25rem 0 0; }
+* { margin: 0; padding: 0; box-sizing: border-box; }
+
+.bsp-dashboard {
+  min-height: 100vh;
+  background: var(--bsp-light);
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  color: var(--bsp-dark);
+}
+
+.dashboard-body {
+  display: flex;
+  min-height: 100vh;
+}
+
+/* Main Content */
+.main-content {
+  flex: 1; min-height: 100vh;
+  padding: 1.5rem 2rem;
+  overflow-x: auto;
+  overflow-y: auto;
+}
+
+.page-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 1.5rem;
+}
+.page-title {
+  color: var(--bsp-primary);
+  font-size: 1.5rem;
+  font-weight: 700;
+  margin-bottom: 0.25rem;
+}
+.page-subtitle { color: #64748b; font-size: 0.9rem; }
 .page-actions { display: flex; gap: 0.75rem; }
 .tab-bar { display: flex; flex-wrap: wrap; gap: 0.5rem; margin-bottom: 1.5rem; }
 .tab-btn { background: #fff; border: 1px solid #e2e8f0; border-radius: 8px; color: #64748b; cursor: pointer; font-size: 0.85rem; font-weight: 600; padding: 0.6rem 1.2rem; transition: all 0.15s; }
