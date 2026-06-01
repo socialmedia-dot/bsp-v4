@@ -2,74 +2,7 @@
   <div class="bsp-dashboard">
     <div class="dashboard-body">
       <!-- Left Sidebar Navigation -->
-      <aside class="sidebar">
-        <nav class="sidebar-nav">
-          <div class="nav-section">
-            <div class="nav-section-title">User Categories</div>
-            <NuxtLink to="/BSP/users/personal" class="nav-item">
-              <span class="nav-icon">👤</span>
-              <span>Personal</span>
-              <span class="nav-count">12</span>
-            </NuxtLink>
-            <NuxtLink to="/BSP/users/school" class="nav-item">
-              <span class="nav-icon">🏫</span>
-              <span>School</span>
-              <span class="nav-count">24</span>
-            </NuxtLink>
-            <NuxtLink to="/BSP/users/consultant" class="nav-item">
-              <span class="nav-icon">💼</span>
-              <span>Consultant</span>
-              <span class="nav-count">8</span>
-            </NuxtLink>
-            <NuxtLink to="/BSP/users/business" class="nav-item active">
-              <span class="nav-icon">🏢</span>
-              <span>Business</span>
-              <span class="nav-count">8</span>
-            </NuxtLink>
-            <NuxtLink to="/BSP/users/bspstaff" class="nav-item">
-              <span class="nav-icon">👔</span>
-              <span>BSP Staff</span>
-              <span class="nav-count">3</span>
-            </NuxtLink>
-          </div>
-
-          <div class="nav-section">
-            <div class="nav-section-title">Management</div>
-            <NuxtLink to="/BSP/dashboard" class="nav-item">
-              <span class="nav-icon">📊</span>
-              <span>Overview</span>
-            </NuxtLink>
-            <NuxtLink to="/BSP/new-account-applications" class="nav-item">
-              <span class="nav-icon">📋</span>
-              <span>New Account Applications</span>
-            </NuxtLink>
-            <NuxtLink to="/BSP/payments" class="nav-item">
-              <span class="nav-icon">💳</span>
-              <span>Payments</span>
-            </NuxtLink>
-            <NuxtLink to="/BSP/promo-codes" class="nav-item">
-              <span class="nav-icon">🎟️</span>
-              <span>Promo Codes</span>
-            </NuxtLink>
-          </div>
-
-          <div class="nav-section">
-            <div class="nav-section-title">Settings</div>
-            <NuxtLink to="/BSP/settings/fees" class="nav-item">
-              <span class="nav-icon">💰</span>
-              <span>Annual Fee</span>
-            </NuxtLink>
-            <NuxtLink to="/BSP/settings/website" class="nav-item">
-              <span class="nav-icon">🌐</span>
-              <span>Website Settings</span>
-            </NuxtLink>
-            <NuxtLink to="/BSP/settings/staff" class="nav-item">
-              <span class="nav-icon">👔</span>
-              <span>Staff</span>
-            </NuxtLink>
-          </div>
-        </nav>
-      </aside>
+      <BspSidebar active="business" />
 
       <!-- Main Content Area -->
       <main class="main-content">
@@ -677,15 +610,7 @@ const exportBusinesses = () => {
 <style scoped>
 .bsp-dashboard { background: #f0f4f8; font-family: Inter, -apple-system, BlinkMacSystemFont, sans-serif; min-height: 100vh; }
 .dashboard-body { display: flex; min-height: 100vh; }
-.sidebar { background: #fff; border-right: 1px solid #e2e8f0; flex-shrink: 0; height: 100vh; overflow-y: auto; position: sticky; top: 0; width: 260px; }
-.sidebar-nav { padding: 1.5rem 1rem; }
-.nav-section { margin-bottom: 1.5rem; }
-.nav-section-title { color: #94a3b8; font-size: 0.7rem; font-weight: 700; letter-spacing: 0.05em; margin-bottom: 0.5rem; padding-left: 0.75rem; text-transform: uppercase; }
-.nav-item { align-items: center; border-radius: 8px; color: #475569; cursor: pointer; display: flex; font-size: 0.875rem; font-weight: 500; gap: 0.75rem; padding: 0.6rem 0.75rem; text-decoration: none; transition: all 0.15s; }
-.nav-item:hover { background: #f1f5f9; color: #1e3a5f; }
-.nav-item.active { background: #1e3a5f; color: #fff; }
-.nav-icon { font-size: 1rem; }
-.nav-count { color: #94a3b8; font-size: 0.8rem; margin-left: auto; }
+
 .main-content { flex: 1; min-height: 100vh; overflow: auto; padding: 2rem; }
 .page-header { align-items: flex-start; display: flex; justify-content: space-between; margin-bottom: 2rem; }
 .page-title { color: #1e3a5f; font-size: 1.5rem; font-weight: 700; margin: 0; }
