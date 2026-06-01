@@ -79,9 +79,13 @@ defineProps<{
 .sidebar {
   background: #fff;
   border-right: 1px solid #e2e8f0;
+  border-radius: 0;
+  box-shadow: none;
   flex-shrink: 0;
   height: 100vh;
+  margin-right: 0;
   overflow-y: auto;
+  padding: 0;
   position: sticky;
   top: 0;
   width: 260px;
