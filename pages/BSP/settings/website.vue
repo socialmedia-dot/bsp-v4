@@ -92,30 +92,5 @@ const saveSettings = () => { alert('Website settings saved!') }
 </script>
 
 <style scoped>
-.bsp-dashboard { min-height: 100vh; background: #f8fafc; font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; color: #1e293b; }
-.dashboard-body { display: flex; min-height: 100vh; }
-
-.main-content { flex: 1; min-height: 100vh; padding: 2rem; max-width: 1200px; }
-.page-header { margin-bottom: 2rem; }
-.page-title { font-size: 1.5rem; font-weight: 700; color: #212E54; margin-bottom: 0.25rem; }
-.page-subtitle { font-size: 0.9rem; color: #64748b; }
-.settings-section { background: white; border-radius: 10px; padding: 1.5rem; margin-bottom: 1.5rem; box-shadow: 0 1px 3px rgba(0,0,0,0.08); }
-.section-header { margin-bottom: 1.25rem; }
-.section-title { font-size: 1.1rem; font-weight: 600; color: #1e293b; }
-.form-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 1.25rem; }
-.form-group { display: flex; flex-direction: column; gap: 0.4rem; }
-.form-group.full-width { grid-column: 1 / -1; }
-.form-label { font-size: 0.8rem; font-weight: 600; color: #64748b; }
-.form-input, .form-textarea { padding: 0.65rem 0.875rem; border: 1px solid #e2e8f0; border-radius: 6px; font-size: 0.9rem; font-family: inherit; }
-.form-input:focus, .form-textarea:focus { outline: none; border-color: #3b82f6; box-shadow: 0 0 0 3px rgba(59,130,246,0.1); }
-.form-textarea { resize: vertical; }
-.btn { padding: 0.6rem 1.25rem; border-radius: 6px; font-size: 0.85rem; font-weight: 600; cursor: pointer; border: 1px solid transparent; transition: all 0.2s; }
-.btn-primary { background: #3b82f6; color: white; }
-.btn-primary:hover { background: #2563eb; }
-.settings-footer { display: flex; justify-content: flex-end; }
-@media (max-width: 768px) {
-  
-  .main-content { padding: 1rem; }
-  .form-grid { grid-template-columns: 1fr; }
-}
+/* No page-specific styles needed — uses global bsp-admin.css */
 </style>

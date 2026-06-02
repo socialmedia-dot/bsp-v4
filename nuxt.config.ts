@@ -106,7 +106,7 @@ export default defineNuxtConfig({
   },
 
   // Global CSS
-  css: ['~/assets/css/main.css'],
+  css: ['~/assets/css/main.css', '~/assets/css/bsp-admin.css'],
 
   // Auto-import components
   components: true,
