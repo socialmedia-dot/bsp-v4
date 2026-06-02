@@ -102,7 +102,7 @@ defineProps<{
   font-weight: 700;
   letter-spacing: 0.05em;
   margin-bottom: 0.5rem;
-  padding: 0 1.5rem;
+  padding: 0 1.5rem 0 3.35rem;
   text-transform: uppercase;
 }
 .nav-item {
