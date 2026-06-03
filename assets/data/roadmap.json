@@ -7,6 +7,8 @@
     "portals": ["Public", "Auth", "Student", "Operations", "Admin", "School", "Consultant", "Legal"]
   },
   "recentUpdates": [
+    { "date": "2026-06-03", "text": "Add Student Profile page - personal info, documents, guardian, academic tabs" },
+    { "date": "2026-06-03", "text": "Update My Applications - collaborative platform with messaging & document requests" },
     { "date": "2026-05-31", "text": "Update roadmap: remove AI features, keep existing v4 + non-AI planned items" },
     { "date": "2026-05-28", "text": "Redesign Sitemap with real v4 progress & per-portal progress bars" },
     { "date": "2026-05-28", "text": "Add Roadmap page with three-column kanban-style board" },
@@ -57,7 +59,7 @@
         { "status": "done", "label": "Student Registration", "path": "/student/register", "date": "2026-04" },
         { "status": "done", "label": "Apply to School", "path": "/student/apply/:schoolId", "date": "2026-04" },
         { "status": "done", "label": "My Applications", "path": "/student/applications", "date": "2026-04" },
-        { "status": "planned", "label": "Student Profile", "path": "/student/profile", "date": null }
+        { "status": "done", "label": "Student Profile", "path": "/student/profile", "date": "2026-06" }
       ]
     },
     {
@@ -134,6 +136,7 @@
     }
   ],
   "milestones": [
+    { "date": "2026-06-03", "label": "Student Portal Complete", "desc": "Student Profile + collaborative My Applications - all 5 student portal pages done" },
     { "date": "2026-05-31", "label": "v4 Roadmap Update", "desc": "Remove AI features from roadmap; keep existing v4 + non-AI planned items" },
     { "date": "2026-05-28", "label": "Sitemap & Roadmap Redesign", "desc": "Real-time progress tracking with per-portal completion rates" },
     { "date": "2026-05-20", "label": "Business Users & Address Fields", "desc": "Business user management + company/school address in registration" },
