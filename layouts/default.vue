@@ -75,11 +75,13 @@ onMounted(() => {
 const route = useRoute()
 if (import.meta.client) {
   watch(() => route.path, (path) => {
-    isBspRoute.value = path.startsWith('/BSP')
+    const isBsp = path.startsWith('/BSP')
+    isBspRoute.value = isBsp
+    if (!isBsp) close()
   })
 }
 
-const { isOpen, toggle } = useSidebarState()
+const { isOpen, toggle, close } = useSidebarState()
 </script>
 
 <style>
