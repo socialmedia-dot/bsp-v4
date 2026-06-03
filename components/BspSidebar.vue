@@ -1,50 +1,38 @@
 <template>
   <div class="sidebar-wrapper">
-    <!-- Mobile Hamburger Button -->
-    <button
-      class="mobile-menu-btn"
-      :class="{ active: mobileOpen }"
-      @click="mobileOpen = !mobileOpen"
-      aria-label="Toggle menu"
-    >
-      <span class="hamburger-line"></span>
-      <span class="hamburger-line"></span>
-      <span class="hamburger-line"></span>
-    </button>
-
     <!-- Mobile Overlay Backdrop -->
     <div
-      v-if="mobileOpen"
+      v-if="isOpen"
       class="sidebar-backdrop"
-      @click="mobileOpen = false"
+      @click="close"
     ></div>
 
     <!-- Sidebar -->
-    <aside class="sidebar" :class="{ open: mobileOpen }">
+    <aside class="sidebar" :class="{ open: isOpen }">
       <nav class="sidebar-nav">
         <div class="nav-section">
           <div class="nav-section-title">User Categories</div>
-          <NuxtLink to="/BSP/users/personal" :class="['nav-item', { active: active === 'personal' }]">
+          <NuxtLink to="/BSP/users/personal" :class="['nav-item', { active: active === 'personal' }]" @click="close">
             <span class="nav-icon">👤</span>
             <span>Personal</span>
             <span class="nav-count">12</span>
           </NuxtLink>
-          <NuxtLink to="/BSP/users/school" :class="['nav-item', { active: active === 'school' }]">
+          <NuxtLink to="/BSP/users/school" :class="['nav-item', { active: active === 'school' }]" @click="close">
             <span class="nav-icon">🏫</span>
             <span>School</span>
             <span class="nav-count">24</span>
           </NuxtLink>
-          <NuxtLink to="/BSP/users/consultant" :class="['nav-item', { active: active === 'consultant' }]">
+          <NuxtLink to="/BSP/users/consultant" :class="['nav-item', { active: active === 'consultant' }]" @click="close">
             <span class="nav-icon">💼</span>
             <span>Consultant</span>
             <span class="nav-count">8</span>
           </NuxtLink>
-          <NuxtLink to="/BSP/users/business" :class="['nav-item', { active: active === 'business' }]">
+          <NuxtLink to="/BSP/users/business" :class="['nav-item', { active: active === 'business' }]" @click="close">
             <span class="nav-icon">🏢</span>
             <span>Business</span>
             <span class="nav-count">8</span>
           </NuxtLink>
-          <NuxtLink to="/BSP/users/bspstaff" :class="['nav-item', { active: active === 'bspstaff' }]">
+          <NuxtLink to="/BSP/users/bspstaff" :class="['nav-item', { active: active === 'bspstaff' }]" @click="close">
             <span class="nav-icon">👔</span>
             <span>BSP Staff</span>
             <span class="nav-count">3</span>
@@ -53,19 +41,19 @@
 
         <div class="nav-section">
           <div class="nav-section-title">Management</div>
-          <NuxtLink to="/BSP/dashboard" :class="['nav-item', { active: active === 'dashboard' }]">
+          <NuxtLink to="/BSP/dashboard" :class="['nav-item', { active: active === 'dashboard' }]" @click="close">
             <span class="nav-icon">📊</span>
             <span>Overview</span>
           </NuxtLink>
-          <NuxtLink to="/BSP/new-account-applications" :class="['nav-item', { active: active === 'applications' }]">
+          <NuxtLink to="/BSP/new-account-applications" :class="['nav-item', { active: active === 'applications' }]" @click="close">
             <span class="nav-icon">📋</span>
             <span>New Account Applications</span>
           </NuxtLink>
-          <NuxtLink to="/BSP/payments" :class="['nav-item', { active: active === 'payments' }]">
+          <NuxtLink to="/BSP/payments" :class="['nav-item', { active: active === 'payments' }]" @click="close">
             <span class="nav-icon">💳</span>
             <span>Payments</span>
           </NuxtLink>
-          <NuxtLink to="/BSP/promo-codes" :class="['nav-item', { active: active === 'promo-codes' }]">
+          <NuxtLink to="/BSP/promo-codes" :class="['nav-item', { active: active === 'promo-codes' }]" @click="close">
             <span class="nav-icon">🎟️</span>
             <span>Promo Codes</span>
           </NuxtLink>
@@ -73,15 +61,15 @@
 
         <div class="nav-section">
           <div class="nav-section-title">Settings</div>
-          <NuxtLink to="/BSP/settings/fees" :class="['nav-item', { active: active === 'fees' }]">
+          <NuxtLink to="/BSP/settings/fees" :class="['nav-item', { active: active === 'fees' }]" @click="close">
             <span class="nav-icon">💰</span>
             <span>Annual Fee</span>
           </NuxtLink>
-          <NuxtLink to="/BSP/settings/website" :class="['nav-item', { active: active === 'website' }]">
+          <NuxtLink to="/BSP/settings/website" :class="['nav-item', { active: active === 'website' }]" @click="close">
             <span class="nav-icon">🌐</span>
             <span>Website Settings</span>
           </NuxtLink>
-          <NuxtLink to="/BSP/settings/staff" :class="['nav-item', { active: active === 'staff' }]">
+          <NuxtLink to="/BSP/settings/staff" :class="['nav-item', { active: active === 'staff' }]" @click="close">
             <span class="nav-icon">👔</span>
             <span>Staff</span>
           </NuxtLink>
@@ -96,12 +84,12 @@ defineProps<{
   active?: string
 }>()
 
-const mobileOpen = ref(false)
+const { isOpen, close } = useSidebarState()
 
-// Close mobile menu on route change
+// Close sidebar on route change
 const route = useRoute()
 watch(() => route.path, () => {
-  mobileOpen.value = false
+  close()
 })
 </script>
 
@@ -183,46 +171,6 @@ watch(() => route.path, () => {
   border-radius: 9999px;
 }
 
-/* Mobile Hamburger Button */
-.mobile-menu-btn {
-  display: none;
-  position: fixed;
-  top: 1rem;
-  left: 1rem;
-  z-index: 110;
-  width: 40px;
-  height: 40px;
-  background: white;
-  border: 1px solid #e2e8f0;
-  border-radius: 8px;
-  cursor: pointer;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  gap: 5px;
-  padding: 0;
-  box-shadow: 0 2px 8px rgba(0,0,0,0.08);
-}
-
-.hamburger-line {
-  display: block;
-  width: 20px;
-  height: 2px;
-  background: #212E54;
-  border-radius: 2px;
-  transition: all 0.3s;
-}
-
-.mobile-menu-btn.active .hamburger-line:nth-child(1) {
-  transform: translateY(7px) rotate(45deg);
-}
-.mobile-menu-btn.active .hamburger-line:nth-child(2) {
-  opacity: 0;
-}
-.mobile-menu-btn.active .hamburger-line:nth-child(3) {
-  transform: translateY(-7px) rotate(-45deg);
-}
-
 /* Mobile Overlay Backdrop */
 .sidebar-backdrop {
   display: none;
@@ -236,10 +184,6 @@ watch(() => route.path, () => {
    MOBILE RESPONSIVE
    ============================================ */
 @media (max-width: 768px) {
-  .mobile-menu-btn {
-    display: flex;
-  }
-
   .sidebar-backdrop {
     display: block;
   }

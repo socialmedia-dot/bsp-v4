@@ -3,6 +3,18 @@
     <!-- Header -->
     <header class="navbar">
       <div class="container navbar-content">
+        <!-- Mobile BSP Menu Toggle -->
+        <button
+          v-if="isBspRoute"
+          class="header-menu-btn"
+          :class="{ active: isOpen }"
+          @click="toggle"
+          aria-label="Toggle menu"
+        >
+          <span class="header-menu-line"></span>
+          <span class="header-menu-line"></span>
+          <span class="header-menu-line"></span>
+        </button>
         <NuxtLink to="/" class="logo">
           <img src="/img/logo-bsp.jpg" alt="British School Portal Logo" class="logo-img" />
         </NuxtLink>
@@ -51,6 +63,12 @@
     </footer>
   </div>
 </template>
+
+<script setup lang="ts">
+const route = useRoute()
+const isBspRoute = computed(() => route.path.startsWith('/BSP'))
+const { isOpen, toggle } = useSidebarState()
+</script>
 
 <style>
 /* Global Reset */
@@ -142,6 +160,41 @@
   background: #1e40af;
 }
 
+/* Header Mobile Menu Button */
+.header-menu-btn {
+  display: none;
+  width: 40px;
+  height: 40px;
+  background: none;
+  border: none;
+  cursor: pointer;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 5px;
+  padding: 0;
+  margin-right: 0.5rem;
+}
+
+.header-menu-line {
+  display: block;
+  width: 22px;
+  height: 2px;
+  background: #212E54;
+  border-radius: 2px;
+  transition: all 0.3s;
+}
+
+.header-menu-btn.active .header-menu-line:nth-child(1) {
+  transform: translateY(7px) rotate(45deg);
+}
+.header-menu-btn.active .header-menu-line:nth-child(2) {
+  opacity: 0;
+}
+.header-menu-btn.active .header-menu-line:nth-child(3) {
+  transform: translateY(-7px) rotate(-45deg);
+}
+
 /* Footer */
 .footer {
   background: #1e293b;
@@ -193,14 +246,18 @@
 
 /* Responsive */
 @media (max-width: 768px) {
+  .header-menu-btn {
+    display: flex;
+  }
+
   .nav-links {
     gap: 1rem;
   }
-  
+
   .nav-links a {
     font-size: 0.85rem;
   }
-  
+
   .logo-img {
     height: 40px;
   }
