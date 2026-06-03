@@ -10,6 +10,7 @@
           <ul class="nav-links">
             <li><NuxtLink to="/">Home</NuxtLink></li>
             <li><NuxtLink to="/schools">Schools</NuxtLink></li>
+            <li><NuxtLink to="/student/profile">Profile</NuxtLink></li>
             <li><NuxtLink to="/student/applications" class="active">My Applications</NuxtLink></li>
             <li><NuxtLink to="/student/login" class="btn btn-primary">Logout</NuxtLink></li>
           </ul>
