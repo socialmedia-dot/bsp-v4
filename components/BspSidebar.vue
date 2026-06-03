@@ -189,7 +189,7 @@ watch(() => route.path, () => {
   position: fixed;
   top: 1rem;
   left: 1rem;
-  z-index: 60;
+  z-index: 110;
   width: 40px;
   height: 40px;
   background: white;
