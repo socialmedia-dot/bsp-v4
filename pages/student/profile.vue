@@ -474,7 +474,6 @@ const tabs = [
 
 const requiredDocs = [
   { key: 'passport', name: 'Passport Copy', icon: '🛂' },
-  { key: 'transcript', name: 'Academic Transcript', icon: '📜' },
   { key: 'reference', name: 'Teacher Reference', icon: '✉️' },
   { key: 'englishCert', name: 'English Certificate (IELTS/TOEFL)', icon: '📋' }
 ]
