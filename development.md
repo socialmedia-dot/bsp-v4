@@ -1,45 +1,63 @@
-# BSP v3 Development Notes
-*Last updated: 2026-04-27*
+# BSP v4 Development Notes
+*Last updated: 2026-06-04*
 
 ## Current Project Status
 
 ### ✅ Completed
-- School Users, Consultant Users, Personal Users, BSP Staff pages (CMS)
-- New Account Applications page (CMS)
-- Public Yellow Pages profile pages (3 types):
-  - `pages/school/[city]/[slug].vue`
-  - `pages/consultant/[city]/[slug].vue`
-  - `pages/business/[city]/[slug].vue`
-- Links updated from `/BSP/users/school/[id]` to `/school/[city]/[slug]` format
+- Public site pages: Home, Schools, Consultants, Search, News, Roadmap, Sitemap
+- Payment page (`/payment`) with Stripe integration
+- Registration/Login pages (`/register`, `/login`)
+- School profile pages (`/school/[city]/[slug]`)
+- Consultant profile pages (`/consultant/[city]/[slug]`)
+- Business profile pages (`/business/[city]/[slug]`)
+- Student Portal: Apply (`/student/apply/[schoolId]`), Login, Register
+- BSP Admin Portal (`/BSP/*`):
+  - Dashboard
+  - New Account Applications
+  - Users (School, Consultant, Personal, Staff)
+  - Settings (Fees, Staff, Website)
+  - Payments, Promo Codes
+- Operations Portal (`/operations/*`):
+  - Dashboard, Applications, Payments, Reports, Users
+- Mobile sidebar + hamburger menu (header-integrated, global CSS unified)
+- Roadmap page, Sitemap page
 
 ### ⚠️ Known Issues
-- Empty `pages/school/city/` directory (fixed 'city' name) should be deleted
-- Empty `pages/consultant/city/` directory
-- Empty `pages/business/city/` directory
+- Operations Portal pages use duplicated scoped sidebar CSS (needs unification)
+- `/school/`, `/consultant/`, `/business/` dynamic routes may need ISR/SSR for SEO
 
 ### 📋 Latest Deploy
-- URL: https://be368c61.bsp-v3.pages.dev
-- Date: 2026-04-27
+- URL: https://bsp-v4.pages.dev
+- Date: 2026-06-04
 
 ---
 
-## BSP Instructions (2026-04-27 16:38)
+## Development Priority
 
-BSP said:
-1. "Save current progress" - current build is the baseline
-2. "Redesign from new direction" - easier, simpler, clearer for users
-3. All old BSP website features will be ported over to new site
-4. School performance data (CSV) will be uploaded later
-5. UK Government API available (free, no auth): https://api.education.gov.uk/statistics
-   - Covers KS2 (primary), KS4 (GCSE), KS5 (A-Level)
-   - Query by school URN
+### Phase 1: Operations Portal Polish
+- Unify Operations Portal layout (extract duplicate sidebar CSS into shared styles)
+- Enhance `/operations/users.vue` (currently basic, 247 lines)
+- Add mobile responsive support to Operations pages
 
-### BSP Old Website Features to Preserve
-- (TBD - BSP to list)
+### Phase 2: BSP Admin Enhancements
+- `/BSP/dashboard` — add analytics/widgets
+- `/BSP/new-account-applications` — add bulk actions
+
+### Phase 3: Public Site & Portal Features
+- Consultant Portal (`/consultant/*`) — profile management, leads
+- School Portal (`/school/*`) — profile management, enquiries
+- Business Portal (`/business/*`) — profile management
+
+### Phase 4: Application Progress ⏳ LAST
+- **Reason:** Linked to ALL account users (Personal, School, Consultant, BSP Staff)
+- Student application tracking (`/student/applications` — basic version exists)
+- School application management
+- Consultant application pipeline
+- Cross-portal unified progress view
+- Notifications & status updates
 
 ---
 
 ## Resources
 - Cloudflare Account ID: 5ed625224e853f3339f49db5068641c8
-- Cloudflare API Token: [REDACTED]
 - UK Education API: https://api.education.gov.uk/statistics
