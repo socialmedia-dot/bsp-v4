@@ -196,7 +196,8 @@ watch(() => route.path, () => {
     transform: translateX(-100%);
     transition: transform 0.3s ease;
     box-shadow: 4px 0 20px rgba(0,0,0,0.15);
-    z-index: 50;
+    z-index: 110;
+    padding-top: 3.5rem;
   }
 
   .sidebar.open {

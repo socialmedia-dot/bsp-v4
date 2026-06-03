@@ -174,6 +174,8 @@ const { isOpen, toggle } = useSidebarState()
   gap: 5px;
   padding: 0;
   margin-right: 0.5rem;
+  position: relative;
+  z-index: 120;
 }
 
 .header-menu-line {
