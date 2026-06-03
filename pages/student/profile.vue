@@ -177,6 +177,8 @@
 
       <!-- Documents Tab -->
       <div v-if="activeTab === 'documents'" class="tab-content">
+
+        <!-- Required Documents -->
         <div class="form-section">
           <h3>Required Documents</h3>
           <p class="section-desc">Upload the following documents for your application</p>
@@ -218,6 +220,150 @@
             </div>
           </div>
         </div>
+
+        <!-- Academic Transcripts (Multiple, Orderable) -->
+        <div class="form-section">
+          <div class="section-header">
+            <div>
+              <h3>Academic Transcripts</h3>
+              <p class="section-desc">Upload all academic transcripts. Drag to reorder (most recent first).</p>
+            </div>
+            <button class="btn btn-primary btn-sm" @click="addTranscript">
+              + Add Transcript
+            </button>
+          </div>
+
+          <div v-if="profile.transcripts.length === 0" class="empty-docs">
+            <span class="empty-icon">📜</span>
+            <p>No transcripts uploaded yet. Click "Add Transcript" to upload your first one.</p>
+          </div>
+
+          <div v-else class="transcript-list">
+            <div
+              v-for="(transcript, index) in profile.transcripts"
+              :key="transcript.id"
+              class="transcript-item"
+              :class="{ draggable: isDragging }"
+              draggable="true"
+              @dragstart="dragStartTranscript(index, $event)"
+              @dragover.prevent="dragOverTranscript(index)"
+              @dragend="dragEndTranscript"
+            >
+              <div class="transcript-drag-handle">⋮⋮</div>
+              <div class="transcript-info">
+                <div class="transcript-order">#{{ index + 1 }}</div>
+                <div class="transcript-details">
+                  <span class="transcript-label">{{ transcript.label || 'Transcript ' + (index + 1) }}</span>
+                  <span class="transcript-date" v-if="transcript.date">{{ transcript.date }}</span>
+                  <span class="transcript-file" v-if="transcript.file">{{ transcript.file.name }}</span>
+                </div>
+              </div>
+              <div class="transcript-actions">
+                <button class="btn btn-sm btn-outline" @click="editTranscript(transcript)">Edit</button>
+                <button class="btn btn-sm btn-danger" @click="removeTranscript(index)">Remove</button>
+              </div>
+            </div>
+          </div>
+
+          <!-- Add/Edit Transcript Modal -->
+          <div v-if="showTranscriptModal" class="mini-modal-overlay" @click.self="closeTranscriptModal">
+            <div class="mini-modal">
+              <h4>{{ editingTranscript ? 'Edit Transcript' : 'Add Transcript' }}</h4>
+              <div class="form-group">
+                <label>Label (e.g. "Year 10 Final Exam", "Year 11 Mock")</label>
+                <input v-model="transcriptForm.label" type="text" placeholder="Enter label" />
+              </div>
+              <div class="form-group">
+                <label>Date / Period (e.g. "May 2024", "Academic Year 2023-24")</label>
+                <input v-model="transcriptForm.date" type="text" placeholder="Enter date or period" />
+              </div>
+              <div class="form-group">
+                <label>Upload File</label>
+                <input
+                  type="file"
+                  ref="transcriptFileInput"
+                  @change="handleTranscriptFileUpload"
+                  accept=".pdf,.jpg,.jpeg,.png"
+                />
+                <p v-if="transcriptForm.file" class="file-selected">✓ {{ transcriptForm.file.name }}</p>
+              </div>
+              <div class="modal-actions">
+                <button class="btn btn-outline" @click="closeTranscriptModal">Cancel</button>
+                <button class="btn btn-primary" @click="saveTranscript">Save</button>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Other Documents (Custom) -->
+        <div class="form-section">
+          <div class="section-header">
+            <div>
+              <h3>Other Documents</h3>
+              <p class="section-desc">Add any additional documents you want to include with your application.</p>
+            </div>
+            <button class="btn btn-outline btn-sm" @click="addCustomDoc">
+              + Add Document
+            </button>
+          </div>
+
+          <div v-if="profile.customDocuments.length === 0" class="empty-docs">
+            <span class="empty-icon">📎</span>
+            <p>No additional documents added. Click "Add Document" to upload extras like awards, certificates, etc.</p>
+          </div>
+
+          <div v-else class="document-list">
+            <div v-for="(doc, index) in profile.customDocuments" :key="doc.id" class="document-item custom-doc">
+              <div class="doc-info">
+                <span class="doc-icon">{{ doc.icon || '📄' }}</span>
+                <div class="doc-details">
+                  <span class="doc-name">{{ doc.name }}</span>
+                  <span class="doc-status status-uploaded">✓ {{ doc.file?.name || 'Added' }}</span>
+                </div>
+              </div>
+              <div class="doc-action">
+                <button class="btn btn-sm btn-outline" @click="editCustomDoc(index)">Edit</button>
+                <button class="btn btn-sm btn-danger" @click="removeCustomDoc(index)">Remove</button>
+              </div>
+            </div>
+          </div>
+
+          <!-- Add/Edit Custom Document Modal -->
+          <div v-if="showCustomDocModal" class="mini-modal-overlay" @click.self="closeCustomDocModal">
+            <div class="mini-modal">
+              <h4>{{ editingCustomDocIndex !== null ? 'Edit Document' : 'Add Document' }}</h4>
+              <div class="form-group">
+                <label>Document Name</label>
+                <input v-model="customDocForm.name" type="text" placeholder="e.g. Music Award, Volunteer Certificate" />
+              </div>
+              <div class="form-group">
+                <label>Icon</label>
+                <select v-model="customDocForm.icon">
+                  <option value="📄">📄 Document</option>
+                  <option value="🏆">🏆 Award</option>
+                  <option value="🎓">🎓 Certificate</option>
+                  <option value="🎖️">🎖️ Achievement</option>
+                  <option value="📋">📋 Other</option>
+                </select>
+              </div>
+              <div class="form-group">
+                <label>Upload File</label>
+                <input
+                  type="file"
+                  ref="customDocFileInput"
+                  @change="handleCustomDocFileUpload"
+                  accept=".pdf,.jpg,.jpeg,.png"
+                />
+                <p v-if="customDocForm.file" class="file-selected">✓ {{ customDocForm.file.name }}</p>
+              </div>
+              <div class="modal-actions">
+                <button class="btn btn-outline" @click="closeCustomDocModal">Cancel</button>
+                <button class="btn btn-primary" @click="saveCustomDoc">Save</button>
+              </div>
+            </div>
+          </div>
+        </div>
+
       </div>
 
       <!-- Academic Tab -->
@@ -362,6 +508,8 @@ const profile = reactive({
     reference: null,
     englishCert: null
   },
+  transcripts: [],
+  customDocuments: [],
   academic: {
     currentSchool: '',
     currentGrade: '',
@@ -378,6 +526,18 @@ const initials = computed(() => {
   return profile.fullName.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2)
 })
 
+// Transcript management
+const showTranscriptModal = ref(false)
+const editingTranscript = ref(null)
+const transcriptForm = reactive({ label: '', date: '', file: null })
+const transcriptDragIndex = ref(-1)
+const isDragging = ref(false)
+
+// Custom document management
+const showCustomDocModal = ref(false)
+const editingCustomDocIndex = ref(null)
+const customDocForm = reactive({ name: '', icon: '📄', file: null })
+
 // Load profile from localStorage
 onMounted(() => {
   const saved = localStorage.getItem('studentProfile')
@@ -390,6 +550,144 @@ onMounted(() => {
     }
   }
 })
+
+// Transcript functions
+function addTranscript() {
+  editingTranscript.value = null
+  transcriptForm.label = ''
+  transcriptForm.date = ''
+  transcriptForm.file = null
+  showTranscriptModal.value = true
+}
+
+function editTranscript(transcript) {
+  editingTranscript.value = transcript
+  transcriptForm.label = transcript.label || ''
+  transcriptForm.date = transcript.date || ''
+  transcriptForm.file = transcript.file || null
+  showTranscriptModal.value = true
+}
+
+function saveTranscript() {
+  if (editingTranscript.value) {
+    editingTranscript.value.label = transcriptForm.label
+    editingTranscript.value.date = transcriptForm.date
+    if (transcriptForm.file) {
+      editingTranscript.value.file = transcriptForm.file
+    }
+  } else {
+    profile.transcripts.push({
+      id: Date.now(),
+      label: transcriptForm.label,
+      date: transcriptForm.date,
+      file: transcriptForm.file
+    })
+  }
+  showTranscriptModal.value = false
+  showToastNotification('Transcript saved!', 'success')
+}
+
+function removeTranscript(index) {
+  profile.transcripts.splice(index, 1)
+  showToastNotification('Transcript removed', 'info')
+}
+
+function dragStartTranscript(index, event) {
+  transcriptDragIndex.value = index
+  isDragging.value = true
+  event.dataTransfer.effectAllowed = 'move'
+}
+
+function dragOverTranscript(index) {
+  if (transcriptDragIndex.value === -1 || transcriptDragIndex.value === index) return
+  const items = [...profile.transcripts]
+  const draggedItem = items.splice(transcriptDragIndex.value, 1)[0]
+  items.splice(index, 0, draggedItem)
+  profile.transcripts = items
+  transcriptDragIndex.value = index
+}
+
+function dragEndTranscript() {
+  transcriptDragIndex.value = -1
+  isDragging.value = false
+}
+
+function handleTranscriptFileUpload(event) {
+  const file = event.target.files[0]
+  if (file) {
+    transcriptForm.file = {
+      name: file.name,
+      size: file.size,
+      uploadedAt: new Date().toISOString()
+    }
+  }
+}
+
+function closeTranscriptModal() {
+  showTranscriptModal.value = false
+}
+
+// Custom document functions
+function addCustomDoc() {
+  editingCustomDocIndex.value = null
+  customDocForm.name = ''
+  customDocForm.icon = '📄'
+  customDocForm.file = null
+  showCustomDocModal.value = true
+}
+
+function editCustomDoc(index) {
+  editingCustomDocIndex.value = index
+  const doc = profile.customDocuments[index]
+  customDocForm.name = doc.name || ''
+  customDocForm.icon = doc.icon || '📄'
+  customDocForm.file = doc.file || null
+  showCustomDocModal.value = true
+}
+
+function saveCustomDoc() {
+  if (!customDocForm.name.trim()) {
+    showToastNotification('Please enter a document name', 'error')
+    return
+  }
+  if (editingCustomDocIndex.value !== null) {
+    profile.customDocuments[editingCustomDocIndex.value] = {
+      id: profile.customDocuments[editingCustomDocIndex.value].id,
+      name: customDocForm.name,
+      icon: customDocForm.icon,
+      file: customDocForm.file
+    }
+  } else {
+    profile.customDocuments.push({
+      id: Date.now(),
+      name: customDocForm.name,
+      icon: customDocForm.icon,
+      file: customDocForm.file
+    })
+  }
+  showCustomDocModal.value = false
+  showToastNotification('Document saved!', 'success')
+}
+
+function removeCustomDoc(index) {
+  profile.customDocuments.splice(index, 1)
+  showToastNotification('Document removed', 'info')
+}
+
+function handleCustomDocFileUpload(event) {
+  const file = event.target.files[0]
+  if (file) {
+    customDocForm.file = {
+      name: file.name,
+      size: file.size,
+      uploadedAt: new Date().toISOString()
+    }
+  }
+}
+
+function closeCustomDocModal() {
+  showCustomDocModal.value = false
+}
 
 function triggerAvatarUpload() {
   // For now, just show a toast
@@ -664,6 +962,183 @@ function saveProfile() {
 .doc-action {
   display: flex;
   gap: 0.5rem;
+}
+
+/* Section Header */
+.section-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 1rem;
+}
+
+.section-header h3 { margin: 0 0 0.25rem 0; }
+.section-header .section-desc { margin: 0; }
+
+/* Empty Docs */
+.empty-docs {
+  text-align: center;
+  padding: 2rem;
+  background: #f8fafc;
+  border-radius: 0.5rem;
+  border: 1px dashed #e2e8f0;
+}
+
+.empty-docs .empty-icon { font-size: 2.5rem; margin-bottom: 0.5rem; }
+.empty-docs p { margin: 0; color: #64748b; font-size: 0.9rem; }
+
+/* Transcript List */
+.transcript-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.transcript-item {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.875rem;
+  background: #f8fafc;
+  border-radius: 0.5rem;
+  border: 1px solid #e2e8f0;
+  transition: all 0.2s;
+}
+
+.transcript-item.draggable {
+  background: #eff6ff;
+  border-color: #3b82f6;
+  box-shadow: 0 4px 12px rgba(59, 130, 246, 0.15);
+}
+
+.transcript-item:hover {
+  border-color: #cbd5e1;
+}
+
+.transcript-drag-handle {
+  cursor: grab;
+  color: #94a3b8;
+  font-size: 1rem;
+  padding: 0.25rem;
+  user-select: none;
+}
+
+.transcript-drag-handle:active { cursor: grabbing; }
+
+.transcript-info {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  flex: 1;
+}
+
+.transcript-order {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  background: #3b82f6;
+  color: white;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.8rem;
+  font-weight: 700;
+  flex-shrink: 0;
+}
+
+.transcript-details {
+  display: flex;
+  flex-direction: column;
+  gap: 0.15rem;
+}
+
+.transcript-label { font-weight: 600; color: #1e293b; }
+.transcript-date { font-size: 0.85rem; color: #64748b; }
+.transcript-file { font-size: 0.8rem; color: #94a3b8; }
+
+.transcript-actions {
+  display: flex;
+  gap: 0.5rem;
+}
+
+/* Mini Modal */
+.mini-modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,0.5);
+  z-index: 300;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 1rem;
+}
+
+.mini-modal {
+  background: #fff;
+  border-radius: 0.75rem;
+  padding: 1.5rem;
+  width: 100%;
+  max-width: 400px;
+  box-shadow: 0 20px 60px rgba(0,0,0,0.2);
+}
+
+.mini-modal h4 {
+  margin: 0 0 1rem 0;
+  font-size: 1.1rem;
+  color: #1e293b;
+}
+
+.mini-modal .form-group {
+  margin-bottom: 1rem;
+}
+
+.mini-modal .form-group label {
+  display: block;
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: #475569;
+  margin-bottom: 0.35rem;
+}
+
+.mini-modal .form-group input,
+.mini-modal .form-group select {
+  width: 100%;
+  padding: 0.625rem 0.875rem;
+  border: 1px solid #e2e8f0;
+  border-radius: 0.5rem;
+  font-size: 0.95rem;
+}
+
+.mini-modal .form-group input:focus,
+.mini-modal .form-group select:focus {
+  outline: none;
+  border-color: #3b82f6;
+  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+}
+
+.mini-modal .form-group input[type="file"] {
+  padding: 0.5rem;
+  background: #f8fafc;
+}
+
+.file-selected {
+  margin: 0.5rem 0 0 0;
+  color: #10b981;
+  font-size: 0.85rem;
+  font-weight: 500;
+}
+
+.modal-actions {
+  display: flex;
+  gap: 0.5rem;
+  justify-content: flex-end;
+  margin-top: 1.25rem;
+}
+
+/* Custom Doc */
+.custom-doc {
+  background: #fffbeb;
+  border-color: #fef3c7;
 }
 
 /* Buttons */
