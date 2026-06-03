@@ -192,7 +192,8 @@ watch(() => route.path, () => {
     position: fixed;
     top: 0;
     left: 0;
-    height: 100vh;
+    height: 100dvh;
+    padding-top: env(safe-area-inset-top);
     transform: translateX(-100%);
     transition: transform 0.3s ease;
     box-shadow: 4px 0 20px rgba(0,0,0,0.15);
