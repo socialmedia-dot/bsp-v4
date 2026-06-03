@@ -65,8 +65,20 @@
 </template>
 
 <script setup lang="ts">
+const isBspRoute = ref(false)
+
+onMounted(() => {
+  isBspRoute.value = window.location.pathname.startsWith('/BSP')
+})
+
+// Also watch for client-side navigation
 const route = useRoute()
-const isBspRoute = computed(() => route.path.startsWith('/BSP'))
+if (import.meta.client) {
+  watch(() => route.path, (path) => {
+    isBspRoute.value = path.startsWith('/BSP')
+  })
+}
+
 const { isOpen, toggle } = useSidebarState()
 </script>
 
