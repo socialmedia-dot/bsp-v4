@@ -88,30 +88,82 @@
         <!-- Section 3: Documents -->
         <div class="form-section">
           <h2 class="section-title">📎 Documents</h2>
-          <p class="section-desc">Please upload the following documents (PDF, JPG, PNG — max 5MB each)</p>
-          <div class="upload-grid">
-            <div class="upload-item">
-              <label>Passport Copy *</label>
-              <div class="upload-box">
-                <span class="upload-icon">📄</span>
-                <span>Click to upload or drag</span>
-                <span class="upload-hint">PDF, JPG, PNG</span>
-              </div>
+          <p class="section-desc">Please upload the following documents (PDF, JPG, PNG — max 5MB each). You can select multiple files at once.</p>
+
+          <div v-for="doc in documents" :key="doc.id" class="doc-category">
+            <div class="doc-label">{{ doc.label }} {{ doc.required ? '*' : '' }}</div>
+            <div
+              class="upload-area-multiple"
+              @click="triggerFileInput(doc.id)"
+              @dragover.prevent
+              @drop.prevent="handleDrop($event, doc.id)"
+            >
+              <input
+                :ref="el => setFileInputRef(el, doc.id)"
+                type="file"
+                multiple
+                @change="handleFiles($event, doc.id)"
+                accept=".pdf,.jpg,.jpeg,.png"
+                style="display: none;"
+              />
+              <span class="upload-icon-big">📤</span>
+              <span class="upload-text">Click or drag files here to upload</span>
+              <span class="upload-hint">PDF, JPG, PNG · Max 5MB each</span>
             </div>
-            <div class="upload-item">
-              <label>School Reports (last 2 years)</label>
-              <div class="upload-box">
-                <span class="upload-icon">📊</span>
-                <span>Click to upload or drag</span>
-                <span class="upload-hint">PDF preferred</span>
-              </div>
-            </div>
-            <div class="upload-item">
-              <label>Recommendation Letter</label>
-              <div class="upload-box">
-                <span class="upload-icon">✉️</span>
-                <span>Click to upload or drag</span>
-                <span class="upload-hint">PDF preferred</span>
+
+            <!-- Uploaded File List -->
+            <div v-if="doc.files.length > 0" class="file-list">
+              <div
+                v-for="(file, index) in doc.files"
+                :key="file.id"
+                class="file-item"
+              >
+                <span class="file-icon">{{ getFileIcon(file.type) }}</span>
+                <div class="file-info">
+                  <span
+                    v-if="!file.editing"
+                    class="file-name"
+                    @click="startRename(doc.id, index)"
+                    title="Click to rename"
+                  >{{ file.name }}</span>
+                  <input
+                    v-else
+                    v-model="file.tempName"
+                    @blur="finishRename(doc.id, index)"
+                    @keyup.enter="finishRename(doc.id, index)"
+                    class="file-rename-input"
+                    type="text"
+                  />
+                  <span class="file-size">{{ formatFileSize(file.size) }}</span>
+                </div>
+                <div class="file-actions">
+                  <button
+                    type="button"
+                    class="file-btn"
+                    @click="moveFile(doc.id, index, -1)"
+                    :disabled="index === 0"
+                    title="Move up"
+                  >⬆️</button>
+                  <button
+                    type="button"
+                    class="file-btn"
+                    @click="moveFile(doc.id, index, 1)"
+                    :disabled="index === doc.files.length - 1"
+                    title="Move down"
+                  >⬇️</button>
+                  <button
+                    type="button"
+                    class="file-btn"
+                    @click="startRename(doc.id, index)"
+                    title="Rename"
+                  >✏️</button>
+                  <button
+                    type="button"
+                    class="file-btn delete"
+                    @click="removeFile(doc.id, index)"
+                    title="Delete"
+                  >🗑️</button>
+                </div>
               </div>
             </div>
           </div>
@@ -212,9 +264,94 @@ const form = ref({
   declared: false
 })
 
+const fileInputRefs = ref({})
+const setFileInputRef = (el, id) => { if (el) fileInputRefs.value[id] = el }
+
+const documents = ref([
+  { id: 'passport', label: 'Passport Copy', required: true, files: [] },
+  { id: 'school-reports', label: 'School Reports (last 2 years)', required: false, files: [] },
+  { id: 'recommendation', label: 'Recommendation Letter', required: false, files: [] }
+])
+
+const triggerFileInput = (docId) => {
+  fileInputRefs.value[docId]?.click()
+}
+
+const handleFiles = (event, docId) => {
+  const files = Array.from(event.target.files)
+  addFiles(docId, files)
+  event.target.value = ''
+}
+
+const handleDrop = (event, docId) => {
+  const files = Array.from(event.dataTransfer.files)
+  addFiles(docId, files)
+}
+
+const addFiles = (docId, files) => {
+  const doc = documents.value.find(d => d.id === docId)
+  if (!doc) return
+  files.forEach(file => {
+    doc.files.push({
+      id: Date.now() + Math.random().toString(36).substr(2, 9),
+      name: file.name,
+      tempName: file.name,
+      size: file.size,
+      type: file.type,
+      file: file,
+      editing: false
+    })
+  })
+}
+
+const removeFile = (docId, index) => {
+  const doc = documents.value.find(d => d.id === docId)
+  if (doc) doc.files.splice(index, 1)
+}
+
+const moveFile = (docId, index, direction) => {
+  const doc = documents.value.find(d => d.id === docId)
+  if (!doc) return
+  const newIndex = index + direction
+  if (newIndex < 0 || newIndex >= doc.files.length) return
+  const temp = doc.files[index]
+  doc.files[index] = doc.files[newIndex]
+  doc.files[newIndex] = temp
+}
+
+const startRename = (docId, index) => {
+  const doc = documents.value.find(d => d.id === docId)
+  if (!doc) return
+  doc.files[index].editing = true
+  doc.files[index].tempName = doc.files[index].name
+}
+
+const finishRename = (docId, index) => {
+  const doc = documents.value.find(d => d.id === docId)
+  if (!doc) return
+  if (doc.files[index].tempName.trim()) {
+    doc.files[index].name = doc.files[index].tempName.trim()
+  }
+  doc.files[index].editing = false
+}
+
+const getFileIcon = (type) => {
+  if (type.includes('pdf')) return '📄'
+  if (type.includes('image')) return '🖼️'
+  return '📎'
+}
+
+const formatFileSize = (bytes) => {
+  if (bytes < 1024) return bytes + ' B'
+  if (bytes < 1024 * 1024) return (bytes / 1024).toFixed(1) + ' KB'
+  return (bytes / (1024 * 1024)).toFixed(1) + ' MB'
+}
+
 const handleSubmit = () => {
   console.log('Application submitted:', form.value)
-  alert(`Application submitted successfully!\n\nStudent: ${form.value.student.name}\nSchool: ${school.value.name}\n\nThis is a demo — no actual submission occurred.`)
+  console.log('Documents:', documents.value)
+  const totalFiles = documents.value.reduce((sum, d) => sum + d.files.length, 0)
+  alert(`Application submitted successfully!\n\nStudent: ${form.value.student.name}\nSchool: ${school.value.name}\nDocuments uploaded: ${totalFiles} file(s)\n\nThis is a demo — no actual submission occurred.`)
 }
 </script>
 
@@ -258,6 +395,76 @@ const handleSubmit = () => {
 .upload-icon { display: block; font-size: 1.5rem; margin-bottom: 0.5rem; }
 .upload-box span:not(.upload-icon):not(.upload-hint) { display: block; font-size: 0.8rem; color: #64748b; }
 .upload-hint { display: block; font-size: 0.7rem !important; color: #94a3b8 !important; margin-top: 0.25rem; }
+
+/* Document Upload */
+.doc-category { margin-bottom: 2rem; }
+.doc-category:last-child { margin-bottom: 0; }
+.doc-label { font-size: 0.875rem; font-weight: 600; color: #374151; margin-bottom: 0.5rem; }
+
+.upload-area-multiple {
+  border: 2px dashed #d1d5db;
+  border-radius: 0.75rem;
+  padding: 2rem 1rem;
+  text-align: center;
+  cursor: pointer;
+  transition: all 0.2s;
+  background: #fafafa;
+}
+.upload-area-multiple:hover {
+  border-color: #3B82F6;
+  background: #f0f7ff;
+}
+.upload-icon-big { display: block; font-size: 2rem; margin-bottom: 0.5rem; }
+.upload-text { display: block; font-size: 0.9rem; font-weight: 600; color: #374151; margin-bottom: 0.25rem; }
+
+.file-list { margin-top: 1rem; display: flex; flex-direction: column; gap: 0.5rem; }
+.file-item {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.6rem 0.75rem;
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  border-radius: 0.5rem;
+  transition: background 0.15s;
+}
+.file-item:hover { background: #f1f5f9; }
+.file-icon { font-size: 1.25rem; flex-shrink: 0; }
+.file-info { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 0.15rem; }
+.file-name {
+  font-size: 0.85rem;
+  font-weight: 500;
+  color: #1e293b;
+  cursor: pointer;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.file-name:hover { color: #3B82F6; text-decoration: underline; }
+.file-size { font-size: 0.75rem; color: #94a3b8; }
+.file-rename-input {
+  font-size: 0.85rem;
+  padding: 0.25rem 0.5rem;
+  border: 1px solid #3B82F6;
+  border-radius: 0.35rem;
+  outline: none;
+  width: 100%;
+  max-width: 300px;
+}
+.file-actions { display: flex; gap: 0.25rem; flex-shrink: 0; }
+.file-btn {
+  background: white;
+  border: 1px solid #e2e8f0;
+  border-radius: 0.35rem;
+  padding: 0.35rem 0.45rem;
+  font-size: 0.85rem;
+  cursor: pointer;
+  transition: all 0.15s;
+  line-height: 1;
+}
+.file-btn:hover:not(:disabled) { background: #f1f5f9; border-color: #cbd5e1; }
+.file-btn:disabled { opacity: 0.4; cursor: not-allowed; }
+.file-btn.delete:hover:not(:disabled) { background: #fef2f2; border-color: #fecaca; }
 
 .declaration-box { background: #f8fafc; border-radius: 0.5rem; padding: 1.25rem; }
 .checkbox-label { display: flex; align-items: flex-start; gap: 0.75rem; cursor: pointer; font-size: 0.875rem; color: #374151; line-height: 1.5; }
