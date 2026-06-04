@@ -3,7 +3,7 @@
     <div class="sitemap-header">
       <h1>🗺️ Sitemap</h1>
       <p>British School Portal — All Pages & Development Progress</p>
-      <p class="updated">Version: d3d945aa | Updated: {{ currentDate }}</p>
+      <p class="updated">Version: 9f65c82 | Updated: {{ currentDate }}</p>
       <div class="progress-bar">
         <div class="progress-fill" :style="{ width: progressPercent + '%' }"></div>
         <span class="progress-text">{{ completedCount }} / {{ totalCount }} pages ({{ progressPercent }}%)</span>
@@ -34,7 +34,7 @@
         <ul>
           <li><span class="status done">✅</span> <NuxtLink to="/student/login">Student Login</NuxtLink></li>
           <li><span class="status done">✅</span> <NuxtLink to="/student/register">Student Registration</NuxtLink></li>
-          <li><span class="status done">✅</span> <NuxtLink to="/student/apply/demo-school">Apply to School</NuxtLink> <span class="note">(sample)</span></li>
+          <li><span class="status done">✅</span> <NuxtLink to="/student/apply/demo-school">Apply to School</NuxtLink> <span class="note">(sample · multi-file upload, reorder, rename)</span></li>
           <li><span class="status done">✅</span> <NuxtLink to="/student/applications">My Applications</NuxtLink></li>
           <li><span class="status todo">❌</span> <span class="todo-link">/student/profile — Student Profile</span></li>
         </ul>
@@ -156,7 +156,7 @@ const currentDate = new Date().toLocaleDateString('en-GB', {
   day: 'numeric'
 })
 
-const deployedUrl = 'https://853627c9.bsp-v3.pages.dev'
+const deployedUrl = 'https://33a3f9d6.bsp-v3.pages.dev'
 
 // Progress tracking
 const totalCount = 51
