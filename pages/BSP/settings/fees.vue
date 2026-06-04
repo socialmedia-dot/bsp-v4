@@ -2,70 +2,7 @@
   <div class="bsp-dashboard">
     <div class="dashboard-body">
       <!-- Left Sidebar Navigation -->
-      <aside class="sidebar">
-        <nav class="sidebar-nav">
-          <div class="nav-section">
-            <div class="nav-section-title">User Categories</div>
-            <NuxtLink to="/BSP/users/personal" class="nav-item">
-              <span class="nav-icon">👤</span>
-              <span>Personal</span>
-            </NuxtLink>
-            <NuxtLink to="/BSP/users/school" class="nav-item">
-              <span class="nav-icon">🏫</span>
-              <span>School</span>
-            </NuxtLink>
-            <NuxtLink to="/BSP/users/consultant" class="nav-item">
-              <span class="nav-icon">💼</span>
-              <span>Consultant</span>
-            </NuxtLink>
-            <NuxtLink to="/BSP/users/business" class="nav-item">
-              <span class="nav-icon">🏢</span>
-              <span>Business</span>
-              <span class="nav-count">8</span>
-            </NuxtLink>
-            <NuxtLink to="/BSP/users/bspstaff" class="nav-item">
-              <span class="nav-icon">👔</span>
-              <span>BSP Staff</span>
-            </NuxtLink>
-          </div>
-
-          <div class="nav-section">
-            <div class="nav-section-title">Management</div>
-            <NuxtLink to="/BSP/dashboard" class="nav-item">
-              <span class="nav-icon">📊</span>
-              <span>Overview</span>
-            </NuxtLink>
-            <NuxtLink to="/BSP/new-account-applications" class="nav-item">
-              <span class="nav-icon">📋</span>
-              <span>New Account Applications</span>
-            </NuxtLink>
-            <NuxtLink to="/BSP/payments" class="nav-item">
-              <span class="nav-icon">💳</span>
-              <span>Payments</span>
-            </NuxtLink>
-            <NuxtLink to="/BSP/promo-codes" class="nav-item">
-              <span class="nav-icon">🎟️</span>
-              <span>Promo Codes</span>
-            </NuxtLink>
-          </div>
-
-          <div class="nav-section">
-            <div class="nav-section-title">Settings</div>
-            <NuxtLink to="/BSP/settings/fees" class="nav-item active">
-              <span class="nav-icon">💰</span>
-              <span>Annual Fee</span>
-            </NuxtLink>
-            <NuxtLink to="/BSP/settings/website" class="nav-item">
-              <span class="nav-icon">🌐</span>
-              <span>Website Settings</span>
-            </NuxtLink>
-            <NuxtLink to="/BSP/settings/staff" class="nav-item">
-              <span class="nav-icon">👔</span>
-              <span>Staff</span>
-            </NuxtLink>
-          </div>
-        </nav>
-      </aside>
+      <BspSidebar active="fees" />
 
       <!-- Main Content Area -->
       <main class="main-content">
@@ -75,13 +12,15 @@
             <p class="page-subtitle">Manage membership fees for all user types</p>
             <NuxtLink to="/BSP/promo-codes" class="link-action">🎟️ Manage Promo Codes</NuxtLink>
           </div>
+          <div class="page-actions">
+            <button class="btn btn-primary" @click="openAddTier">+ Add New Price Version</button>
+          </div>
         </div>
 
         <!-- Current Fee Tiers -->
         <div class="settings-section">
           <div class="section-header">
             <h2 class="section-title">Current Fee Tiers</h2>
-            <button class="btn btn-primary" @click="openAddTier">+ Add New Price Version</button>
           </div>
           <p class="section-desc">Prices shown below are active now. Each change creates a new version — old prices are kept in history for records.</p>
 
@@ -547,79 +486,22 @@ const saveSettings = () => {
 </script>
 
 <style scoped>
-.bsp-dashboard { min-height: 100vh; background: var(--bsp-light, #f8fafc); font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; color: var(--bsp-dark, #1e293b); }
-.dashboard-body { display: flex; min-height: 100vh; }
+/* Fees-specific styles only — layout/base styles moved to global bsp-admin.css */
 
-/* Sidebar */
-.sidebar { width: 260px; background: white; border-right: 1px solid #e2e8f0; flex-shrink: 0; height: 100vh; overflow-y: auto; position: sticky; top: 0; padding: 0; }
-.sidebar-nav { padding: 1.5rem 1rem; }
-.nav-section { margin-bottom: 1.5rem; }
-.nav-section-title { font-size: 0.7rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.08em; color: #94a3b8; padding: 0 1.5rem; margin-bottom: 0.5rem; }
-.nav-item { display: flex; align-items: center; gap: 0.75rem; padding: 0.875rem 1.5rem; color: #64748b; text-decoration: none; font-weight: 500; font-size: 0.9rem; transition: all 0.2s; border-left: 3px solid transparent; }
-.nav-item:hover { background: #f1f5f9; color: var(--bsp-primary, #212E54); }
-.nav-item.active { background: #eff6ff; color: var(--bsp-primary, #212E54); border-left-color: var(--bsp-secondary, #3b82f6); font-weight: 600; }
-.nav-icon { font-size: 1.1rem; }
-
-/* Main Content */
-.main-content { flex: 1; min-height: 100vh; padding: 2rem; max-width: 1200px; }
-.page-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 2rem; }
-.page-title { font-size: 1.5rem; font-weight: 700; color: var(--bsp-primary, #212E54); margin-bottom: 0.25rem; }
-.page-subtitle { font-size: 0.9rem; color: #64748b; }
-.link-action { display: inline-flex; align-items: center; gap: 0.25rem; color: #3b82f6; text-decoration: none; font-size: 0.875rem; font-weight: 500; margin-top: 0.35rem; }
-.link-action:hover { text-decoration: underline; }
-
-/* Settings Section */
-.settings-section { background: white; border-radius: 10px; padding: 1.5rem; margin-bottom: 1.5rem; box-shadow: 0 1px 3px rgba(0,0,0,0.08); }
-.section-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.75rem; }
-.section-title { font-size: 1.1rem; font-weight: 600; color: var(--bsp-dark, #1e293b); }
-.section-desc { font-size: 0.85rem; color: #64748b; margin-bottom: 1.25rem; margin-top: -0.25rem; }
-.section-hint { font-size: 0.8rem; color: #94a3b8; }
+/* Section */
+.section-desc { margin-top: -0.25rem; }
 
 /* Fees Table */
-.fees-table-wrapper { overflow-x: auto; }
-.fees-table { width: 100%; border-collapse: collapse; font-size: 0.9rem; }
-.fees-table th { text-align: left; padding: 0.875rem 1rem; font-size: 0.75rem; font-weight: 700; color: #64748b; text-transform: uppercase; letter-spacing: 0.05em; border-bottom: 1px solid #e2e8f0; }
-.fees-table td { padding: 1rem; border-bottom: 1px solid #f1f5f9; vertical-align: middle; }
 .history-table td { padding: 0.875rem 1rem; }
-.type-cell { display: flex; align-items: center; gap: 0.75rem; }
-.type-badge { padding: 0.25rem 0.75rem; border-radius: 20px; font-size: 0.75rem; font-weight: 600; text-transform: capitalize; }
-.type-school { background: #dbeafe; color: #1e40af; }
-.type-consultant { background: #fef3c7; color: #92400e; }
-.type-personal { background: #d1fae5; color: #047857; }
 .tier-name { font-weight: 600; color: var(--bsp-dark, #1e293b); }
 .fee-amount { font-size: 1.1rem; font-weight: 700; color: var(--bsp-primary, #212E54); }
-.text-muted { color: #94a3b8; font-size: 0.85rem; }
 
-/* Status Pills */
-.status-pill { display: inline-block; padding: 0.25rem 0.75rem; border-radius: 20px; font-size: 0.75rem; font-weight: 600; }
-.status-pill.active { background: #d1fae5; color: #047857; }
-.status-pill.paused { background: #fee2e2; color: #991b1b; }
-.status-pill.expired { background: #f1f5f9; color: #64748b; }
-
-/* Action Buttons */
-.action-buttons { display: flex; align-items: center; gap: 0.5rem; }
-
-/* Empty State */
-.empty-state { text-align: center; padding: 2rem; }
-.empty-content { display: flex; flex-direction: column; align-items: center; gap: 0.5rem; color: #94a3b8; }
-.empty-icon { font-size: 2rem; }
-
-/* Toggle Switch */
-.toggle-switch { position: relative; display: inline-block; width: 44px; height: 24px; }
-.toggle-switch input { opacity: 0; width: 0; height: 0; }
-.toggle-slider { position: absolute; cursor: pointer; inset: 0; background: #cbd5e1; border-radius: 24px; transition: 0.3s; }
-.toggle-slider::before { content: ''; position: absolute; height: 18px; width: 18px; left: 3px; bottom: 3px; background: white; border-radius: 50%; transition: 0.3s; }
-.toggle-switch input:checked + .toggle-slider { background: var(--bsp-success, #10b981); }
-.toggle-switch input:checked + .toggle-slider::before { transform: translateX(20px); }
-
-/* Form Grid */
-.form-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 1.25rem; }
-.form-group { display: flex; flex-direction: column; gap: 0.4rem; }
-.form-group.full-width { grid-column: 1 / -1; }
-.form-label { font-size: 0.8rem; font-weight: 600; color: #64748b; }
-.form-input { padding: 0.65rem 0.875rem; border: 1px solid #e2e8f0; border-radius: 6px; font-size: 0.9rem; font-family: inherit; }
-.form-input:focus { outline: none; border-color: var(--bsp-secondary, #3b82f6); box-shadow: 0 0 0 3px rgba(59,130,246,0.1); }
-.form-hint { font-size: 0.75rem; color: #94a3b8; margin-top: 0.15rem; }
+/* Toggle Buttons */
+.btn-toggle { padding: 0.35rem 0.75rem; border-radius: 6px; font-size: 0.8rem; font-weight: 600; cursor: pointer; border: 1px solid transparent; transition: all 0.2s; }
+.btn-pause { background: #fee2e2; color: #991b1b; border-color: #fecaca; }
+.btn-pause:hover { background: #fecaca; }
+.btn-resume { background: #d1fae5; color: #047857; border-color: #a7f3d0; }
+.btn-resume:hover { background: #a7f3d0; }
 
 /* Versioning Box */
 .versioning-box { background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px; padding: 1rem; }
@@ -639,41 +521,9 @@ const saveSettings = () => {
 .calc-label { color: #64748b; }
 .calc-value { font-weight: 600; color: var(--bsp-primary, #212E54); }
 
-/* Buttons */
-.btn { padding: 0.6rem 1.25rem; border-radius: 6px; font-size: 0.85rem; font-weight: 600; cursor: pointer; border: 1px solid transparent; transition: all 0.2s; }
-.btn-primary { background: var(--bsp-secondary, #3b82f6); color: white; }
-.btn-primary:hover { background: #2563eb; }
-.btn-secondary { background: #f1f5f9; color: #475569; border-color: #e2e8f0; }
-.btn-secondary:hover { background: #e2e8f0; }
-.btn-success { background: var(--bsp-success, #10b981); color: white; }
-.btn-success:hover { background: #059669; }
-.btn-action { background: none; border: none; font-size: 1rem; cursor: pointer; padding: 0.35rem; border-radius: 4px; }
-.btn-action:hover { background: #f1f5f9; }
-
-/* Toggle Buttons */
-.btn-toggle { padding: 0.35rem 0.75rem; border-radius: 6px; font-size: 0.8rem; font-weight: 600; cursor: pointer; border: 1px solid transparent; transition: all 0.2s; }
-.btn-pause { background: #fee2e2; color: #991b1b; border-color: #fecaca; }
-.btn-pause:hover { background: #fecaca; }
-.btn-resume { background: #d1fae5; color: #047857; border-color: #a7f3d0; }
-.btn-resume:hover { background: #a7f3d0; }
-
-/* Footer */
-.settings-footer { display: flex; justify-content: flex-end; }
-
-/* Modal */
-.modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.45); display: flex; align-items: center; justify-content: center; z-index: 1000; padding: 1rem; }
-.modal-box { background: white; border-radius: 12px; width: 100%; max-width: 480px; max-height: 90vh; overflow-y: auto; box-shadow: 0 20px 60px rgba(0,0,0,0.2); }
-.modal-header { display: flex; justify-content: space-between; align-items: center; padding: 1.25rem 1.5rem; border-bottom: 1px solid #e2e8f0; }
-.modal-title { font-size: 1.1rem; font-weight: 700; color: var(--bsp-dark, #1e293b); margin: 0; }
-.modal-close { background: none; border: none; font-size: 1.5rem; color: #94a3b8; cursor: pointer; line-height: 1; }
-.modal-close:hover { color: var(--bsp-dark, #1e293b); }
+/* Modal overrides (fees uses slightly different modal sizing) */
+.modal-overlay { background: rgba(0,0,0,0.45); z-index: 1000; }
+.modal-box { max-width: 480px; box-shadow: 0 20px 60px rgba(0,0,0,0.2); }
 .modal-body { padding: 1.5rem; display: flex; flex-direction: column; gap: 1rem; }
-.modal-footer { display: flex; justify-content: flex-end; gap: 0.75rem; padding: 1rem 1.5rem; border-top: 1px solid #e2e8f0; background: #f8fafc; }
-
-/* Responsive */
-@media (max-width: 768px) {
-  .sidebar { display: none; }
-  .main-content { padding: 1rem; }
-  .form-grid { grid-template-columns: 1fr; }
-}
+.modal-footer { padding: 1rem 1.5rem; background: #f8fafc; }
 </style>
