@@ -1,12 +1,13 @@
 {
   "meta": {
     "version": "v4",
-    "updated": "2026-05-31",
+    "updated": "2026-06-04",
     "deployedUrl": "https://bsp-v4.pages.dev",
     "totalVueFiles": 35,
     "portals": ["Public", "Auth", "Student", "Operations", "Admin", "School", "Consultant", "Legal"]
   },
   "recentUpdates": [
+    { "date": "2026-06-04", "text": "Apply to School: multi-file document upload with drag-drop, reorder, and inline rename" },
     { "date": "2026-06-03", "text": "Add Student Profile page - personal info, documents, guardian, academic tabs" },
     { "date": "2026-06-03", "text": "Update My Applications - collaborative platform with messaging & document requests" },
     { "date": "2026-05-31", "text": "Update roadmap: remove AI features, keep existing v4 + non-AI planned items" },
