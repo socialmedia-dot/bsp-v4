@@ -33,28 +33,51 @@
     <div class="detail-grid">
       <!-- Left Column -->
       <div class="detail-left">
-        <!-- Application Summary (compact) — only shown at Phase 1 (school is reviewing for first time) -->
+        <!-- Student Information (full) — only at Phase 1 (school is reviewing for first time) -->
+        <div v-if="application.currentPhase === 1" class="info-card student-info-card">
+          <h3>👤 Student Information</h3>
+          <div class="info-grid">
+            <div class="info-item">
+              <span class="info-label">Full Name</span>
+              <span class="info-value">{{ application.studentName }}</span>
+            </div>
+            <div class="info-item">
+              <span class="info-label">Date of Birth</span>
+              <span class="info-value">{{ application.studentDob }}</span>
+            </div>
+            <div class="info-item">
+              <span class="info-label">Nationality</span>
+              <span class="info-value">{{ application.studentNationality }}</span>
+            </div>
+            <div class="info-item">
+              <span class="info-label">Guardian</span>
+              <span class="info-value">{{ application.guardianName }}</span>
+            </div>
+            <div class="info-item">
+              <span class="info-label">Email</span>
+              <span class="info-value"><a :href="'mailto:' + application.studentEmail">{{ application.studentEmail }}</a></span>
+            </div>
+            <div class="info-item">
+              <span class="info-label">Phone</span>
+              <span class="info-value"><a :href="'tel:' + application.studentPhone">{{ application.studentPhone }}</a></span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Application Details (compact row) — only at Phase 1 -->
         <div v-if="application.currentPhase === 1" class="info-card summary-card">
           <div class="summary-row">
             <div class="summary-item">
-              <span class="summary-label">DOB</span>
-              <span class="summary-value">{{ application.studentDob }}</span>
-            </div>
-            <div class="summary-item">
-              <span class="summary-label">Nationality</span>
-              <span class="summary-value">{{ application.studentNationality }}</span>
-            </div>
-            <div class="summary-item">
-              <span class="summary-label">Entry</span>
+              <span class="summary-label">Year of Entry</span>
               <span class="summary-value">{{ application.yearOfEntry }}</span>
             </div>
             <div class="summary-item">
-              <span class="summary-label">Grade</span>
+              <span class="summary-label">Entry Grade</span>
               <span class="summary-value">{{ application.entryGrade }}</span>
             </div>
             <div class="summary-item">
-              <span class="summary-label">Visa</span>
-              <span class="summary-value">{{ application.visaRequired ? 'Required' : 'Not required' }}</span>
+              <span class="summary-label">Visa Required</span>
+              <span class="summary-value">{{ application.visaRequired ? 'Yes' : 'No' }}</span>
             </div>
             <div class="summary-item">
               <span class="summary-label">Consultant</span>
@@ -454,6 +477,18 @@ function restartApplication() {
 
 /* Compact Application Summary (replaces full info cards) */
 .summary-card { padding: 0.85rem 1.25rem !important; }
+
+/* Clickable links (email/phone) inside student info card */
+.info-value a {
+  color: #2563eb;
+  text-decoration: none;
+  border-bottom: 1px dotted #93c5fd;
+  transition: all 0.15s;
+}
+.info-value a:hover {
+  color: #1d4ed8;
+  border-bottom-color: #1d4ed8;
+}
 .summary-row {
   display: flex;
   flex-wrap: wrap;
