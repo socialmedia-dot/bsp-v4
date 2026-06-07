@@ -33,160 +33,203 @@
     <div class="detail-grid">
       <!-- Left Column -->
       <div class="detail-left">
-        <!-- Student Information (full) — only at Phase 1 (school is reviewing for first time) -->
-        <div v-if="application.currentPhase === 1" class="info-card student-info-card">
-          <h3>👤 Student Information</h3>
-          <div class="info-grid">
-            <div class="info-item">
-              <span class="info-label">Full Name</span>
-              <span class="info-value">{{ application.studentName }}</span>
+        <!-- Phase Stack: latest at top expanded, past phases collapsed at bottom -->
+        <div class="phase-stack">
+          <div
+            v-for="ph in visiblePhases"
+            :key="ph.phase"
+            class="phase-item"
+            :class="{
+              'phase-current': ph.phase === application.currentPhase,
+              'phase-past': ph.phase < application.currentPhase
+            }"
+          >
+            <!-- Header row (always visible; click to expand past phases) -->
+            <div
+              class="phase-row"
+              :class="{ 'phase-row-clickable': ph.phase !== application.currentPhase, 'phase-row-expanded': expandedPhases.includes(ph.phase) }"
+              @click="ph.phase !== application.currentPhase && togglePhaseExpand(ph.phase)"
+            >
+              <span class="phase-num-badge">P{{ ph.phase }}</span>
+              <span class="phase-title">{{ ph.label }}</span>
+              <span class="phase-status-badge" :class="'status-' + ph.status.toLowerCase().replace(/ /g, '-')">{{ ph.status }}</span>
+              <span v-if="ph.date" class="phase-date-inline">📅 {{ formatDate(ph.date) }}</span>
+              <span v-if="ph.phase !== application.currentPhase" class="phase-chevron">
+                {{ expandedPhases.includes(ph.phase) ? '▾' : '▸' }}
+              </span>
             </div>
-            <div class="info-item">
-              <span class="info-label">Date of Birth</span>
-              <span class="info-value">{{ application.studentDob }}</span>
-            </div>
-            <div class="info-item">
-              <span class="info-label">Nationality</span>
-              <span class="info-value">{{ application.studentNationality }}</span>
-            </div>
-            <div class="info-item">
-              <span class="info-label">Guardian</span>
-              <span class="info-value">{{ application.guardianName }}</span>
-            </div>
-            <div class="info-item">
-              <span class="info-label">Email</span>
-              <span class="info-value"><a :href="'mailto:' + application.studentEmail">{{ application.studentEmail }}</a></span>
-            </div>
-            <div class="info-item">
-              <span class="info-label">Phone</span>
-              <span class="info-value"><a :href="'tel:' + application.studentPhone">{{ application.studentPhone }}</a></span>
+
+            <!-- Content: always show for current, or when expanded for past -->
+            <div
+              v-if="ph.phase === application.currentPhase || expandedPhases.includes(ph.phase)"
+              class="phase-body"
+            >
+              <!-- Phase 1: Student Info + Application Details -->
+              <template v-if="ph.phase === 1">
+                <div class="phase-subsection">
+                  <h4>👤 Student Information</h4>
+                  <div class="info-grid">
+                    <div class="info-item">
+                      <span class="info-label">Full Name</span>
+                      <span class="info-value">{{ application.studentName }}</span>
+                    </div>
+                    <div class="info-item">
+                      <span class="info-label">Date of Birth</span>
+                      <span class="info-value">{{ application.studentDob }}</span>
+                    </div>
+                    <div class="info-item">
+                      <span class="info-label">Nationality</span>
+                      <span class="info-value">{{ application.studentNationality }}</span>
+                    </div>
+                    <div class="info-item">
+                      <span class="info-label">Guardian</span>
+                      <span class="info-value">{{ application.guardianName }}</span>
+                    </div>
+                    <div class="info-item">
+                      <span class="info-label">Email</span>
+                      <span class="info-value"><a :href="'mailto:' + application.studentEmail">{{ application.studentEmail }}</a></span>
+                    </div>
+                    <div class="info-item">
+                      <span class="info-label">Phone</span>
+                      <span class="info-value"><a :href="'tel:' + application.studentPhone">{{ application.studentPhone }}</a></span>
+                    </div>
+                  </div>
+                </div>
+
+                <div class="phase-subsection">
+                  <h4>📝 Application Details</h4>
+                  <div class="info-grid">
+                    <div class="info-item">
+                      <span class="info-label">Year of Entry</span>
+                      <span class="info-value">{{ application.yearOfEntry }}</span>
+                    </div>
+                    <div class="info-item">
+                      <span class="info-label">Entry Grade</span>
+                      <span class="info-value">{{ application.entryGrade }}</span>
+                    </div>
+                    <div class="info-item">
+                      <span class="info-label">Visa Required</span>
+                      <span class="info-value">{{ application.visaRequired ? 'Yes' : 'No' }}</span>
+                    </div>
+                    <div class="info-item">
+                      <span class="info-label">Consultant</span>
+                      <span class="info-value">{{ application.consultantName || 'Unassigned' }}</span>
+                    </div>
+                  </div>
+                </div>
+              </template>
+
+              <!-- Phase notes (any phase with notes) -->
+              <div v-if="ph.notes" class="phase-subsection">
+                <h4>📝 Notes</h4>
+                <p class="phase-notes-text">{{ ph.notes }}</p>
+              </div>
+
+              <!-- Attachments for this phase -->
+              <div v-if="getPhaseAttachments(ph.phase).length" class="phase-subsection">
+                <h4>📎 Attachments</h4>
+                <div class="phase-attachments">
+                  <div v-for="att in getPhaseAttachments(ph.phase)" :key="att.id" class="att-row">
+                    <span class="att-icon">📄</span>
+                    <div class="att-info">
+                      <div class="att-name">{{ att.fileName }}</div>
+                      <div class="att-meta">{{ att.fileSize }} · {{ att.uploadedByRole }} · {{ formatDate(att.createdAt) }}</div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <!-- School Actions: only for current phase -->
+              <div v-if="ph.phase === application.currentPhase" class="phase-subsection">
+                <h4>⚙️ School Actions</h4>
+
+                <div v-if="ph.phase === 1" class="action-section">
+                  <div class="action-title">Arrange Interview</div>
+                  <div class="action-desc">New application received. Choose how the interview will be conducted.</div>
+                  <div class="action-buttons">
+                    <button class="btn-approve" @click="scheduleInHouse">📅 Schedule Interview (In-House)</button>
+                    <button class="btn-primary" @click="delegateToConsultant">🤝 Delegate to Consultant</button>
+                    <button class="btn-reject" @click="rejectApplication">❌ Reject</button>
+                  </div>
+                </div>
+
+                <div v-if="ph.phase === 2" class="action-section">
+                  <div class="action-title">Interview & Assessment</div>
+                  <div class="action-desc">Schedule and manage student interview</div>
+                  <div class="action-buttons">
+                    <button class="btn-primary" @click="scheduleInterview">📅 Schedule Interview</button>
+                    <button class="btn-secondary" @click="uploadAssessment">📝 Upload Assessment</button>
+                  </div>
+                </div>
+
+                <div v-if="ph.phase === 3" class="action-section">
+                  <div class="action-title">Decision</div>
+                  <div class="action-desc">Make final admission decision</div>
+                  <div class="action-buttons">
+                    <button class="btn-approve" @click="makeOffer">🎓 Make Offer</button>
+                    <button class="btn-reject" @click="rejectApplication">❌ Reject</button>
+                  </div>
+                </div>
+
+                <div v-if="ph.phase === 4" class="action-section">
+                  <div class="action-title">Offer & Acceptance</div>
+                  <div class="action-desc">Send offer letter and track acceptance</div>
+                  <div class="action-buttons">
+                    <button class="btn-primary" @click="uploadOfferLetter">📄 Upload Offer Letter</button>
+                    <button class="btn-secondary" @click="markDepositReceived">💰 Mark Deposit Received</button>
+                  </div>
+                </div>
+
+                <div v-if="ph.phase === 5" class="action-section">
+                  <div class="action-title">Admission Documents</div>
+                  <div class="action-desc">Prepare and upload admission documents</div>
+                  <div class="action-buttons">
+                    <button class="btn-primary" @click="uploadAdmissionDocs">📁 Upload Documents</button>
+                    <button class="btn-secondary" @click="markReady">✅ Mark Documents Ready</button>
+                  </div>
+                </div>
+
+                <div v-if="ph.phase === 6" class="action-section">
+                  <div class="action-title">Visa & Travel</div>
+                  <div class="action-desc">Track visa progress and travel arrangements</div>
+                  <div class="action-buttons">
+                    <button class="btn-primary" @click="updateVisaStatus">🛂 Update Visa Status</button>
+                    <button class="btn-secondary" @click="confirmTravel">✈️ Confirm Travel Arranged</button>
+                  </div>
+                </div>
+
+                <div v-if="ph.phase === 7" class="action-section">
+                  <div class="action-title">Enrolled</div>
+                  <div class="action-desc">Student has successfully enrolled</div>
+                  <div class="action-buttons">
+                    <button class="btn-secondary" @click="viewStudentRecord">📋 View Student Record</button>
+                  </div>
+                </div>
+
+                <div class="action-section divider">
+                  <div class="action-title">Consultant Assignment</div>
+                  <div class="action-desc">Assign or change consultant for this application</div>
+                  <div class="action-buttons">
+                    <button class="btn-secondary" @click="assignConsultant">
+                      {{ application.consultantName ? '👤 Change Consultant' : '👤 Assign Consultant' }}
+                    </button>
+                  </div>
+                </div>
+
+                <div v-if="application.status === 'rejected'" class="action-section divider">
+                  <div class="action-title">Reopen Application</div>
+                  <div class="action-desc">Reopen this application if rejection was made in error</div>
+                  <div class="action-buttons">
+                    <button class="btn-primary" @click="reopenApplication">🔄 Reopen Application</button>
+                  </div>
+                </div>
+              </div>
             </div>
           </div>
         </div>
-
-        <!-- Application Details (compact row) — only at Phase 1 -->
-        <div v-if="application.currentPhase === 1" class="info-card summary-card">
-          <div class="summary-row">
-            <div class="summary-item">
-              <span class="summary-label">Year of Entry</span>
-              <span class="summary-value">{{ application.yearOfEntry }}</span>
-            </div>
-            <div class="summary-item">
-              <span class="summary-label">Entry Grade</span>
-              <span class="summary-value">{{ application.entryGrade }}</span>
-            </div>
-            <div class="summary-item">
-              <span class="summary-label">Visa Required</span>
-              <span class="summary-value">{{ application.visaRequired ? 'Yes' : 'No' }}</span>
-            </div>
-            <div class="summary-item">
-              <span class="summary-label">Consultant</span>
-              <span class="summary-value">{{ application.consultantName || 'Unassigned' }}</span>
-            </div>
-          </div>
-        </div>
-
-                <!-- School Actions -->
-        <div class="info-card">
-          <h3>⚙️ School Actions</h3>
-          <div class="action-list">
-            <!-- Phase 1: Arrange Interview -->
-            <div v-if="application.currentPhase === 1" class="action-section">
-              <div class="action-title">Phase 1: Arrange Interview</div>
-              <div class="action-desc">New application received. Choose how the interview will be conducted.</div>
-              <div class="action-buttons">
-                <button class="btn-approve" @click="scheduleInHouse">📅 Schedule Interview (In-House)</button>
-                <button class="btn-primary" @click="delegateToConsultant">🤝 Delegate to Consultant</button>
-                <button class="btn-reject" @click="rejectApplication">❌ Reject</button>
-              </div>
-            </div>
-
-            <!-- Phase 2: Interview Schedule -->
-            <div v-if="application.currentPhase === 2" class="action-section">
-              <div class="action-title">Phase 2: Interview & Assessment</div>
-              <div class="action-desc">Schedule and manage student interview</div>
-              <div class="action-buttons">
-                <button class="btn-primary" @click="scheduleInterview">📅 Schedule Interview</button>
-                <button class="btn-secondary" @click="uploadAssessment">📝 Upload Assessment</button>
-              </div>
-            </div>
-
-            <!-- Phase 3: Decision -->
-            <div v-if="application.currentPhase === 3" class="action-section">
-              <div class="action-title">Phase 3: Decision</div>
-              <div class="action-desc">Make final admission decision</div>
-              <div class="action-buttons">
-                <button class="btn-approve" @click="makeOffer">🎓 Make Offer</button>
-                <button class="btn-reject" @click="rejectApplication">❌ Reject</button>
-              </div>
-            </div>
-
-            <!-- Phase 4: Offer & Acceptance -->
-            <div v-if="application.currentPhase === 4" class="action-section">
-              <div class="action-title">Phase 4: Offer & Acceptance</div>
-              <div class="action-desc">Send offer letter and track acceptance</div>
-              <div class="action-buttons">
-                <button class="btn-primary" @click="uploadOfferLetter">📄 Upload Offer Letter</button>
-                <button class="btn-secondary" @click="markDepositReceived">💰 Mark Deposit Received</button>
-              </div>
-            </div>
-
-            <!-- Phase 5: Admission Documents -->
-            <div v-if="application.currentPhase === 5" class="action-section">
-              <div class="action-title">Phase 5: Admission Documents</div>
-              <div class="action-desc">Prepare and upload admission documents</div>
-              <div class="action-buttons">
-                <button class="btn-primary" @click="uploadAdmissionDocs">📁 Upload Documents</button>
-                <button class="btn-secondary" @click="markReady">✅ Mark Documents Ready</button>
-              </div>
-            </div>
-
-            <!-- Phase 6: Visa & Travel -->
-            <div v-if="application.currentPhase === 6" class="action-section">
-              <div class="action-title">Phase 6: Visa & Travel</div>
-              <div class="action-desc">Track visa progress and travel arrangements</div>
-              <div class="action-buttons">
-                <button class="btn-primary" @click="updateVisaStatus">🛂 Update Visa Status</button>
-                <button class="btn-secondary" @click="confirmTravel">✈️ Confirm Travel Arranged</button>
-              </div>
-            </div>
-
-            <!-- Phase 7: Enrolled -->
-            <div v-if="application.currentPhase === 7" class="action-section">
-              <div class="action-title">Phase 7: Enrolled</div>
-              <div class="action-desc">Student has successfully enrolled</div>
-              <div class="action-buttons">
-                <button class="btn-secondary" @click="viewStudentRecord">📋 View Student Record</button>
-              </div>
-            </div>
-
-            <!-- Consultant Assignment -->
-            <div class="action-section divider">
-              <div class="action-title">Consultant Assignment</div>
-              <div class="action-desc">Assign or change consultant for this application</div>
-              <div class="action-buttons">
-                <button class="btn-secondary" @click="assignConsultant">
-                  {{ application.consultantName ? '👤 Change Consultant' : '👤 Assign Consultant' }}
-                </button>
-              </div>
-            </div>
-
-            <!-- Reopen (if rejected) -->
-            <div v-if="application.status === 'rejected'" class="action-section divider">
-              <div class="action-title">Reopen Application</div>
-              <div class="action-desc">Reopen this application if rejection was made in error</div>
-              <div class="action-buttons">
-                <button class="btn-primary" @click="reopenApplication">🔄 Reopen Application</button>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        <!-- Attachments -->
-        <AttachmentPanel :attachments="application.attachments" />
       </div>
 
-      <!-- Right Column -->
+            <!-- Right Column -->
       <div class="detail-right">
         <ChatRoom :application-ref="application.refNumber" user-role="school" />
       </div>
@@ -459,6 +502,30 @@ function reopenApplication() {
   saveState()
 }
 
+// Phase Stack: reverse order, hide future phases
+const visiblePhases = computed(() => {
+  const cur = application.value.currentPhase
+  return [...application.value.phaseHistory]
+    .filter(p => p.phase <= cur)
+    .reverse()  // latest at top
+})
+
+// Past phases the user has expanded
+const expandedPhases = ref([])
+function togglePhaseExpand(phase) {
+  if (expandedPhases.value.includes(phase)) {
+    expandedPhases.value = expandedPhases.value.filter(p => p !== phase)
+  } else {
+    expandedPhases.value = [...expandedPhases.value, phase]
+  }
+}
+
+// Filter attachments by phase number
+function getPhaseAttachments(phaseNum) {
+  if (!application.value.attachments) return []
+  return application.value.attachments.filter(a => a.phase === phaseNum)
+}
+
 // RESTART: full reset to Phase 1 + clear localStorage
 function restartApplication() {
   if (!confirm('Restart this application?\n\nThis will:\n- Reset to Phase 1\n- Clear all decisions and notes\n- Clear localStorage for this application\n\nProceed?')) return
@@ -488,6 +555,160 @@ function restartApplication() {
 .info-value a:hover {
   color: #1d4ed8;
   border-bottom-color: #1d4ed8;
+}
+
+/* Phase Stack: latest at top, past phases collapsed at bottom */
+.phase-stack {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+.phase-item {
+  background: #fff;
+  border: 1px solid #e2e8f0;
+  border-radius: 12px;
+  overflow: hidden;
+  transition: all 0.15s;
+}
+.phase-current {
+  border-color: #3b82f6;
+  box-shadow: 0 0 0 1px rgba(59, 130, 246, 0.15);
+}
+.phase-past {
+  opacity: 0.92;
+}
+.phase-row {
+  align-items: center;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  padding: 14px 18px;
+  transition: background 0.15s;
+}
+.phase-row-clickable {
+  cursor: pointer;
+}
+.phase-row-clickable:hover {
+  background: #f8fafc;
+}
+.phase-row-expanded {
+  background: #f8fafc;
+  border-bottom: 1px solid #e2e8f0;
+}
+.phase-num-badge {
+  align-items: center;
+  background: #1e293b;
+  border-radius: 6px;
+  color: #fff;
+  display: inline-flex;
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  padding: 3px 8px;
+}
+.phase-current .phase-num-badge {
+  background: #3b82f6;
+}
+.phase-title {
+  color: #1e293b;
+  flex: 1;
+  font-size: 0.95rem;
+  font-weight: 700;
+  min-width: 180px;
+}
+.phase-status-badge {
+  border-radius: 10px;
+  font-size: 0.7rem;
+  font-weight: 700;
+  letter-spacing: 0.03em;
+  padding: 3px 10px;
+  text-transform: uppercase;
+}
+.phase-status-badge.status-completed,
+.phase-status-badge.status-completed {
+  background: #dcfce7;
+  color: #15803d;
+}
+.phase-status-badge.status-in-progress,
+.phase-status-badge.status-active {
+  background: #dbeafe;
+  color: #1d4ed8;
+}
+.phase-status-badge.status-pending {
+  background: #f1f5f9;
+  color: #94a3b8;
+}
+.phase-date-inline {
+  color: #64748b;
+  font-size: 0.78rem;
+}
+.phase-chevron {
+  color: #94a3b8;
+  font-size: 0.85rem;
+  margin-left: auto;
+}
+.phase-body {
+  padding: 16px 18px 20px;
+}
+.phase-subsection {
+  border-top: 1px solid #f1f5f9;
+  margin-top: 14px;
+  padding-top: 14px;
+}
+.phase-subsection:first-child {
+  border-top: none;
+  margin-top: 0;
+  padding-top: 0;
+}
+.phase-subsection h4 {
+  color: #1e293b;
+  font-size: 0.9rem;
+  margin: 0 0 12px;
+}
+.phase-notes-text {
+  background: #f8fafc;
+  border-left: 3px solid #cbd5e1;
+  border-radius: 0 6px 6px 0;
+  color: #475569;
+  font-size: 0.85rem;
+  line-height: 1.5;
+  margin: 0;
+  padding: 10px 14px;
+}
+.phase-attachments {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.att-row {
+  align-items: center;
+  background: #f8fafc;
+  border-radius: 8px;
+  display: flex;
+  gap: 10px;
+  padding: 8px 12px;
+}
+.att-icon {
+  font-size: 1.1rem;
+}
+.att-info {
+  flex: 1;
+  min-width: 0;
+}
+.att-name {
+  color: #1e293b;
+  font-size: 0.85rem;
+  font-weight: 600;
+}
+.att-meta {
+  color: #94a3b8;
+  font-size: 0.72rem;
+}
+@media (max-width: 768px) {
+  .phase-row { gap: 8px; padding: 12px 14px; }
+  .phase-title { font-size: 0.88rem; min-width: 120px; }
+  .phase-body { padding: 12px 14px 16px; }
+  .phase-date-inline { display: none; }
 }
 .summary-row {
   display: flex;
