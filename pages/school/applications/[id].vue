@@ -44,24 +44,29 @@
               'phase-past': ph.phase < application.currentPhase
             }"
           >
-            <!-- Header row (always visible; click to expand past phases) -->
+            <!-- Header row (always visible; click anywhere on row to expand past phases) -->
             <div
               class="phase-row"
               :class="{ 'phase-row-clickable': ph.phase !== application.currentPhase, 'phase-row-expanded': expandedPhases.includes(ph.phase) }"
-              @click="ph.phase !== application.currentPhase && togglePhaseExpand(ph.phase)"
+              :role="ph.phase !== application.currentPhase ? 'button' : undefined"
+              :tabindex="ph.phase !== application.currentPhase ? 0 : undefined"
+              @click="onPhaseRowClick(ph)"
+              @keydown.enter.prevent="onPhaseRowClick(ph)"
+              @keydown.space.prevent="onPhaseRowClick(ph)"
             >
               <span class="phase-num-badge">P{{ ph.phase }}</span>
               <span class="phase-title">{{ ph.label }}</span>
               <span class="phase-status-badge" :class="'status-' + ph.status.toLowerCase().replace(/ /g, '-')">{{ ph.status }}</span>
               <span v-if="ph.date" class="phase-date-inline">📅 {{ formatDate(ph.date) }}</span>
-              <span v-if="ph.phase !== application.currentPhase" class="phase-chevron">
-                {{ expandedPhases.includes(ph.phase) ? '▾' : '▸' }}
+              <span v-if="ph.phase !== application.currentPhase" class="phase-expand-hint">
+                {{ expandedPhases.includes(ph.phase) ? '▾ Hide details' : '▸ View details' }}
               </span>
             </div>
 
             <!-- Content: always show for current, or when expanded for past -->
             <div
               v-if="ph.phase === application.currentPhase || expandedPhases.includes(ph.phase)"
+              :id="'phase-body-' + ph.phase"
               class="phase-body"
             >
               <!-- Phase 1: Student Info + Application Details -->
@@ -519,6 +524,20 @@ function togglePhaseExpand(phase) {
     expandedPhases.value = [...expandedPhases.value, phase]
   }
 }
+function onPhaseRowClick(ph) {
+  // Current phase: no-op (no expand toggle; it's always shown)
+  if (ph.phase === application.value.currentPhase) return
+  const wasExpanded = expandedPhases.value.includes(ph.phase)
+  togglePhaseExpand(ph.phase)
+  // After expanding (not collapsing), scroll the phase body into view
+  if (!wasExpanded) {
+    nextTick(() => {
+      if (typeof document === 'undefined') return
+      const el = document.getElementById('phase-body-' + ph.phase)
+      if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' })
+    })
+  }
+}
 
 // Filter attachments by phase number
 function getPhaseAttachments(phaseNum) {
@@ -589,11 +608,37 @@ function restartApplication() {
   cursor: pointer;
 }
 .phase-row-clickable:hover {
-  background: #f8fafc;
+  background: #f1f5f9;
+}
+.phase-row-clickable:hover .phase-expand-hint {
+  color: #3b82f6;
+}
+.phase-row-clickable:focus-visible {
+  background: #e0e7ff;
+  outline: 2px solid #3b82f6;
+  outline-offset: -2px;
 }
 .phase-row-expanded {
   background: #f8fafc;
   border-bottom: 1px solid #e2e8f0;
+}
+.phase-expand-hint {
+  color: #64748b;
+  font-size: 0.78rem;
+  font-weight: 600;
+  letter-spacing: 0.01em;
+  margin-left: auto;
+  padding: 4px 10px;
+  border-radius: 6px;
+  background: #fff;
+  border: 1px solid #e2e8f0;
+  transition: all 0.15s;
+  user-select: none;
+}
+.phase-row-clickable:hover .phase-expand-hint {
+  background: #3b82f6;
+  color: #fff !important;
+  border-color: #3b82f6;
 }
 .phase-num-badge {
   align-items: center;
