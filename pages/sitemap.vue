@@ -12,6 +12,32 @@
       </div>
     </div>
 
+    <!-- Trial Readiness Callout (highlighted at top) -->
+    <div v-if="trialModule" class="trial-callout">
+      <div class="trial-callout-header">
+        <h2>🎯 {{ trialModule.label }}</h2>
+        <div class="trial-stats">
+          <span class="trial-stat high">{{ trialCountByCriticality.high }} HIGH</span>
+          <span class="trial-stat medium">{{ trialCountByCriticality.medium }} MED</span>
+          <span class="trial-stat low">{{ trialCountByCriticality.low }} LOW</span>
+          <span class="trial-stat total">{{ trialModule.items.length }} pages</span>
+        </div>
+      </div>
+      <p class="trial-summary">{{ meta.trialStatus }}</p>
+      <ul class="trial-list">
+        <li
+          v-for="item in trialModule.items"
+          :key="item.path"
+          :class="'trial-' + (item.criticality || 'low')"
+        >
+          <span class="trial-crit">{{ criticalityBadge(item.criticality) }}</span>
+          <span class="trial-path">{{ item.path }}</span>
+          <span class="trial-label">{{ item.label }}</span>
+          <span v-if="item.note" class="trial-note">{{ item.note }}</span>
+        </li>
+      </ul>
+    </div>
+
     <!-- Portal Completion Overview -->
     <div class="portal-overview">
       <h2>📊 Portal Completion Rates</h2>
@@ -77,7 +103,8 @@
             <NuxtLink v-if="item.status === 'done' && item.path" :to="item.path">{{ item.label }}</NuxtLink>
             <NuxtLink v-else-if="item.status === 'draft' && item.path" :to="item.path" class="draft-link">{{ item.label }}</NuxtLink>
             <span v-else class="todo-link">{{ item.label }}</span>
-            <span v-if="item.status === 'draft'" class="review-badge" :class="{ reviewed: item.reviewed }">
+            <span v-if="item.trial" class="trial-inline-badge" :title="'Trial priority: ' + (item.criticality || 'low')">🔴 TRIAL</span>
+            <span v-if="item.status === 'draft' && !item.trial" class="review-badge" :class="{ reviewed: item.reviewed }">
               {{ item.reviewed ? '✅ Reviewed' : '⏳ Pending' }}
             </span>
             <span v-else-if="item.date && item.status === 'done'" class="item-date">{{ item.date }}</span>
@@ -156,6 +183,14 @@ const modules = roadmapData.modules
 const recentUpdates = roadmapData.recentUpdates
 const milestones = roadmapData.milestones
 
+// Trial Readiness module (always shown at top if present)
+const trialModule = modules.find(m => m.key === 'trial') || null
+const trialCountByCriticality = {
+  high: trialModule ? trialModule.items.filter(i => i.criticality === 'high').length : 0,
+  medium: trialModule ? trialModule.items.filter(i => i.criticality === 'medium').length : 0,
+  low: trialModule ? trialModule.items.filter(i => i.criticality === 'low').length : 0
+}
+
 const applicationPhases = [
   { num: 1, name: 'Application Submitted', desc: 'Student submits application with required documents and personal statement' },
   { num: 2, name: 'Interview & Assessment', desc: 'School reviews application and conducts interview or entrance assessment' },
@@ -194,6 +229,12 @@ function statusIcon(status) {
   if (status === 'in_progress') return '🚧'
   if (status === 'draft') return '📝'
   return '📋'
+}
+
+function criticalityBadge(level) {
+  if (level === 'high') return '🔴'
+  if (level === 'medium') return '🟡'
+  return '🟢'
 }
 </script>
 
@@ -259,6 +300,82 @@ function statusIcon(status) {
   color: #374151;
   white-space: nowrap;
 }
+
+/* Trial Readiness Callout */
+.trial-callout {
+  background: linear-gradient(135deg, #fef2f2 0%, #fff7ed 100%);
+  border: 2px solid #fca5a5;
+  border-radius: 12px;
+  margin-bottom: 30px;
+  padding: 20px 24px;
+  box-shadow: 0 4px 12px rgba(239, 68, 68, 0.08);
+}
+.trial-callout-header {
+  align-items: flex-start;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  justify-content: space-between;
+  margin-bottom: 12px;
+}
+.trial-callout-header h2 {
+  color: #991b1b;
+  font-size: 1.15rem;
+  margin: 0;
+}
+.trial-stats {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+.trial-stat {
+  border-radius: 9999px;
+  font-size: 0.7rem;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  padding: 3px 10px;
+  white-space: nowrap;
+}
+.trial-stat.high { background: #fee2e2; color: #991b1b; }
+.trial-stat.medium { background: #fef3c7; color: #92400e; }
+.trial-stat.low { background: #d1fae5; color: #065f46; }
+.trial-stat.total { background: #1f2937; color: #fff; }
+.trial-summary {
+  color: #7f1d1d;
+  font-size: 0.85rem;
+  line-height: 1.5;
+  margin: 0 0 16px 0;
+}
+.trial-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 8px;
+}
+.trial-list li {
+  align-items: flex-start;
+  background: #fff;
+  border: 1px solid #fecaca;
+  border-left: 4px solid #f87171;
+  border-radius: 8px;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  padding: 10px 14px;
+  font-size: 0.85rem;
+}
+.trial-list li.trial-medium { border-left-color: #fbbf24; }
+.trial-list li.trial-low { border-left-color: #10b981; }
+.trial-crit { font-size: 1rem; flex-shrink: 0; }
+.trial-path {
+  color: #1e40af;
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: 0.8rem;
+  font-weight: 600;
+}
+.trial-label { color: #1f2937; flex: 1; min-width: 200px; }
+.trial-note { color: #6b7280; font-size: 0.75rem; font-style: italic; width: 100%; padding-left: 24px; }
 
 /* Portal Overview */
 .portal-overview {
@@ -481,6 +598,18 @@ function statusIcon(status) {
 .review-badge.reviewed {
   background: #d1fae5;
   color: #065f46;
+}
+
+.trial-inline-badge {
+  background: #fef2f2;
+  border: 1px solid #fca5a5;
+  border-radius: 9999px;
+  color: #991b1b;
+  font-size: 0.7rem;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  padding: 2px 8px;
+  white-space: nowrap;
 }
 
 .trial-inline-badge {

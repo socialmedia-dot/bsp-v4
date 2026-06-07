@@ -1,7 +1,7 @@
 {
   "meta": {
     "version": "v4",
-    "updated": "2026-06-05",
+    "updated": "2026-06-07",
     "deployedUrl": "https://bsp-v4.pages.dev",
     "totalVueFiles": 57,
     "portals": [
@@ -15,9 +15,15 @@
       "Business",
       "Legal",
       "Development"
-    ]
+    ],
+    "trialCount": 13,
+    "trialStatus": "BSP v4 needs 13 critical pages built before school pilot (Q3 2026). Auth / Intake / Review = transaction core (must build). Communicate = trust layer (can be skipped for trial)."
   },
   "recentUpdates": [
+    {
+      "date": "2026-06-07",
+      "text": "Trial readiness audit: marked 13 critical pages needed before school pilot"
+    },
     {
       "date": "2026-06-05",
       "text": "Architecture update: remove dead Operations links, add Business Portal, reorganise portals per latest spec"
@@ -76,6 +82,143 @@
     }
   ],
   "modules": [
+    {
+      "key": "trial",
+      "label": "\ud83d\udea8 Trial Readiness \u2014 School Pilot Q3 2026",
+      "emoji": "\ud83c\udfaf",
+      "items": [
+        {
+          "status": "draft",
+          "label": "\ud83c\udfeb School: Application Management (list view)",
+          "path": "/school/applications",
+          "date": null,
+          "reviewed": false,
+          "trial": true,
+          "criticality": "high",
+          "note": "Replace 4 hardcoded apps w/ API + add \"manual entry\" for trial"
+        },
+        {
+          "status": "draft",
+          "label": "\ud83c\udfeb School: Application Detail (review/approve/reject)",
+          "path": "/school/applications/:id",
+          "date": null,
+          "reviewed": false,
+          "trial": true,
+          "criticality": "high",
+          "note": "13 action buttons currently alert(\"API pending\")"
+        },
+        {
+          "status": "draft",
+          "label": "\ud83d\udcbc Consultant: Application Management (list)",
+          "path": "/consultant/applications",
+          "date": null,
+          "reviewed": false,
+          "trial": true,
+          "criticality": "high",
+          "note": "Page literally says \"Under Construction \ud83d\udea7\""
+        },
+        {
+          "status": "draft",
+          "label": "\ud83d\udcbc Consultant: Application Detail (status tracking)",
+          "path": "/consultant/applications/:id",
+          "date": null,
+          "reviewed": false,
+          "trial": true,
+          "criticality": "high",
+          "note": "Page literally says \"Under Construction \ud83d\udea7\""
+        },
+        {
+          "status": "draft",
+          "label": "\ud83c\udfeb School: Dashboard (landing after login)",
+          "path": "/school/dashboard",
+          "date": null,
+          "reviewed": false,
+          "trial": true,
+          "criticality": "medium",
+          "note": "Schools need somewhere to land after login"
+        },
+        {
+          "status": "draft",
+          "label": "\ud83d\udcbc Consultant: Dashboard",
+          "path": "/consultant/dashboard",
+          "date": null,
+          "reviewed": false,
+          "trial": true,
+          "criticality": "medium",
+          "note": ""
+        },
+        {
+          "status": "draft",
+          "label": "\ud83c\udfeb School: Profile (school admin self-edit)",
+          "path": "/school/profile",
+          "date": null,
+          "reviewed": false,
+          "trial": true,
+          "criticality": "medium",
+          "note": ""
+        },
+        {
+          "status": "draft",
+          "label": "\ud83d\udcbc Consultant: Profile",
+          "path": "/consultant/profile",
+          "date": null,
+          "reviewed": false,
+          "trial": true,
+          "criticality": "medium",
+          "note": ""
+        },
+        {
+          "status": "draft",
+          "label": "\ud83c\udfeb School: Reports (analytics)",
+          "path": "/school/reports",
+          "date": null,
+          "reviewed": false,
+          "trial": true,
+          "criticality": "low",
+          "note": "Skip for trial \u2014 schools can ask BSP team manually"
+        },
+        {
+          "status": "draft",
+          "label": "\ud83c\udfeb School: Partnerships (B2B connections)",
+          "path": "/school/partnerships",
+          "date": null,
+          "reviewed": false,
+          "trial": true,
+          "criticality": "low",
+          "note": "Skip \u2014 not in school trial flow"
+        },
+        {
+          "status": "draft",
+          "label": "\ud83d\udcbc Consultant: Reports",
+          "path": "/consultant/reports",
+          "date": null,
+          "reviewed": false,
+          "trial": true,
+          "criticality": "low",
+          "note": "Skip for trial"
+        },
+        {
+          "status": "draft",
+          "label": "\ud83d\udcbc Consultant: Partnerships",
+          "path": "/consultant/partnerships",
+          "date": null,
+          "reviewed": false,
+          "trial": true,
+          "criticality": "low",
+          "note": "Skip for trial"
+        },
+        {
+          "status": "draft",
+          "label": "\ud83c\udfe2 Business Portal (3 pages) \u2014 Dashboard / Profile / Partnerships",
+          "path": "/business-portal/*",
+          "date": null,
+          "reviewed": false,
+          "trial": true,
+          "criticality": "low",
+          "note": "Not in trial scope \u2014 defer to Q4"
+        }
+      ]
+    },
     {
       "key": "public",
       "label": "Public",
@@ -525,6 +668,11 @@
     }
   ],
   "milestones": [
+    {
+      "date": "2026-06-07",
+      "label": "Trial Readiness Audit Complete",
+      "desc": "13 pages identified as blockers for Q3 school pilot. Trial module added to sitemap for tracking."
+    },
     {
       "date": "2026-06-05",
       "label": "Architecture Finalisation",
