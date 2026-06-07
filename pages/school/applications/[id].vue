@@ -33,8 +33,8 @@
     <div class="detail-grid">
       <!-- Left Column -->
       <div class="detail-left">
-        <!-- Application Summary (compact) -->
-        <div class="info-card summary-card">
+        <!-- Application Summary (compact) — only shown at Phase 1 (school is reviewing for first time) -->
+        <div v-if="application.currentPhase === 1" class="info-card summary-card">
           <div class="summary-row">
             <div class="summary-item">
               <span class="summary-label">DOB</span>
