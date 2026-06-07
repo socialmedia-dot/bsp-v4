@@ -3,165 +3,572 @@
     "version": "v4",
     "updated": "2026-06-05",
     "deployedUrl": "https://bsp-v4.pages.dev",
-    "totalVueFiles": 36,
-    "portals": ["Public", "Auth", "Student", "Operations", "Admin", "School", "Consultant", "Business", "Legal", "Development"]
+    "totalVueFiles": 57,
+    "portals": [
+      "Public",
+      "Auth",
+      "Student",
+      "Operations",
+      "Admin",
+      "School",
+      "Consultant",
+      "Business",
+      "Legal",
+      "Development"
+    ]
   },
   "recentUpdates": [
-    { "date": "2026-06-05", "text": "Architecture update: remove dead Operations links, add Business Portal, reorganise portals per latest spec" },
-    { "date": "2026-06-04", "text": "Apply to School: multi-file document upload with drag-drop, reorder, and inline rename" },
-    { "date": "2026-06-03", "text": "Add Student Profile page - personal info, documents, guardian, academic tabs" },
-    { "date": "2026-06-03", "text": "Update My Applications - collaborative platform with messaging & document requests" },
-    { "date": "2026-05-31", "text": "Update roadmap: remove AI features, keep existing v4 + non-AI planned items" },
-    { "date": "2026-05-28", "text": "Redesign Sitemap with real v4 progress & per-portal progress bars" },
-    { "date": "2026-05-28", "text": "Add Roadmap page with three-column kanban-style board" },
-    { "date": "2026-05-21", "text": "Unify Settings sidebar CSS & fix Promo Codes indentation" },
-    { "date": "2026-05-21", "text": "Fix missing links & duplicate Promo Codes in sidebars" },
-    { "date": "2026-05-20", "text": "Add /BSP/users/business Business User Management page" },
-    { "date": "2026-05-20", "text": "Add company address field for Consultant & Business registration" },
-    { "date": "2026-05-19", "text": "Add school address field to School registration form" },
-    { "date": "2026-05-18", "text": "New registration flow: payment + Manager approval workflow" },
-    { "date": "2026-05-16", "text": "Add /operations/applications Manager approval page" }
+    {
+      "date": "2026-06-05",
+      "text": "Architecture update: remove dead Operations links, add Business Portal, reorganise portals per latest spec"
+    },
+    {
+      "date": "2026-06-04",
+      "text": "Apply to School: multi-file document upload with drag-drop, reorder, and inline rename"
+    },
+    {
+      "date": "2026-06-03",
+      "text": "Add Student Profile page - personal info, documents, guardian, academic tabs"
+    },
+    {
+      "date": "2026-06-03",
+      "text": "Update My Applications - collaborative platform with messaging & document requests"
+    },
+    {
+      "date": "2026-05-31",
+      "text": "Update roadmap: remove AI features, keep existing v4 + non-AI planned items"
+    },
+    {
+      "date": "2026-05-28",
+      "text": "Redesign Sitemap with real v4 progress & per-portal progress bars"
+    },
+    {
+      "date": "2026-05-28",
+      "text": "Add Roadmap page with three-column kanban-style board"
+    },
+    {
+      "date": "2026-05-21",
+      "text": "Unify Settings sidebar CSS & fix Promo Codes indentation"
+    },
+    {
+      "date": "2026-05-21",
+      "text": "Fix missing links & duplicate Promo Codes in sidebars"
+    },
+    {
+      "date": "2026-05-20",
+      "text": "Add /BSP/users/business Business User Management page"
+    },
+    {
+      "date": "2026-05-20",
+      "text": "Add company address field for Consultant & Business registration"
+    },
+    {
+      "date": "2026-05-19",
+      "text": "Add school address field to School registration form"
+    },
+    {
+      "date": "2026-05-18",
+      "text": "New registration flow: payment + Manager approval workflow"
+    },
+    {
+      "date": "2026-05-16",
+      "text": "Add /operations/applications Manager approval page"
+    }
   ],
   "modules": [
     {
       "key": "public",
       "label": "Public",
-      "emoji": "🌐",
+      "emoji": "\ud83c\udf10",
       "items": [
-        { "status": "done", "label": "Homepage", "path": "/", "date": "2026-04" },
-        { "status": "done", "label": "Search", "path": "/search", "date": "2026-04" },
-        { "status": "done", "label": "BSP Landing", "path": "/bsp", "date": "2026-04" },
-        { "status": "done", "label": "Consultants Directory", "path": "/consultants", "date": "2026-04" },
-        { "status": "done", "label": "Consultant Profile", "path": "/consultant/:city/:slug", "date": "2026-04" },
-        { "status": "done", "label": "Business Profile", "path": "/business/:city/:slug", "date": "2026-04" },
-        { "status": "done", "label": "News Article", "path": "/news/:slug", "date": "2026-04" },
-        { "status": "in_progress", "label": "Schools Directory", "path": "/schools", "date": null },
-        { "status": "in_progress", "label": "School Profile", "path": "/school/:city/:slug", "date": null },
-        { "status": "planned", "label": "Business Directory", "path": "/businesses", "date": null },
-        { "status": "planned", "label": "About BSP", "path": "/about", "date": null },
-        { "status": "planned", "label": "Contact Us", "path": "/contact", "date": null }
+        {
+          "status": "done",
+          "label": "Homepage",
+          "path": "/",
+          "date": "2026-04"
+        },
+        {
+          "status": "done",
+          "label": "Search",
+          "path": "/search",
+          "date": "2026-04"
+        },
+        {
+          "status": "done",
+          "label": "BSP Landing",
+          "path": "/bsp",
+          "date": "2026-04"
+        },
+        {
+          "status": "done",
+          "label": "Consultants Directory",
+          "path": "/consultants",
+          "date": "2026-04"
+        },
+        {
+          "status": "done",
+          "label": "Consultant Profile",
+          "path": "/consultant/:city/:slug",
+          "date": "2026-04"
+        },
+        {
+          "status": "done",
+          "label": "Business Profile",
+          "path": "/business/:city/:slug",
+          "date": "2026-04"
+        },
+        {
+          "status": "done",
+          "label": "News Article",
+          "path": "/news/:slug",
+          "date": "2026-04"
+        },
+        {
+          "status": "draft",
+          "label": "Schools Directory",
+          "path": "/schools",
+          "date": null,
+          "reviewed": false
+        },
+        {
+          "status": "draft",
+          "label": "School Profile",
+          "path": "/school/:city/:slug",
+          "date": null,
+          "reviewed": false
+        },
+        {
+          "status": "draft",
+          "label": "Business Directory",
+          "path": "/businesses",
+          "date": null,
+          "reviewed": false
+        },
+        {
+          "status": "draft",
+          "label": "About BSP",
+          "path": "/about",
+          "date": null,
+          "reviewed": false
+        },
+        {
+          "status": "draft",
+          "label": "Contact Us",
+          "path": "/contact",
+          "date": null,
+          "reviewed": false
+        }
       ]
     },
     {
       "key": "auth",
       "label": "Authentication",
-      "emoji": "🔐",
+      "emoji": "\ud83d\udd10",
       "items": [
-        { "status": "done", "label": "User Login", "path": "/login", "date": "2026-04" },
-        { "status": "done", "label": "Operations Login", "path": "/login/operations", "date": "2026-04" },
-        { "status": "done", "label": "Registration", "path": "/register", "date": "2026-04" },
-        { "status": "done", "label": "Payment Page", "path": "/payment", "date": "2026-04" }
+        {
+          "status": "done",
+          "label": "User Login",
+          "path": "/login",
+          "date": "2026-04"
+        },
+        {
+          "status": "done",
+          "label": "Operations Login",
+          "path": "/login/operations",
+          "date": "2026-04"
+        },
+        {
+          "status": "done",
+          "label": "Registration",
+          "path": "/register",
+          "date": "2026-04"
+        },
+        {
+          "status": "done",
+          "label": "Payment Page",
+          "path": "/payment",
+          "date": "2026-04"
+        }
       ]
     },
     {
       "key": "student",
       "label": "Student Portal",
-      "emoji": "🎓",
+      "emoji": "\ud83c\udf93",
       "items": [
-        { "status": "done", "label": "Student Login", "path": "/student/login", "date": "2026-04" },
-        { "status": "done", "label": "Student Registration", "path": "/student/register", "date": "2026-04" },
-        { "status": "done", "label": "Apply to School", "path": "/student/apply/:schoolId", "date": "2026-04" },
-        { "status": "done", "label": "My Applications", "path": "/student/applications", "date": "2026-04" },
-        { "status": "done", "label": "Student Profile", "path": "/student/profile", "date": "2026-06" }
+        {
+          "status": "done",
+          "label": "Student Login",
+          "path": "/student/login",
+          "date": "2026-04"
+        },
+        {
+          "status": "done",
+          "label": "Student Registration",
+          "path": "/student/register",
+          "date": "2026-04"
+        },
+        {
+          "status": "done",
+          "label": "Apply to School",
+          "path": "/student/apply/:schoolId",
+          "date": "2026-04"
+        },
+        {
+          "status": "done",
+          "label": "My Applications",
+          "path": "/student/applications",
+          "date": "2026-04"
+        },
+        {
+          "status": "done",
+          "label": "Student Profile",
+          "path": "/student/profile",
+          "date": "2026-06"
+        }
       ]
     },
     {
       "key": "operations",
       "label": "Operations Portal",
-      "emoji": "🔧",
+      "emoji": "\ud83d\udd27",
       "items": [
-        { "status": "done", "label": "Operations Landing", "path": "/operations", "date": "2026-04" },
-        { "status": "done", "label": "Operations Dashboard", "path": "/operations/dashboard", "date": "2026-04" },
-        { "status": "done", "label": "New User Applications", "path": "/operations/applications", "date": "2026-05" },
-        { "status": "done", "label": "User Management", "path": "/operations/users", "date": "2026-04" },
-        { "status": "done", "label": "Payment Records", "path": "/operations/payments", "date": "2026-04" },
-        { "status": "done", "label": "Reports", "path": "/operations/reports", "date": "2026-04" }
+        {
+          "status": "done",
+          "label": "Operations Landing",
+          "path": "/operations",
+          "date": "2026-04"
+        },
+        {
+          "status": "done",
+          "label": "Operations Dashboard",
+          "path": "/operations/dashboard",
+          "date": "2026-04"
+        },
+        {
+          "status": "done",
+          "label": "New User Applications",
+          "path": "/operations/applications",
+          "date": "2026-05"
+        },
+        {
+          "status": "done",
+          "label": "User Management",
+          "path": "/operations/users",
+          "date": "2026-04"
+        },
+        {
+          "status": "done",
+          "label": "Payment Records",
+          "path": "/operations/payments",
+          "date": "2026-04"
+        },
+        {
+          "status": "done",
+          "label": "Reports",
+          "path": "/operations/reports",
+          "date": "2026-04"
+        }
       ]
     },
     {
       "key": "admin",
       "label": "BSP Admin Portal",
-      "emoji": "⚙️",
+      "emoji": "\u2699\ufe0f",
       "items": [
-        { "status": "done", "label": "BSP Dashboard", "path": "/BSP/dashboard", "date": "2026-04" },
-        { "status": "done", "label": "New Account Applications", "path": "/BSP/new-account-applications", "date": "2026-04" },
-        { "status": "done", "label": "School Users", "path": "/BSP/users/school", "date": "2026-04" },
-        { "status": "done", "label": "Consultant Users", "path": "/BSP/users/consultant", "date": "2026-04" },
-        { "status": "done", "label": "Personal Users", "path": "/BSP/users/personal", "date": "2026-04" },
-        { "status": "done", "label": "BSP Staff Users", "path": "/BSP/users/bspstaff", "date": "2026-04" },
-        { "status": "done", "label": "Business Users", "path": "/BSP/users/business", "date": "2026-05" },
-        { "status": "done", "label": "Payments", "path": "/BSP/payments", "date": "2026-04" },
-        { "status": "done", "label": "Promo Codes", "path": "/BSP/promo-codes", "date": "2026-05" },
-        { "status": "done", "label": "Fee Settings", "path": "/BSP/settings/fees", "date": "2026-05" },
-        { "status": "done", "label": "Website Settings", "path": "/BSP/settings/website", "date": "2026-05" },
-        { "status": "done", "label": "Staff Role Permissions Settings", "path": "/BSP/settings/staff", "date": "2026-05" }
+        {
+          "status": "done",
+          "label": "BSP Dashboard",
+          "path": "/BSP/dashboard",
+          "date": "2026-04"
+        },
+        {
+          "status": "done",
+          "label": "New Account Applications",
+          "path": "/BSP/new-account-applications",
+          "date": "2026-04"
+        },
+        {
+          "status": "done",
+          "label": "School Users",
+          "path": "/BSP/users/school",
+          "date": "2026-04"
+        },
+        {
+          "status": "done",
+          "label": "Consultant Users",
+          "path": "/BSP/users/consultant",
+          "date": "2026-04"
+        },
+        {
+          "status": "done",
+          "label": "Personal Users",
+          "path": "/BSP/users/personal",
+          "date": "2026-04"
+        },
+        {
+          "status": "done",
+          "label": "BSP Staff Users",
+          "path": "/BSP/users/bspstaff",
+          "date": "2026-04"
+        },
+        {
+          "status": "done",
+          "label": "Business Users",
+          "path": "/BSP/users/business",
+          "date": "2026-05"
+        },
+        {
+          "status": "done",
+          "label": "Payments",
+          "path": "/BSP/payments",
+          "date": "2026-04"
+        },
+        {
+          "status": "done",
+          "label": "Promo Codes",
+          "path": "/BSP/promo-codes",
+          "date": "2026-05"
+        },
+        {
+          "status": "done",
+          "label": "Fee Settings",
+          "path": "/BSP/settings/fees",
+          "date": "2026-05"
+        },
+        {
+          "status": "done",
+          "label": "Website Settings",
+          "path": "/BSP/settings/website",
+          "date": "2026-05"
+        },
+        {
+          "status": "done",
+          "label": "Staff Role Permissions Settings",
+          "path": "/BSP/settings/staff",
+          "date": "2026-05"
+        }
       ]
     },
     {
       "key": "school",
       "label": "School Portal",
-      "emoji": "🏫",
+      "emoji": "\ud83c\udfeb",
       "items": [
-        { "status": "planned", "label": "School Dashboard", "path": "/school/dashboard", "date": null },
-        { "status": "planned", "label": "Application Management", "path": "/school/applications", "date": null },
-        { "status": "planned", "label": "Application Details", "path": "/school/applications/:id", "date": null },
-        { "status": "planned", "label": "School Profile", "path": "/school/profile", "date": null },
-        { "status": "planned", "label": "Admissions Reports", "path": "/school/reports", "date": null },
-        { "status": "planned", "label": "Partnership Applications", "path": "/school/partnerships", "date": null }
+        {
+          "status": "draft",
+          "label": "School Dashboard",
+          "path": "/school/dashboard",
+          "date": null,
+          "reviewed": false
+        },
+        {
+          "status": "draft",
+          "label": "Application Management",
+          "path": "/school/applications",
+          "date": null,
+          "reviewed": false
+        },
+        {
+          "status": "draft",
+          "label": "Application Details",
+          "path": "/school/applications/:id",
+          "date": null,
+          "reviewed": false
+        },
+        {
+          "status": "draft",
+          "label": "School Profile",
+          "path": "/school/profile",
+          "date": null,
+          "reviewed": false
+        },
+        {
+          "status": "draft",
+          "label": "Admissions Reports",
+          "path": "/school/reports",
+          "date": null,
+          "reviewed": false
+        },
+        {
+          "status": "draft",
+          "label": "Partnership Applications",
+          "path": "/school/partnerships",
+          "date": null,
+          "reviewed": false
+        }
       ]
     },
     {
       "key": "consultant",
       "label": "Consultant Portal",
-      "emoji": "💼",
+      "emoji": "\ud83d\udcbc",
       "items": [
-        { "status": "planned", "label": "Consultant Dashboard", "path": "/consultant/dashboard", "date": null },
-        { "status": "planned", "label": "Application Management", "path": "/consultant/applications", "date": null },
-        { "status": "planned", "label": "Application Details", "path": "/consultant/applications/:id", "date": null },
-        { "status": "planned", "label": "Consultant Profile", "path": "/consultant/profile", "date": null },
-        { "status": "planned", "label": "Partnership Applications", "path": "/consultant/partnerships", "date": null },
-        { "status": "planned", "label": "Application Reports", "path": "/consultant/reports", "date": null }
+        {
+          "status": "draft",
+          "label": "Consultant Dashboard",
+          "path": "/consultant/dashboard",
+          "date": null,
+          "reviewed": false
+        },
+        {
+          "status": "draft",
+          "label": "Application Management",
+          "path": "/consultant/applications",
+          "date": null,
+          "reviewed": false
+        },
+        {
+          "status": "draft",
+          "label": "Application Details",
+          "path": "/consultant/applications/:id",
+          "date": null,
+          "reviewed": false
+        },
+        {
+          "status": "draft",
+          "label": "Consultant Profile",
+          "path": "/consultant/profile",
+          "date": null,
+          "reviewed": false
+        },
+        {
+          "status": "draft",
+          "label": "Partnership Applications",
+          "path": "/consultant/partnerships",
+          "date": null,
+          "reviewed": false
+        },
+        {
+          "status": "draft",
+          "label": "Application Reports",
+          "path": "/consultant/reports",
+          "date": null,
+          "reviewed": false
+        }
       ]
     },
     {
       "key": "business",
       "label": "Business Portal",
-      "emoji": "🏢",
+      "emoji": "\ud83c\udfe2",
       "items": [
-        { "status": "planned", "label": "Business Dashboard", "path": "/business-portal/dashboard", "date": null },
-        { "status": "planned", "label": "Business Profile", "path": "/business-portal/profile", "date": null },
-        { "status": "planned", "label": "Partnership Applications", "path": "/business-portal/partnerships", "date": null }
+        {
+          "status": "draft",
+          "label": "Business Dashboard",
+          "path": "/business-portal/dashboard",
+          "date": null,
+          "reviewed": false
+        },
+        {
+          "status": "draft",
+          "label": "Business Profile",
+          "path": "/business-portal/profile",
+          "date": null,
+          "reviewed": false
+        },
+        {
+          "status": "draft",
+          "label": "Partnership Applications",
+          "path": "/business-portal/partnerships",
+          "date": null,
+          "reviewed": false
+        }
       ]
     },
     {
       "key": "legal",
       "label": "Legal & Info",
-      "emoji": "📜",
+      "emoji": "\ud83d\udcdc",
       "items": [
-        { "status": "planned", "label": "FAQ", "path": "/faq", "date": null },
-        { "status": "planned", "label": "Terms of Service", "path": "/terms", "date": null },
-        { "status": "planned", "label": "Privacy Policy", "path": "/privacy", "date": null }
+        {
+          "status": "draft",
+          "label": "FAQ",
+          "path": "/faq",
+          "date": null,
+          "reviewed": false
+        },
+        {
+          "status": "draft",
+          "label": "Terms of Service",
+          "path": "/terms",
+          "date": null,
+          "reviewed": false
+        },
+        {
+          "status": "draft",
+          "label": "Privacy Policy",
+          "path": "/privacy",
+          "date": null,
+          "reviewed": false
+        }
       ]
     },
     {
       "key": "development",
       "label": "BSP Development",
-      "emoji": "🔨",
+      "emoji": "\ud83d\udd28",
       "items": [
-        { "status": "done", "label": "Sitemap", "path": "/sitemap", "date": "2026-05" },
-        { "status": "done", "label": "Roadmap", "path": "/roadmap", "date": "2026-05" }
+        {
+          "status": "done",
+          "label": "Sitemap",
+          "path": "/sitemap",
+          "date": "2026-05"
+        },
+        {
+          "status": "done",
+          "label": "Roadmap",
+          "path": "/roadmap",
+          "date": "2026-05"
+        }
       ]
     }
   ],
   "milestones": [
-    { "date": "2026-06-05", "label": "Architecture Finalisation", "desc": "Updated v4 architecture: removed dead Operations links, added Business Portal, reorganised per latest spec" },
-    { "date": "2026-06-03", "label": "Student Portal Complete", "desc": "Student Profile + collaborative My Applications - all 5 student portal pages done" },
-    { "date": "2026-05-31", "label": "v4 Roadmap Update", "desc": "Remove AI features from roadmap; keep existing v4 + non-AI planned items" },
-    { "date": "2026-05-28", "label": "Sitemap & Roadmap Redesign", "desc": "Real-time progress tracking with per-portal completion rates" },
-    { "date": "2026-05-20", "label": "Business Users & Address Fields", "desc": "Business user management + company/school address in registration" },
-    { "date": "2026-05-16", "label": "Manager Approval Workflow", "desc": "Payment + Manager approval for new registrations" },
-    { "date": "2026-05-13", "label": "Settings Pages + Promo Codes", "desc": "Fee/Staff/Website settings + standalone Promo Code management" },
-    { "date": "2026-04-29", "label": "Clean Header Rollout", "desc": "Unified white header across all public pages" },
-    { "date": "2026-04-20", "label": "Payment & Dashboard v2", "desc": "Payment page rebuild + BSP Dashboard redesign" }
+    {
+      "date": "2026-06-05",
+      "label": "Architecture Finalisation",
+      "desc": "Updated v4 architecture: removed dead Operations links, added Business Portal, reorganised per latest spec"
+    },
+    {
+      "date": "2026-06-03",
+      "label": "Student Portal Complete",
+      "desc": "Student Profile + collaborative My Applications - all 5 student portal pages done"
+    },
+    {
+      "date": "2026-05-31",
+      "label": "v4 Roadmap Update",
+      "desc": "Remove AI features from roadmap; keep existing v4 + non-AI planned items"
+    },
+    {
+      "date": "2026-05-28",
+      "label": "Sitemap & Roadmap Redesign",
+      "desc": "Real-time progress tracking with per-portal completion rates"
+    },
+    {
+      "date": "2026-05-20",
+      "label": "Business Users & Address Fields",
+      "desc": "Business user management + company/school address in registration"
+    },
+    {
+      "date": "2026-05-16",
+      "label": "Manager Approval Workflow",
+      "desc": "Payment + Manager approval for new registrations"
+    },
+    {
+      "date": "2026-05-13",
+      "label": "Settings Pages + Promo Codes",
+      "desc": "Fee/Staff/Website settings + standalone Promo Code management"
+    },
+    {
+      "date": "2026-04-29",
+      "label": "Clean Header Rollout",
+      "desc": "Unified white header across all public pages"
+    },
+    {
+      "date": "2026-04-20",
+      "label": "Payment & Dashboard v2",
+      "desc": "Payment page rebuild + BSP Dashboard redesign"
+    }
   ]
 }

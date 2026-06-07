@@ -31,8 +31,21 @@
           </div>
           <div class="portal-count">
             {{ m.items.filter(i => i.status === 'done').length }} / {{ m.items.length }} done
-            <span v-if="m.items.some(i => i.status === 'in_progress')" class="wip-badge">🚧 WIP</span>
+            <span v-if="m.items.some(i => i.status === 'draft')" class="draft-badge">📝 Draft</span>
+            <span v-else-if="m.items.some(i => i.status === 'in_progress')" class="wip-badge">🚧 WIP</span>
           </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Application Phases -->
+    <div class="application-phases">
+      <h2>🎓 Application Phases</h2>
+      <div class="phase-grid">
+        <div v-for="phase in applicationPhases" :key="phase.num" class="phase-card">
+          <div class="phase-number">{{ phase.num }}</div>
+          <div class="phase-name">{{ phase.name }}</div>
+          <div class="phase-desc">{{ phase.desc }}</div>
         </div>
       </div>
     </div>
@@ -62,8 +75,12 @@
           <li v-for="item in m.items" :key="item.path" :class="item.status">
             <span class="status-icon">{{ statusIcon(item.status) }}</span>
             <NuxtLink v-if="item.status === 'done' && item.path" :to="item.path">{{ item.label }}</NuxtLink>
+            <NuxtLink v-else-if="item.status === 'draft' && item.path" :to="item.path" class="draft-link">{{ item.label }}</NuxtLink>
             <span v-else class="todo-link">{{ item.label }}</span>
-            <span v-if="item.date && item.status === 'done'" class="item-date">{{ item.date }}</span>
+            <span v-if="item.status === 'draft'" class="review-badge" :class="{ reviewed: item.reviewed }">
+              {{ item.reviewed ? '✅ Reviewed' : '⏳ Pending' }}
+            </span>
+            <span v-else-if="item.date && item.status === 'done'" class="item-date">{{ item.date }}</span>
           </li>
         </ul>
       </div>
@@ -94,6 +111,10 @@
         <div class="summary-item">
           <span class="summary-number">{{ inProgressCount }}</span>
           <span class="summary-label">In Progress</span>
+        </div>
+        <div class="summary-item">
+          <span class="summary-number">{{ draftCount }}</span>
+          <span class="summary-label">Draft</span>
         </div>
         <div class="summary-item">
           <span class="summary-number">{{ plannedCount }}</span>
@@ -135,11 +156,22 @@ const modules = roadmapData.modules
 const recentUpdates = roadmapData.recentUpdates
 const milestones = roadmapData.milestones
 
+const applicationPhases = [
+  { num: 1, name: 'Application Submitted', desc: 'Student submits application with required documents and personal statement' },
+  { num: 2, name: 'Interview & Assessment', desc: 'School reviews application and conducts interview or entrance assessment' },
+  { num: 3, name: 'Decision', desc: 'School makes admission decision: Accept, Reject, or Waitlist' },
+  { num: 4, name: 'Offer & Acceptance', desc: 'Offer letter sent, student accepts place and pays deposit' },
+  { num: 5, name: 'Admission Documents', desc: 'Collect official documents, references, medical forms, and agreements' },
+  { num: 6, name: 'Visa & Travel', desc: 'CAS letter issued, visa application, and travel arrangements' },
+  { num: 7, name: 'Enrolled', desc: 'Student arrives, completes registration, and begins studies' }
+]
+
 const commitHash = config.public.gitCommit || 'unknown'
 
 const allItems = modules.flatMap(m => m.items)
 const completedCount = allItems.filter(i => i.status === 'done').length
 const inProgressCount = allItems.filter(i => i.status === 'in_progress').length
+const draftCount = allItems.filter(i => i.status === 'draft').length
 const plannedCount = allItems.filter(i => i.status === 'planned').length
 const totalCount = allItems.length
 const overallPercent = Math.round((completedCount / totalCount) * 100)
@@ -160,6 +192,7 @@ function moduleBarClass(m) {
 function statusIcon(status) {
   if (status === 'done') return '✅'
   if (status === 'in_progress') return '🚧'
+  if (status === 'draft') return '📝'
   return '📋'
 }
 </script>
@@ -426,6 +459,51 @@ function statusIcon(status) {
   color: #9ca3af;
 }
 
+.draft-link {
+  color: #d97706;
+  text-decoration: none;
+}
+
+.draft-link:hover {
+  text-decoration: underline;
+}
+
+.review-badge {
+  margin-left: auto;
+  font-size: 0.7rem;
+  font-weight: 600;
+  padding: 2px 8px;
+  border-radius: 9999px;
+  background: #fef3c7;
+  color: #92400e;
+}
+
+.review-badge.reviewed {
+  background: #d1fae5;
+  color: #065f46;
+}
+
+.trial-inline-badge {
+  font-size: 0.7rem;
+  font-weight: 700;
+  padding: 2px 8px;
+  border-radius: 9999px;
+  background: #fef2f2;
+  color: #991b1b;
+  border: 1px solid #fca5a5;
+  white-space: nowrap;
+  letter-spacing: 0.02em;
+}
+
+.draft-badge {
+  background: #fef3c7;
+  color: #92400e;
+  font-size: 0.65rem;
+  font-weight: 700;
+  padding: 2px 6px;
+  border-radius: 4px;
+}
+
 .item-date {
   margin-left: auto;
   font-size: 0.75rem;
@@ -566,6 +644,67 @@ function statusIcon(status) {
   text-decoration: underline;
 }
 
+/* Application Phases */
+.application-phases {
+  margin-bottom: 30px;
+}
+
+.application-phases h2 {
+  font-size: 1.15rem;
+  color: #1a1a2e;
+  margin-bottom: 16px;
+  padding-bottom: 10px;
+  border-bottom: 2px solid #10b981;
+}
+
+.phase-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+  gap: 12px;
+}
+
+.phase-card {
+  background: #ffffff;
+  border: 2px solid #e5e7eb;
+  border-radius: 12px;
+  padding: 16px 12px;
+  text-align: center;
+  transition: transform 0.2s, box-shadow 0.2s;
+}
+
+.phase-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+}
+
+.phase-number {
+  width: 32px;
+  height: 32px;
+  background: linear-gradient(135deg, #10b981, #059669);
+  color: white;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 700;
+  font-size: 0.9rem;
+  margin: 0 auto 10px;
+}
+
+.phase-name {
+  font-weight: 600;
+  font-size: 0.9rem;
+  color: #1a1a2e;
+  margin-bottom: 6px;
+  line-height: 1.3;
+}
+
+.phase-desc {
+  font-size: 0.75rem;
+  color: #6b7280;
+  line-height: 1.4;
+}
+
 /* Responsive */
 @media (max-width: 640px) {
   .sitemap-header h1 {
@@ -573,6 +712,9 @@ function statusIcon(status) {
   }
   .portal-grid {
     grid-template-columns: 1fr;
+  }
+  .phase-grid {
+    grid-template-columns: repeat(2, 1fr);
   }
   .update-list {
     grid-template-columns: 1fr;
