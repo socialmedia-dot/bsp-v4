@@ -134,12 +134,13 @@
         <div class="info-card">
           <h3>⚙️ School Actions</h3>
           <div class="action-list">
-            <!-- Phase 1: Review Application -->
+            <!-- Phase 1: Arrange Interview -->
             <div v-if="application.currentPhase === 1" class="action-section">
-              <div class="action-title">Phase 1: Review Application</div>
-              <div class="action-desc">Review student documents and make initial decision</div>
+              <div class="action-title">Phase 1: Arrange Interview</div>
+              <div class="action-desc">New application received. Choose how the interview will be conducted.</div>
               <div class="action-buttons">
-                <button class="btn-approve" @click="approveApplication">✅ Approve & Proceed to Interview</button>
+                <button class="btn-approve" @click="scheduleInHouse">📅 Schedule Interview (In-House)</button>
+                <button class="btn-primary" @click="delegateToConsultant">🤝 Delegate to Consultant</button>
                 <button class="btn-reject" @click="rejectApplication">❌ Reject</button>
               </div>
             </div>
@@ -397,9 +398,15 @@ function advancePhase(newPhase, actionNote) {
 }
 
 // Action handlers — real state transitions
-function approveApplication() {
+function scheduleInHouse() {
   if (application.value.currentPhase === 1) {
-    advancePhase(2, 'School approved application after initial review')
+    advancePhase(2, 'Interview scheduled — school will conduct it in-house')
+  }
+}
+
+function delegateToConsultant() {
+  if (application.value.currentPhase === 1) {
+    advancePhase(2, 'Interview delegated to consultant')
   }
 }
 
