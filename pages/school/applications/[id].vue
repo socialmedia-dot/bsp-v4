@@ -33,104 +33,37 @@
     <div class="detail-grid">
       <!-- Left Column -->
       <div class="detail-left">
-        <!-- Student Information -->
-        <div class="info-card">
-          <h3>👤 Student Information</h3>
-          <div class="info-grid">
-            <div class="info-item">
-              <span class="info-label">Full Name</span>
-              <span class="info-value">{{ application.studentName }}</span>
+        <!-- Application Summary (compact) -->
+        <div class="info-card summary-card">
+          <div class="summary-row">
+            <div class="summary-item">
+              <span class="summary-label">DOB</span>
+              <span class="summary-value">{{ application.studentDob }}</span>
             </div>
-            <div class="info-item">
-              <span class="info-label">Date of Birth</span>
-              <span class="info-value">{{ application.studentDob }}</span>
+            <div class="summary-item">
+              <span class="summary-label">Nationality</span>
+              <span class="summary-value">{{ application.studentNationality }}</span>
             </div>
-            <div class="info-item">
-              <span class="info-label">Nationality</span>
-              <span class="info-value">{{ application.studentNationality }}</span>
+            <div class="summary-item">
+              <span class="summary-label">Entry</span>
+              <span class="summary-value">{{ application.yearOfEntry }}</span>
             </div>
-            <div class="info-item">
-              <span class="info-label">Guardian</span>
-              <span class="info-value">{{ application.guardianName }}</span>
+            <div class="summary-item">
+              <span class="summary-label">Grade</span>
+              <span class="summary-value">{{ application.entryGrade }}</span>
             </div>
-            <div class="info-item">
-              <span class="info-label">Email</span>
-              <span class="info-value">{{ application.studentEmail }}</span>
+            <div class="summary-item">
+              <span class="summary-label">Visa</span>
+              <span class="summary-value">{{ application.visaRequired ? 'Required' : 'Not required' }}</span>
             </div>
-            <div class="info-item">
-              <span class="info-label">Phone</span>
-              <span class="info-value">{{ application.studentPhone }}</span>
-            </div>
-          </div>
-        </div>
-
-        <!-- Application Info -->
-        <div class="info-card">
-          <h3>📝 Application Details</h3>
-          <div class="info-grid">
-            <div class="info-item">
-              <span class="info-label">Reference</span>
-              <span class="info-value">{{ application.refNumber }}</span>
-            </div>
-            <div class="info-item">
-              <span class="info-label">Year of Entry</span>
-              <span class="info-value">{{ application.yearOfEntry }}</span>
-            </div>
-            <div class="info-item">
-              <span class="info-label">Entry Grade</span>
-              <span class="info-value">{{ application.entryGrade }}</span>
-            </div>
-            <div class="info-item">
-              <span class="info-label">Consultant</span>
-              <span class="info-value">{{ application.consultantName || 'Not assigned' }}</span>
-            </div>
-            <div class="info-item">
-              <span class="info-label">Visa Required</span>
-              <span class="info-value">{{ application.visaRequired ? 'Yes' : 'No' }}</span>
-            </div>
-            <div class="info-item">
-              <span class="info-label">Current Phase</span>
-              <span class="info-value">{{ currentPhaseLabel }}</span>
+            <div class="summary-item">
+              <span class="summary-label">Consultant</span>
+              <span class="summary-value">{{ application.consultantName || 'Unassigned' }}</span>
             </div>
           </div>
         </div>
 
-        <!-- Phase History -->
-        <div class="info-card">
-          <h3>📜 Phase History</h3>
-          <div class="phase-history-list">
-            <div
-              v-for="ph in application.phaseHistory"
-              :key="ph.phase"
-              class="ph-item"
-              :class="{ 'ph-expanded': expandedPhase === ph.phase, 'ph-done': ph.status === 'Completed', 'ph-active': application.currentPhase === ph.phase && ph.status !== 'Completed', 'ph-pending': ph.status === 'Pending' }"
-              @click="togglePhase(ph.phase)"
-            >
-              <div class="ph-header">
-                <div class="ph-left">
-                  <span class="ph-dot" :class="{ 'dot-done': ph.status === 'Completed', 'dot-active': application.currentPhase === ph.phase && ph.status !== 'Completed', 'dot-pending': ph.status === 'Pending' }"></span>
-                  <span class="ph-label">Phase {{ ph.phase }}: {{ ph.label }}</span>
-                </div>
-                <div class="ph-right">
-                  <div class="ph-status-col">
-                    <span class="ph-status">{{ ph.status }}</span>
-                    <span v-if="ph.date" class="ph-date-inline">📅 {{ formatDate(ph.date) }}</span>
-                  </div>
-                  <span class="ph-chevron">{{ expandedPhase === ph.phase ? '▾' : '▸' }}</span>
-                </div>
-              </div>
-              <div v-if="expandedPhase === ph.phase" class="ph-body">
-                <p v-if="ph.notes" class="ph-notes">{{ ph.notes }}</p>
-                <p v-if="ph.date" class="ph-date">📅 {{ formatDate(ph.date) }}</p>
-                <div v-if="ph.attachments.length" class="ph-atts">
-                  <span v-for="att in ph.attachments" :key="att" class="ph-att">📄 {{ att }}</span>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        <!-- School Actions -->
+                <!-- School Actions -->
         <div class="info-card">
           <h3>⚙️ School Actions</h3>
           <div class="action-list">
@@ -513,14 +446,44 @@ function restartApplication() {
   saveState()
 }
 
-const expandedPhase = ref(null)
-function togglePhase(phase) {
-  expandedPhase.value = expandedPhase.value === phase ? null : phase
-}
+// (expandedPhase/togglePhase removed — Phase History is gone)
 </script>
 
 <style scoped>
 .main-content { flex: 1; padding: 2rem; }
+
+/* Compact Application Summary (replaces full info cards) */
+.summary-card { padding: 0.85rem 1.25rem !important; }
+.summary-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1.25rem 2rem;
+  align-items: center;
+}
+.summary-item {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 90px;
+}
+.summary-label {
+  color: #94a3b8;
+  font-size: 0.7rem;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+.summary-value {
+  color: #1e293b;
+  font-size: 0.85rem;
+  font-weight: 600;
+  white-space: nowrap;
+}
+@media (max-width: 768px) {
+  .summary-row { gap: 0.75rem 1.25rem; }
+  .summary-item { min-width: 70px; }
+  .summary-value { font-size: 0.8rem; }
+}
 
 /* Header actions (top-right) */
 .header-actions {
@@ -598,28 +561,4 @@ function togglePhase(phase) {
 .btn-reject { background: #ef4444; color: #fff; border: none; padding: 0.5rem 1rem; border-radius: 6px; font-size: 0.8rem; font-weight: 600; cursor: pointer; }
 .btn-reject:hover { background: #dc2626; }
 
-/* Phase History */
-.phase-history-list { display: flex; flex-direction: column; gap: 0.5rem; }
-.ph-item { border: 1px solid #e2e8f0; border-radius: 8px; cursor: pointer; transition: all 0.15s; overflow: hidden; }
-.ph-item:hover { border-color: #cbd5e1; }
-.ph-header { display: flex; justify-content: space-between; align-items: center; padding: 0.75rem 1rem; }
-.ph-left { display: flex; align-items: center; gap: 0.6rem; }
-.ph-dot { width: 10px; height: 10px; border-radius: 50%; display: inline-block; }
-.dot-done { background: #10b981; }
-.dot-active { background: #3b82f6; box-shadow: 0 0 0 3px rgba(59,130,246,0.2); }
-.dot-pending { background: #cbd5e1; }
-.ph-label { font-size: 0.85rem; font-weight: 600; color: #1e293b; }
-.ph-right { display: flex; align-items: center; gap: 0.5rem; }
-.ph-status-col { display: flex; flex-direction: column; align-items: flex-end; gap: 2px; }
-.ph-date-inline { font-size: 0.7rem; color: #64748b; }
-.ph-status { font-size: 0.7rem; font-weight: 600; padding: 2px 8px; border-radius: 10px; text-transform: uppercase; }
-.ph-done .ph-status { background: #dcfce7; color: #15803d; }
-.ph-active .ph-status { background: #dbeafe; color: #1d4ed8; }
-.ph-pending .ph-status { background: #f1f5f9; color: #94a3b8; }
-.ph-chevron { font-size: 0.8rem; color: #94a3b8; }
-.ph-body { padding: 0 1rem 0.75rem; border-top: 1px solid #f1f5f9; }
-.ph-notes { font-size: 0.8rem; color: #475569; margin: 0.5rem 0 0.25rem; }
-.ph-date { font-size: 0.75rem; color: #64748b; margin: 0.25rem 0; }
-.ph-atts { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 0.5rem; }
-.ph-att { background: #e0f2fe; color: #0369a1; font-size: 0.72rem; padding: 3px 10px; border-radius: 12px; }
 </style>
