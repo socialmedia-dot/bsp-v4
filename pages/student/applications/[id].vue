@@ -295,7 +295,7 @@ function doAction(action) {
       alert('School has not sent a deposit form yet.')
       return
     }
-    const f = p3Latest.value.form || {}
+    const f = p3Latest.value.form || p3Latest.value.bankInfo || {}
     const lines = [
       `Bank: ${f.accountName || '-'}`,
       `Account: ${f.accountNumber || '-'}`,
@@ -304,7 +304,11 @@ function doAction(action) {
       f.deadline ? `Deadline: ${f.deadline}` : null,
       f.reference ? `Reference: ${f.reference}` : null
     ].filter(Boolean).join('\n')
-    alert(`Deposit Form\n\n${lines}\n\nPlease make the payment and upload your proof in the next action.`)
+    const docs = p3Latest.value.schoolFiles || []
+    const docSection = docs.length
+      ? '\n\n📎 Documents from school:\n' + docs.map(d => `• ${d.name}`).join('\n')
+      : '\n\n(No documents attached by school)'
+    alert(`Deposit Form\n\n${lines}${docSection}\n\nUse the next action to upload your deposit receipt.`)
   } else if (action.id === 'deposit_proof') {
     const input = document.getElementById('student-p3-file-input')
     if (input) input.click()

@@ -1,5 +1,12 @@
 import { ref, computed, watch } from 'vue'
 
+export interface P3Attachment {
+  name: string
+  dataUrl: string  // base64 data URL
+  uploadedAt: string
+  uploadedBy: string
+}
+
 export interface P3BankInfo {
   accountName: string
   accountNumber: string
@@ -25,8 +32,7 @@ export interface P3Deposit {
   status: 'sent_to_student' | 'proof_uploaded' | 'confirmed'
   createdAt: string
   bankInfo: P3BankInfo
-  schoolFileName?: string
-  schoolFileData?: string  // base64 data URL
+  schoolFiles: P3Attachment[]       // documents school sends to student
   sentAt?: string
   proofFileName?: string
   proofFileData?: string
@@ -43,7 +49,20 @@ function load() {
   if (typeof window === 'undefined') return
   try {
     const raw = localStorage.getItem(STORAGE_KEY)
-    if (raw) deposits.value = JSON.parse(raw)
+    if (raw) {
+      const parsed = JSON.parse(raw)
+      // Migrate old single-file shape -> multi-file
+      deposits.value = (parsed || []).map((d: any) => {
+        if (!d.schoolFiles) {
+          d.schoolFiles = (d.schoolFileName && d.schoolFileData)
+            ? [{ name: d.schoolFileName, dataUrl: d.schoolFileData, uploadedAt: d.sentAt || d.createdAt, uploadedBy: 'school-admin' }]
+            : []
+          delete d.schoolFileName
+          delete d.schoolFileData
+        }
+        return d
+      })
+    }
   } catch (e) { console.error('[useP3Store] load failed', e) }
 }
 
@@ -88,22 +107,22 @@ export function useP3Store() {
   function sendDepositForm(
     appRef: string,
     bankInfo: P3BankInfo,
-    file?: { name: string; dataUrl: string },
+    files: P3Attachment[] = [],
     by: string = 'school-admin'
   ) {
     const existing = deposits.value.find(d => d.applicationRef === appRef && d.status !== 'confirmed')
     if (existing) {
-      // Revise existing record
       const prevStatus = existing.status
       existing.bankInfo = bankInfo
-      existing.schoolFileName = file?.name
-      existing.schoolFileData = file?.dataUrl
+      if (files.length) {
+        existing.schoolFiles = [...existing.schoolFiles, ...files]
+      }
       existing.status = 'sent_to_student'
       delete existing.proofFileName
       delete existing.proofFileData
       delete existing.proofUploadedAt
       existing.sentAt = new Date().toISOString()
-      audit(existing, { by, byRole: 'school', action: 'revise-deposit-form', from: prevStatus, to: 'sent_to_student' })
+      audit(existing, { by, byRole: 'school', action: 'send-deposit-form', from: prevStatus, to: 'sent_to_student' })
       return existing
     }
 
@@ -113,14 +132,29 @@ export function useP3Store() {
       status: 'sent_to_student',
       createdAt: new Date().toISOString(),
       bankInfo,
-      schoolFileName: file?.name,
-      schoolFileData: file?.dataUrl,
+      schoolFiles: files,
       sentAt: new Date().toISOString(),
       auditLog: []
     }
     audit(record, { by, byRole: 'school', action: 'send-deposit-form', to: 'sent_to_student' })
     deposits.value.push(record)
     return record
+  }
+
+  function addSchoolFile(appRef: string, file: P3Attachment, by: string = 'school-admin') {
+    const record = deposits.value.find(d => d.applicationRef === appRef && d.status !== 'confirmed')
+    if (!record) throw new Error('No active deposit record — send the form first')
+    record.schoolFiles = [...record.schoolFiles, file]
+    record.sentAt = new Date().toISOString()
+    audit(record, { by, byRole: 'school', action: 'add-school-file', to: record.status })
+    return record
+  }
+
+  function removeSchoolFile(appRef: string, fileName: string, by: string = 'school-admin') {
+    const record = deposits.value.find(d => d.applicationRef === appRef)
+    if (!record) return
+    record.schoolFiles = record.schoolFiles.filter(f => f.name !== fileName)
+    audit(record, { by, byRole: 'school', action: 'remove-school-file' })
   }
 
   function uploadDepositProof(
@@ -151,15 +185,6 @@ export function useP3Store() {
     return record
   }
 
-  function reviseDepositForm(
-    appRef: string,
-    bankInfo: P3BankInfo,
-    file?: { name: string; dataUrl: string },
-    by: string = 'school-admin'
-  ) {
-    return sendDepositForm(appRef, bankInfo, file, by)
-  }
-
   function clearForApp(appRef: string) {
     deposits.value = deposits.value.filter(d => d.applicationRef !== appRef)
   }
@@ -175,9 +200,10 @@ export function useP3Store() {
     isConfirmed,
     hasAnyRecord,
     sendDepositForm,
+    addSchoolFile,
+    removeSchoolFile,
     uploadDepositProof,
     confirmDeposit,
-    reviseDepositForm,
     clearForApp,
     clearAll
   }

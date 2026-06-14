@@ -455,46 +455,80 @@
                 </div>
 
                 <!-- P3 Deposit Exchange (full UI, replaces old P3 Decision + P4 Offer & Acceptance) -->
-                <div v-if="ph.phase === 3 && p3Latest" class="action-section p3-container">
+                <div v-if="ph.phase === 3" class="action-section p3-container">
                   <div class="p3-status-header">
                     <div>
                       <div class="action-title">💰 Phase 3 — Deposit Exchange</div>
-                      <div class="action-desc">Send deposit form to the student, receive proof of payment, confirm receipt.</div>
+                      <div class="action-desc">Upload deposit documents for the student, share bank details, receive proof, confirm receipt.</div>
                     </div>
                     <div>
-                      <span class="status-pill" :class="`status-pill-p3-${p3Latest.status}`">
+                      <span v-if="p3Latest" class="status-pill" :class="`status-pill-p3-${p3Latest.status}`">
                         {{ p3Latest.status === 'sent_to_student' ? 'Sent to Student' : p3Latest.status === 'proof_uploaded' ? 'Proof Uploaded' : 'Confirmed' }}
                       </span>
+                      <span v-else class="status-pill status-pill-pending">Not yet sent</span>
                     </div>
                   </div>
 
                   <div v-if="p3Toast" class="p2-toast">✅ {{ p3Toast }}</div>
 
+                  <!-- Section A: Documents to send to student (primary action, multi-file) -->
                   <div class="p3-section">
-                    <div class="p3-section-title">📤 Send Deposit Form to Student</div>
-                    <div class="action-desc">Bank details for the student to pay the deposit. Optional PDF attachment for additional instructions.</div>
-                    <div class="form-grid">
-                      <div class="form-item"><label>Account Name</label><input v-model="p3Form.accountName" type="text" placeholder="e.g. Westminster School Fees Account" /></div>
-                      <div class="form-item"><label>Account Number</label><input v-model="p3Form.accountNumber" type="text" placeholder="e.g. 12345678" /></div>
-                      <div class="form-item"><label>Sort Code</label><input v-model="p3Form.sortCode" type="text" placeholder="e.g. 12-34-56" /></div>
-                      <div class="form-item"><label>Amount</label><input v-model.number="p3Form.amount" type="number" placeholder="e.g. 5000" /></div>
-                      <div class="form-item"><label>Currency</label><input v-model="p3Form.currency" type="text" placeholder="GBP" /></div>
-                      <div class="form-item"><label>Deadline</label><input v-model="p3Form.deadline" type="date" /></div>
-                      <div class="form-item" style="grid-column: 1 / -1;"><label>Reference (optional)</label><input v-model="p3Form.reference" type="text" placeholder="e.g. student name or application ref" /></div>
+                    <div class="p3-section-title">📎 Documents for Student</div>
+                    <div class="action-desc">Upload deposit form, payment instructions, or any document the student needs. PDF, JPG, or PNG, max 5MB each.</div>
+
+                    <!-- Sent files list -->
+                    <div v-if="p3Latest && p3Latest.schoolFiles && p3Latest.schoolFiles.length" class="p3-files-list">
+                      <div v-for="(f, i) in p3Latest.schoolFiles" :key="i" class="p3-file-row">
+                        <span class="p3-file-icon">📄</span>
+                        <a class="p3-file-name" :href="f.dataUrl" target="_blank" rel="noopener">{{ f.name }}</a>
+                        <span class="p3-file-meta">{{ formatDateTime(f.uploadedAt) }}</span>
+                        <button v-if="p3Latest.status !== 'confirmed'" class="p3-file-remove" @click="onP3RemoveSentFile(f.name)" title="Remove">✕</button>
+                      </div>
                     </div>
-                    <div class="form-item">
-                      <label>Optional PDF Attachment</label>
-                      <input type="file" accept="application/pdf" @change="onP3SchoolFile" />
-                      <span v-if="p3SchoolFile" class="p3-file-attached">📎 {{ p3SchoolFile.name }}</span>
+                    <p v-else class="p3-empty">No documents sent yet. Add the first one below.</p>
+
+                    <!-- Pending files queue -->
+                    <div v-if="p3NewFiles.length" class="p3-files-list">
+                      <div v-for="(f, i) in p3NewFiles" :key="`new-${i}`" class="p3-file-row p3-file-row-pending">
+                        <span class="p3-file-icon">📎</span>
+                        <span class="p3-file-name">{{ f.name }}</span>
+                        <span class="p3-file-meta">pending</span>
+                        <button class="p3-file-remove" @click="removeP3NewFile(i)" title="Remove">✕</button>
+                      </div>
+                    </div>
+
+                    <!-- File input + Add button (always available) -->
+                    <div v-if="p3Latest.status !== 'confirmed'" class="p3-add-file-row">
+                      <input id="p3-school-file-input" type="file" multiple accept="application/pdf,image/jpeg,image/png" @change="onP3NewFiles" />
+                      <button v-if="p3Latest" class="btn-secondary" :disabled="!p3NewFiles.length" @click="onP3AddFiles">📎 Add to Student</button>
+                    </div>
+                  </div>
+
+                  <!-- Section B: Bank / Payment details -->
+                  <div class="p3-section">
+                    <div class="p3-section-title">🏦 Bank / Payment Details</div>
+                    <div class="action-desc">Bank info the student needs to pay the deposit.</div>
+                    <div class="form-grid">
+                      <div class="form-item"><label>Account Name</label><input v-model="p3Form.accountName" type="text" placeholder="e.g. Westminster School Fees Account" :disabled="p3Latest && p3Latest.status === 'confirmed'" /></div>
+                      <div class="form-item"><label>Account Number</label><input v-model="p3Form.accountNumber" type="text" placeholder="e.g. 12345678" :disabled="p3Latest && p3Latest.status === 'confirmed'" /></div>
+                      <div class="form-item"><label>Sort Code</label><input v-model="p3Form.sortCode" type="text" placeholder="e.g. 12-34-56" :disabled="p3Latest && p3Latest.status === 'confirmed'" /></div>
+                      <div class="form-item"><label>Amount</label><input v-model.number="p3Form.amount" type="number" placeholder="e.g. 5000" :disabled="p3Latest && p3Latest.status === 'confirmed'" /></div>
+                      <div class="form-item"><label>Currency</label><input v-model="p3Form.currency" type="text" placeholder="GBP" :disabled="p3Latest && p3Latest.status === 'confirmed'" /></div>
+                      <div class="form-item"><label>Deadline</label><input v-model="p3Form.deadline" type="date" :disabled="p3Latest && p3Latest.status === 'confirmed'" /></div>
+                      <div class="form-item" style="grid-column: 1 / -1;"><label>Reference (optional)</label><input v-model="p3Form.reference" type="text" placeholder="e.g. student name or application ref" :disabled="p3Latest && p3Latest.status === 'confirmed'" /></div>
                     </div>
                     <div class="form-actions">
-                      <button class="btn-primary" @click="onP3Send" :disabled="!p3Form.accountName || !p3Form.accountNumber || !p3Form.amount">
-                        📤 Send to Student
+                      <button v-if="!p3Latest" class="btn-primary" @click="onP3Send" :disabled="!p3Form.accountName || !p3Form.accountNumber || !p3Form.amount">
+                        📤 Send Form to Student
+                      </button>
+                      <button v-else-if="p3Latest.status !== 'confirmed'" class="btn-secondary" @click="onP3UpdateForm">
+                        📝 Update Bank Details
                       </button>
                     </div>
                   </div>
 
-                  <div v-if="p3Latest.status !== 'sent_to_student' || p3Latest.proofFileName" class="p3-section">
+                  <!-- Section C: Confirm student proof -->
+                  <div v-if="p3Latest && p3Latest.status !== 'sent_to_student'" class="p3-section">
                     <div class="p3-section-title">📥 Confirm Deposit Receipt</div>
                     <div v-if="p3Latest.proofFileName" class="p3-proof-display">
                       <div class="att-row">
@@ -510,7 +544,7 @@
                     <p v-else class="p3-empty">Waiting for student to upload deposit proof…</p>
                   </div>
 
-                  <div v-if="p3Latest.status === 'confirmed'" class="p3-confirmed-banner">
+                  <div v-if="p3Latest && p3Latest.status === 'confirmed'" class="p3-confirmed-banner">
                     ✅ Deposit confirmed. P3 complete. You can now proceed to P4 (Admission Documents).
                   </div>
                 </div>
@@ -1316,7 +1350,7 @@ const p3Form = ref({
   deadline: '',
   reference: ''
 })
-const p3SchoolFile = ref(null)
+const p3NewFiles = ref([])   // queued, not yet sent
 const p3Toast = ref('')
 
 function p3StatusLabel(status) {
@@ -1326,19 +1360,51 @@ function p3StatusLabel(status) {
   return status
 }
 
-function onP3SchoolFile(e) {
-  const file = e.target.files?.[0]
-  if (!file) return
-  if (file.size > 5 * 1024 * 1024) {
-    alert('File too large (max 5MB)')
-    e.target.value = ''
+function onP3NewFiles(e) {
+  const files = Array.from(e.target.files || [])
+  if (!files.length) return
+  const valid = []
+  for (const file of files) {
+    if (file.size > 5 * 1024 * 1024) {
+      alert(`${file.name} is too large (max 5MB)`)
+      continue
+    }
+    const reader = new FileReader()
+    reader.onload = ((f) => () => {
+      p3NewFiles.value.push({ name: f.name, dataUrl: reader.result })
+    })(file)
+    reader.readAsDataURL(file)
+  }
+  e.target.value = ''
+}
+
+function removeP3NewFile(index) {
+  p3NewFiles.value.splice(index, 1)
+}
+
+function onP3AddFiles() {
+  if (!p3Latest.value) {
+    alert('Please send the deposit form first (use the Send button below)')
     return
   }
-  const reader = new FileReader()
-  reader.onload = () => {
-    p3SchoolFile.value = { name: file.name, dataUrl: reader.result }
+  if (!p3NewFiles.value.length) return
+  const files = p3NewFiles.value.map(f => ({ name: f.name, dataUrl: f.dataUrl, uploadedAt: new Date().toISOString(), uploadedBy: 'school-admin' }))
+  try {
+    p3store.addSchoolFile(id, files[0]) // store adds one at a time; loop manually below
+    for (let i = 1; i < files.length; i++) p3store.addSchoolFile(id, files[i])
+    p3NewFiles.value = []
+    p3Toast.value = `✅ ${files.length} document${files.length > 1 ? 's' : ''} added for student`
+    setTimeout(() => { p3Toast.value = '' }, 3000)
+  } catch (err) {
+    alert(err.message)
   }
-  reader.readAsDataURL(file)
+}
+
+function onP3RemoveSentFile(fileName) {
+  if (!confirm(`Remove "${fileName}"?`)) return
+  p3store.removeSchoolFile(id, fileName)
+  p3Toast.value = `🗑️ Removed ${fileName}`
+  setTimeout(() => { p3Toast.value = '' }, 3000)
 }
 
 function onP3Send() {
@@ -1346,9 +1412,20 @@ function onP3Send() {
     alert('Please fill in account name and amount')
     return
   }
-  p3store.sendDepositForm(id, p3Form.value, p3SchoolFile.value || undefined)
-  p3SchoolFile.value = null
+  const files = p3NewFiles.value.map(f => ({ name: f.name, dataUrl: f.dataUrl, uploadedAt: new Date().toISOString(), uploadedBy: 'school-admin' }))
+  p3store.sendDepositForm(id, p3Form.value, files)
+  p3NewFiles.value = []
   p3Toast.value = '✅ Deposit form sent to student'
+  setTimeout(() => { p3Toast.value = '' }, 3000)
+}
+
+function onP3UpdateForm() {
+  if (!p3Form.value.accountName || !p3Form.value.amount) {
+    alert('Please fill in account name and amount')
+    return
+  }
+  p3store.sendDepositForm(id, p3Form.value, [])
+  p3Toast.value = '📝 Bank details updated'
   setTimeout(() => { p3Toast.value = '' }, 3000)
 }
 
@@ -1909,6 +1986,18 @@ function restartApplication() {
 .p3-file-attached { display: inline-block; padding: 0.25rem 0.5rem; background: #dbeafe; color: #1e40af; border-radius: 4px; font-size: 0.8rem; margin-left: 0.5rem; }
 .p3-confirmed-banner { margin-top: 0.75rem; padding: 0.75rem 1rem; background: #d1fae5; border: 1px solid #6ee7b7; border-radius: 6px; color: #065f46; font-weight: 600; }
 .p3-locked-banner { margin-top: 0.75rem; padding: 0.75rem 1rem; background: #fef3c7; border: 1px solid #fcd34d; border-radius: 6px; color: #92400e; font-weight: 600; display: flex; align-items: center; gap: 0.5rem; }
+.p3-files-list { display: flex; flex-direction: column; gap: 0.5rem; margin: 0.75rem 0; }
+.p3-file-row { display: grid; grid-template-columns: auto 1fr auto auto; gap: 0.75rem; align-items: center; padding: 0.5rem 0.75rem; background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 6px; }
+.p3-file-row-pending { background: #fffbeb; border-color: #fcd34d; }
+.p3-file-icon { font-size: 1rem; }
+.p3-file-name { color: #1e40af; text-decoration: none; font-weight: 500; font-size: 0.9rem; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.p3-file-name:hover { text-decoration: underline; }
+.p3-file-meta { color: #64748b; font-size: 0.75rem; }
+.p3-file-remove { background: transparent; border: none; color: #ef4444; cursor: pointer; font-size: 1rem; padding: 0 0.25rem; line-height: 1; }
+.p3-file-remove:hover { color: #b91c1c; }
+.p3-add-file-row { display: flex; gap: 0.5rem; align-items: center; margin-top: 0.5rem; flex-wrap: wrap; }
+.p3-add-file-row input[type="file"] { flex: 1; min-width: 200px; font-size: 0.85rem; }
+.p3-empty { color: #64748b; font-size: 0.85rem; font-style: italic; margin: 0.5rem 0; }
 
 .p2-next-action {
   align-items: flex-start;
