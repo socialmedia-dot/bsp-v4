@@ -1209,6 +1209,18 @@ function onMakeDecision(outcome) {
     }
     application.value.subStatus = outcome === 'approved' ? 'Offer Pending' : 'Rejected'
     saveState()
+    // On approval, auto-advance to P3 (Decision) and smooth-scroll to the P3 body.
+    // KC: clicking Approve in P2 should land admin on the P3 Decision section
+    // in one click, not two (no more separate 'Mark P2 Complete' step).
+    // Reject path stays on P2 with no phase transition (status = 'rejected' above).
+    if (outcome === 'approved') {
+      advancePhase(3, 'P2 interview + decision approved — proceeding to P3 (Decision)')
+      nextTick(() => {
+        if (typeof document === 'undefined') return
+        const el = document.getElementById('phase-body-3')
+        if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' })
+      })
+    }
   } catch (e) {
     alert('Error recording decision: ' + e.message)
   }
