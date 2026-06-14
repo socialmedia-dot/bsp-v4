@@ -619,6 +619,14 @@ The old message in Section B's empty state said "Use Section A above to schedule
 - **Section C: Confirm Deposit Receipt** (only when `p3Latest && p3Latest.status !== 'sent_to_student'`). Shows student's proof + "✅ Confirm Receipt" button when status is `proof_uploaded`.
 - **Confirmed banner** (only when `p3Latest.status === 'confirmed'`).
 
+**Sent files are read-only (2026-06-15 update):**
+- Once a file is in `p3Latest.schoolFiles` (i.e. has been sent to the student via "Send to Student" or "Add to Student"), the school CANNOT delete it. The file row shows only the download link (`<a>` tag with the file name as anchor text), upload timestamp, and **NO remove button** — not before, not after student proof upload, not after confirmation.
+- This applies to ALL statuses: `sent_to_student`, `proof_uploaded`, and `confirmed`.
+- Rationale: the student may have already seen / paid / acted on the file. Removing it would break the audit trail. If a wrong file was sent, the school should send a corrected file via "Add to Student" (the old one remains visible for both parties).
+- Pending files in the queue (`p3NewFiles`, not yet sent) CAN be removed via the queue's remove button. This is local state — only becomes a sent file when the user clicks "Send to Student" or "Add to Student".
+- Implementation: the `<button class="p3-file-remove">` on the sent files list is removed entirely. The pending queue's button is unchanged. The store's `removeSchoolFile` function is kept (dormant) for potential future admin / correction flows.
+- Defensive note: the spec rule is a UI rule. The store primitive is not gated. A future agent who re-introduces the button should also add an explicit "Why sent files are read-only" comment so they don't reverse the rule by accident.
+
 **State transitions:**
 
 | From | To | Trigger |
@@ -652,4 +660,6 @@ The old message in Section B's empty state said "Use Section A above to schedule
 | (a) School opens P3, no deposit sent yet | File input visible, "📤 Send to Student" button shown (disabled until file picked). No bank form visible. |
 | (b) School picks 1 PDF, clicks "Send to Student" | Deposit record created, status `sent_to_student`, "Add to Student" button replaces "Send". Student can see the document in their P3 view. |
 | (c) Student opens P3, clicks "Deposit Form" | Alert shows the document list + message about checking the PDF. No dashes. |
+| (d) School sent 1 file (status `sent_to_student` or later) | Sent files list shows the file with download link, **no delete button**. Pending queue (if any) still has delete buttons. |
+| (e) After student uploads proof, school reviews | Same as (d) — sent files still have no delete button. The school can only "Add to Student" (append more files) or "Confirm Receipt". |
 

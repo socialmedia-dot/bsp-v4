@@ -476,13 +476,12 @@
                     <div class="p3-section-title">📎 Documents for Student</div>
                     <div class="action-desc">Upload deposit form, payment instructions, or any document the student needs. PDF, JPG, or PNG, max 5MB each.</div>
 
-                    <!-- Sent files list -->
+                    <!-- Sent files list (read-only — no delete button per docs §16) -->
                     <div v-if="p3Latest && p3Latest.schoolFiles && p3Latest.schoolFiles.length" class="p3-files-list">
                       <div v-for="(f, i) in p3Latest.schoolFiles" :key="i" class="p3-file-row">
                         <span class="p3-file-icon">📄</span>
                         <a class="p3-file-name" :href="f.dataUrl" target="_blank" rel="noopener">{{ f.name }}</a>
                         <span class="p3-file-meta">{{ formatDateTime(f.uploadedAt) }}</span>
-                        <button v-if="p3Latest.status !== 'confirmed'" class="p3-file-remove" @click="onP3RemoveSentFile(f.name)" title="Remove">✕</button>
                       </div>
                     </div>
                     <p v-else class="p3-empty">No documents sent yet. Add the first one below.</p>
@@ -1369,12 +1368,12 @@ function onP3AddFiles() {
   }
 }
 
-function onP3RemoveSentFile(fileName) {
-  if (!confirm(`Remove "${fileName}"?`)) return
-  p3store.removeSchoolFile(id, fileName)
-  p3Toast.value = `🗑️ Removed ${fileName}`
-  setTimeout(() => { p3Toast.value = '' }, 3000)
-}
+// onP3RemoveSentFile removed — sent files are read-only per docs §16.
+// School cannot delete a file once it has been sent to the student.
+// To "correct" a wrong file, send the corrected one via "Add to Student"
+// (the original remains visible for audit).
+// Store primitive p3store.removeSchoolFile() is kept dormant for future
+// admin / correction flows; the UI does not expose it.
 
 function onP3Send() {
   if (!p3NewFiles.value.length) {
