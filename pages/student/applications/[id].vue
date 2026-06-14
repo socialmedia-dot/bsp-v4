@@ -270,7 +270,7 @@ const phaseActions = computed(() => {
     actions.push({ id: 'interview', icon: '📅', title: 'Interview Schedule', description: 'Confirm or reschedule your interview slot', buttonText: 'Manage', available: true })
     actions.push({ id: 'prep', icon: '📚', title: 'Interview Preparation', description: 'Guidance and tips for your interview', buttonText: 'View', available: true })
   } else if (phase === 3) {
-    actions.push({ id: 'deposit_form', icon: '📋', title: 'Deposit Form', description: 'View bank details and instructions from the school', buttonText: 'View', available: !!p3Latest.value })
+    actions.push({ id: 'deposit_form', icon: '📋', title: 'Deposit Form', description: 'View documents and instructions from the school', buttonText: 'View', available: !!p3Latest.value && (p3Latest.value.schoolFiles || []).length > 0 })
     actions.push({ id: 'deposit_proof', icon: '💳', title: 'Upload Deposit Proof', description: p3Latest.value?.status === 'proof_uploaded' ? 'Proof submitted, awaiting school confirmation' : 'Upload your deposit payment receipt', buttonText: p3Latest.value?.status === 'proof_uploaded' ? 'Re-upload' : 'Upload', available: !!p3Latest.value && p3Latest.value.status !== 'confirmed' })
   } else if (phase === 4) {
     actions.push({ id: 'docs', icon: '📁', title: 'Admission Documents', description: 'Download your admission documents', buttonText: 'Download', available: true })
@@ -295,20 +295,14 @@ function doAction(action) {
       alert('School has not sent a deposit form yet.')
       return
     }
-    const f = p3Latest.value.form || p3Latest.value.bankInfo || {}
-    const lines = [
-      `Bank: ${f.accountName || '-'}`,
-      `Account: ${f.accountNumber || '-'}`,
-      `Sort Code: ${f.sortCode || '-'}`,
-      `Amount: ${f.amount || '-'} ${f.currency || 'GBP'}`,
-      f.deadline ? `Deadline: ${f.deadline}` : null,
-      f.reference ? `Reference: ${f.reference}` : null
-    ].filter(Boolean).join('\n')
     const docs = p3Latest.value.schoolFiles || []
     const docSection = docs.length
       ? '\n\n📎 Documents from school:\n' + docs.map(d => `• ${d.name}`).join('\n')
-      : '\n\n(No documents attached by school)'
-    alert(`Deposit Form\n\n${lines}${docSection}\n\nUse the next action to upload your deposit receipt.`)
+      : ''
+    const intro = docs.length
+      ? 'Please open the attached documents for bank details and payment instructions.'
+      : 'No documents attached yet. Please contact the school for payment instructions.'
+    alert(`Deposit Form\n\n${intro}${docSection}\n\nUse the next action to upload your deposit receipt.`)
   } else if (action.id === 'deposit_proof') {
     const input = document.getElementById('student-p3-file-input')
     if (input) input.click()

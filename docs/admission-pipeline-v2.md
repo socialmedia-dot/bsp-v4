@@ -12,7 +12,7 @@
 |---|-------|-----------|-----------|-------------|
 | **P1** | Application | Student submit | School / Consultant receive | → P2 |
 | **P2** | Interview + Decision | P1 done | Schedule interview, multi-round reports, Manager decision | Approve → P3, Reject → Closed |
-| **P3** | Offer | P2 approved | School issues offer, Student accepts | Accepted → P4, Declined → Closed |
+| **P3** | Deposit Exchange | P2 approved | School uploads deposit docs (PDF) → student pays + uploads proof → school confirms | Confirmed → P4 |
 | **P4** | Documents | P3 accepted | Submit docs, School verify | Verified → P5 |
 | **P5** | Visa / Travel | P4 verified | Apply visa (if needed), Travel arrangement | Arrived → P6 |
 | **P6** | Enrolled | P5 arrived | Official enrollment | Done |
@@ -577,3 +577,79 @@ The old message in Section B's empty state said "Use Section A above to schedule
 | Reopen after rejection (state S5) | B (read-only data) → C (empty) → D (summary) | (no callout — `p2NextAction` returns null when rejected) |
 
 **Verification:** `grep -c "p2-next-action\|NEXT ACTION\|Schedule the First Interview\|Submit Your Report\|Make a Decision\|Awaiting Report\|Decision Made"` against the deployed `_id_.*.js` bundle — all markers should return ≥ 1.
+
+## 16. P3 — Deposit Exchange (2026-06-15)
+
+**Rule:** P3 is a 3-step deposit exchange: (1) School uploads deposit documents (PDF/JPG/PNG, max 5MB each) — bank details, amount, deadline, payment instructions must be ON the uploaded file, NOT in a separate form; (2) Student downloads documents, pays, and uploads payment proof; (3) School confirms receipt. P3 is "confirmed" → P4 unlocked.
+
+**Layout (school page):**
+
+```
+┌─────────────────────────────────────────────────┐
+│  💰 Phase 3 — Deposit Exchange     [Status pill]│
+│  Upload deposit documents for the student,      │
+│  receive proof, confirm receipt.                │
+├─────────────────────────────────────────────────┤
+│  📎 Documents for Student                       │
+│  Upload deposit form, payment instructions, or  │
+│  any document the student needs. PDF/JPG/PNG.   │
+│  ─────────────────────────────────────────────  │
+│  [📄 Sent files list — already uploaded]        │
+│  ─────────────────────────────────────────────  │
+│  [📎 Pending files queue — not yet sent]        │
+│  ─────────────────────────────────────────────  │
+│  [Choose file]  [Send to Student] or            │
+│                  [Add to Student]               │
+└─────────────────────────────────────────────────┘
+┌─────────────────────────────────────────────────┐
+│  📥 Confirm Deposit Receipt                     │
+│  [Student's uploaded proof + Confirm button]    │
+└─────────────────────────────────────────────────┘
+[✅ Confirmed banner — P3 complete]
+```
+
+**Sections:**
+- **Section A: Documents for Student** (primary action, always present)
+  - File input is ALWAYS available — only hidden when `p3Latest?.status === 'confirmed'`
+  - Two button states based on `p3Latest`:
+    - `!p3Latest` → button: **"📤 Send to Student"** (`btn-primary`, disabled when `p3NewFiles.length === 0`). Calls `onP3Send` which creates a new deposit record with queued files + empty `bankInfo: {}`.
+    - `p3Latest && p3Latest.status !== 'confirmed'` → button: **"📎 Add to Student"** (`btn-secondary`, disabled when `p3NewFiles.length === 0`). Calls `onP3AddFiles` which appends to the existing record.
+  - "📤 Send to Student" validation: requires ≥1 file queued. No bank details required (those are on the file).
+- **Section B: ~~Bank / Payment Details~~ — REMOVED.** Bank info lives on the uploaded PDF. No typed bank form. The deposit record stores `bankInfo: {}` (empty).
+- **Section C: Confirm Deposit Receipt** (only when `p3Latest && p3Latest.status !== 'sent_to_student'`). Shows student's proof + "✅ Confirm Receipt" button when status is `proof_uploaded`.
+- **Confirmed banner** (only when `p3Latest.status === 'confirmed'`).
+
+**State transitions:**
+
+| From | To | Trigger |
+|------|----|---------|
+| (none) | `sent_to_student` | School clicks "Send to Student" with ≥1 queued file |
+| `sent_to_student` | `proof_uploaded` | Student uploads deposit proof |
+| `proof_uploaded` | `confirmed` | School clicks "Confirm Receipt" |
+| (any) | (any) | School can append more files via "Add to Student" before confirmation |
+
+**Data shape — `p3store.sendDepositForm(appRef, bankInfo, files, by)`:**
+- `bankInfo` parameter is now always `{}` (empty). The `P3BankInfo` interface stays for forward compatibility (future: OCR the uploaded PDF) but is unused today.
+
+**What stays visible on terminal state (`status === 'confirmed'`):**
+- Section A: file list (read-only — uploaded docs are viewable). File input + buttons hidden.
+- Section C: proof display + "✅ Confirmed" pill.
+- Confirmed banner.
+
+**State sync invariant:** When Section A's "Send to Student" creates a deposit, the page MUST also be ready to re-render with `p3Latest` now non-null (Section A's "Add" button replaces "Send"). No page-level `application.value` change is needed (deposit record is in `p3store`, not in the local page ref). The `p3Latest` computed auto-updates from the store.
+
+**Restart must clear p3 data** (per Section 14 "Full Clean Restart"): `restartApplication` must call `p3store.clearForApp(id)` AND reset `p3NewFiles.value = []`. Update the Restart confirm message to mention "Clear P3 deposit data".
+
+**Student view "Deposit Form" alert:**
+- Old: shows typed bank lines (`Bank: ...`, `Account: ...`, etc.) with dashes when empty
+- New: shows the attached documents list with the message "Please open the attached documents for bank details and payment instructions." Falls back to "No documents attached. Please contact the school." if no files.
+- Description text: "View bank details and instructions from the school" → "View documents and instructions from the school".
+
+**Click-test scenarios (post-deploy):**
+
+| Scenario | Expected |
+|----------|----------|
+| (a) School opens P3, no deposit sent yet | File input visible, "📤 Send to Student" button shown (disabled until file picked). No bank form visible. |
+| (b) School picks 1 PDF, clicks "Send to Student" | Deposit record created, status `sent_to_student`, "Add to Student" button replaces "Send". Student can see the document in their P3 view. |
+| (c) Student opens P3, clicks "Deposit Form" | Alert shows the document list + message about checking the PDF. No dashes. |
+

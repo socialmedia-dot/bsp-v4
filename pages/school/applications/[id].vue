@@ -459,7 +459,7 @@
                   <div class="p3-status-header">
                     <div>
                       <div class="action-title">💰 Phase 3 — Deposit Exchange</div>
-                      <div class="action-desc">Upload deposit documents for the student, share bank details, receive proof, confirm receipt.</div>
+                      <div class="action-desc">Upload deposit documents for the student, receive proof, confirm receipt.</div>
                     </div>
                     <div>
                       <span v-if="p3Latest" class="status-pill" :class="`status-pill-p3-${p3Latest.status}`">
@@ -497,33 +497,11 @@
                       </div>
                     </div>
 
-                    <!-- File input + Add button (always available) -->
-                    <div v-if="p3Latest && p3Latest.status !== 'confirmed'" class="p3-add-file-row">
+                    <!-- File input + Send/Add button (always available until confirmed) -->
+                    <div v-if="!p3Latest || p3Latest.status !== 'confirmed'" class="p3-add-file-row">
                       <input id="p3-school-file-input" type="file" multiple accept="application/pdf,image/jpeg,image/png" @change="onP3NewFiles" />
-                      <button v-if="p3Latest" class="btn-secondary" :disabled="!p3NewFiles.length" @click="onP3AddFiles">📎 Add to Student</button>
-                    </div>
-                  </div>
-
-                  <!-- Section B: Bank / Payment details -->
-                  <div class="p3-section">
-                    <div class="p3-section-title">🏦 Bank / Payment Details</div>
-                    <div class="action-desc">Bank info the student needs to pay the deposit.</div>
-                    <div class="form-grid">
-                      <div class="form-item"><label>Account Name</label><input v-model="p3Form.accountName" type="text" placeholder="e.g. Westminster School Fees Account" :disabled="p3Latest && p3Latest.status === 'confirmed'" /></div>
-                      <div class="form-item"><label>Account Number</label><input v-model="p3Form.accountNumber" type="text" placeholder="e.g. 12345678" :disabled="p3Latest && p3Latest.status === 'confirmed'" /></div>
-                      <div class="form-item"><label>Sort Code</label><input v-model="p3Form.sortCode" type="text" placeholder="e.g. 12-34-56" :disabled="p3Latest && p3Latest.status === 'confirmed'" /></div>
-                      <div class="form-item"><label>Amount</label><input v-model.number="p3Form.amount" type="number" placeholder="e.g. 5000" :disabled="p3Latest && p3Latest.status === 'confirmed'" /></div>
-                      <div class="form-item"><label>Currency</label><input v-model="p3Form.currency" type="text" placeholder="GBP" :disabled="p3Latest && p3Latest.status === 'confirmed'" /></div>
-                      <div class="form-item"><label>Deadline</label><input v-model="p3Form.deadline" type="date" :disabled="p3Latest && p3Latest.status === 'confirmed'" /></div>
-                      <div class="form-item" style="grid-column: 1 / -1;"><label>Reference (optional)</label><input v-model="p3Form.reference" type="text" placeholder="e.g. student name or application ref" :disabled="p3Latest && p3Latest.status === 'confirmed'" /></div>
-                    </div>
-                    <div class="form-actions">
-                      <button v-if="!p3Latest" class="btn-primary" @click="onP3Send" :disabled="!p3Form.accountName || !p3Form.accountNumber || !p3Form.amount">
-                        📤 Send Form to Student
-                      </button>
-                      <button v-else-if="p3Latest && p3Latest.status !== 'confirmed'" class="btn-secondary" @click="onP3UpdateForm">
-                        📝 Update Bank Details
-                      </button>
+                      <button v-if="!p3Latest" class="btn-primary" :disabled="!p3NewFiles.length" @click="onP3Send" title="Send the queued documents to the student and create the deposit record">📤 Send to Student</button>
+                      <button v-else class="btn-secondary" :disabled="!p3NewFiles.length" @click="onP3AddFiles" title="Append the queued documents to the existing deposit record">📎 Add to Student</button>
                     </div>
                   </div>
 
@@ -1341,15 +1319,6 @@ function formatDateTime(iso) {
 const p3store = useP3Store()
 const p3gate = useP3Gate(() => id)
 const p3Latest = computed(() => p3store.getLatest(id).value)
-const p3Form = ref({
-  accountName: '',
-  accountNumber: '',
-  sortCode: '',
-  amount: 0,
-  currency: 'GBP',
-  deadline: '',
-  reference: ''
-})
 const p3NewFiles = ref([])   // queued, not yet sent
 const p3Toast = ref('')
 
@@ -1408,24 +1377,14 @@ function onP3RemoveSentFile(fileName) {
 }
 
 function onP3Send() {
-  if (!p3Form.value.accountName || !p3Form.value.amount) {
-    alert('Please fill in account name and amount')
+  if (!p3NewFiles.value.length) {
+    alert('Please upload at least one document first')
     return
   }
   const files = p3NewFiles.value.map(f => ({ name: f.name, dataUrl: f.dataUrl, uploadedAt: new Date().toISOString(), uploadedBy: 'school-admin' }))
-  p3store.sendDepositForm(id, p3Form.value, files)
+  p3store.sendDepositForm(id, {}, files)  // bankInfo: {} — bank details live on the uploaded PDF
   p3NewFiles.value = []
   p3Toast.value = '✅ Deposit form sent to student'
-  setTimeout(() => { p3Toast.value = '' }, 3000)
-}
-
-function onP3UpdateForm() {
-  if (!p3Form.value.accountName || !p3Form.value.amount) {
-    alert('Please fill in account name and amount')
-    return
-  }
-  p3store.sendDepositForm(id, p3Form.value, [])
-  p3Toast.value = '📝 Bank details updated'
   setTimeout(() => { p3Toast.value = '' }, 3000)
 }
 
@@ -1519,10 +1478,14 @@ function getPhaseAttachments(phaseNum) {
 // This makes the click-through demo work cleanly: after Restart, the user can advance P1 → P7
 // without any pre-populated interviews/reports/decisions. See docs/admission-pipeline-v2.md §14.
 function restartApplication() {
-  if (!confirm('Restart this application?\n\nThis will:\n- Reset to Phase 1 (fresh application)\n- Clear all P2 interviews, reports, and decisions\n- Clear localStorage for the page and P2 store\n- Collapse all expanded past phases\n\nProceed?')) return
+  if (!confirm('Restart this application?\n\nThis will:\n- Reset to Phase 1 (fresh application)\n- Clear all P2 interviews, reports, and decisions\n- Clear all P3 deposit data\n- Clear localStorage for the page, P2 store, and P3 store\n- Collapse all expanded past phases\n\nProceed?')) return
   // 1. Clear the P2 store (interviews, reports, decisions) and persist empty arrays
   if (typeof window !== 'undefined') {
     try { p2.clearAllData() } catch (e) {}
+  }
+  // 1b. Clear the P3 store (deposits) and persist empty array — see docs §16
+  if (typeof window !== 'undefined') {
+    try { p3store.clearForApp(id) } catch (e) {}
   }
   // 2. Clear the page's own localStorage for this application
   if (typeof window !== 'undefined') {
@@ -1532,6 +1495,7 @@ function restartApplication() {
   //    This lets the user click through all phases from the start.
   application.value = clone(defaultMock)
   expandedPhases.value = []  // Collapse any expanded past phases
+  p3NewFiles.value = []      // Reset P3 transient UI ref (queued files) — see docs §16
   saveState()  // Persist fresh state so reload stays at Phase 1
   nextTick(() => {
     if (typeof window !== 'undefined') window.scrollTo({ top: 0, behavior: 'smooth' })
