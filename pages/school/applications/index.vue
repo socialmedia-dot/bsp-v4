@@ -20,8 +20,8 @@
         <div class="stat-label">Interview</div>
       </div>
       <div class="stat-card">
-        <div class="stat-number">{{ offerCount }}</div>
-        <div class="stat-label">Offer</div>
+        <div class="stat-number">{{ depositCount }}</div>
+        <div class="stat-label">Deposit</div>
       </div>
     </div>
 
@@ -90,8 +90,8 @@ const applications = ref([
     studentNationality: 'Singapore',
     schoolName: 'Westminster School',
     yearOfEntry: 'September 2026',
-    currentPhase: 4,
-    subStatus: 'Documents Awaiting',
+    currentPhase: 3,
+    subStatus: 'Deposit Exchange',
     consultantName: 'James Wong',
     appliedAt: '2026-04-20T14:00:00Z'
   },
@@ -102,7 +102,7 @@ const applications = ref([
     studentNationality: 'China',
     schoolName: 'Westminster School',
     yearOfEntry: 'September 2025',
-    currentPhase: 7,
+    currentPhase: 6,
     subStatus: 'Enrolled',
     consultantName: 'Sarah Chen',
     appliedAt: '2024-10-15T10:00:00Z'
@@ -111,9 +111,9 @@ const applications = ref([
 
 const pendingCount = computed(() => applications.value.filter(a => a.currentPhase === 1).length)
 const interviewCount = computed(() => applications.value.filter(a => a.currentPhase === 2).length)
-const offerCount = computed(() => applications.value.filter(a => a.currentPhase === 4).length)
+const depositCount = computed(() => applications.value.filter(a => a.currentPhase === 3).length)
 
-const phaseLabels = ['', 'Review', 'Interview', 'Decision', 'Offer', 'Documents', 'Visa', 'Enrolled']
+const phaseLabels = ['', 'Review', 'Interview', 'Deposit', 'Documents', 'Visa', 'Enrolled']
 
 function phaseLabel(phase) {
   return phaseLabels[phase] || 'Unknown'
@@ -156,7 +156,6 @@ function openApp(app) {
 .phase-4 { background: #dcfce7; color: #15803d; }
 .phase-5 { background: #cffafe; color: #0e7490; }
 .phase-6 { background: #f3e8ff; color: #7c3aed; }
-.phase-7 { background: #ecfdf5; color: #047857; }
 .app-details { display: flex; gap: 1rem; font-size: 0.8rem; color: #64748b; margin-bottom: 0.5rem; flex-wrap: wrap; }
 .app-meta { display: flex; justify-content: space-between; align-items: center; font-size: 0.75rem; color: #94a3b8; }
 .consultant-tag { background: #f1f5f9; color: #475569; padding: 2px 8px; border-radius: 12px; }

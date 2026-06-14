@@ -454,57 +454,114 @@
                   </template>
                 </div>
 
-                <div v-if="ph.phase === 3" class="action-section">
-                  <div v-if="!isRejected">
-                    <div class="action-title">Decision</div>
-                    <div class="action-desc">Make final admission decision</div>
-                    <div class="action-buttons">
-                      <button class="btn-approve" @click="makeOffer">🎓 Make Offer</button>
-                      <button class="btn-reject" @click="rejectApplication">❌ Reject</button>
+                <!-- P3 Deposit Exchange (full UI, replaces old P3 Decision + P4 Offer & Acceptance) -->
+                <div v-if="ph.phase === 3 && p3Latest" class="action-section p3-container">
+                  <div class="p3-status-header">
+                    <div>
+                      <div class="action-title">💰 Phase 3 — Deposit Exchange</div>
+                      <div class="action-desc">Send deposit form to the student, receive proof of payment, confirm receipt.</div>
                     </div>
+                    <div>
+                      <span class="status-pill" :class="`status-pill-p3-${p3Latest.status}`">
+                        {{ p3Latest.status === 'sent_to_student' ? 'Sent to Student' : p3Latest.status === 'proof_uploaded' ? 'Proof Uploaded' : 'Confirmed' }}
+                      </span>
+                    </div>
+                  </div>
+
+                  <div v-if="p3Toast" class="p2-toast">✅ {{ p3Toast }}</div>
+
+                  <div class="p3-section">
+                    <div class="p3-section-title">📤 Send Deposit Form to Student</div>
+                    <div class="action-desc">Bank details for the student to pay the deposit. Optional PDF attachment for additional instructions.</div>
+                    <div class="form-grid">
+                      <div class="form-item"><label>Account Name</label><input v-model="p3Form.accountName" type="text" placeholder="e.g. Westminster School Fees Account" /></div>
+                      <div class="form-item"><label>Account Number</label><input v-model="p3Form.accountNumber" type="text" placeholder="e.g. 12345678" /></div>
+                      <div class="form-item"><label>Sort Code</label><input v-model="p3Form.sortCode" type="text" placeholder="e.g. 12-34-56" /></div>
+                      <div class="form-item"><label>Amount</label><input v-model.number="p3Form.amount" type="number" placeholder="e.g. 5000" /></div>
+                      <div class="form-item"><label>Currency</label><input v-model="p3Form.currency" type="text" placeholder="GBP" /></div>
+                      <div class="form-item"><label>Deadline</label><input v-model="p3Form.deadline" type="date" /></div>
+                      <div class="form-item" style="grid-column: 1 / -1;"><label>Reference (optional)</label><input v-model="p3Form.reference" type="text" placeholder="e.g. student name or application ref" /></div>
+                    </div>
+                    <div class="form-item">
+                      <label>Optional PDF Attachment</label>
+                      <input type="file" accept="application/pdf" @change="onP3SchoolFile" />
+                      <span v-if="p3SchoolFile" class="p3-file-attached">📎 {{ p3SchoolFile.name }}</span>
+                    </div>
+                    <div class="form-actions">
+                      <button class="btn-primary" @click="onP3Send" :disabled="!p3Form.accountName || !p3Form.accountNumber || !p3Form.amount">
+                        📤 Send to Student
+                      </button>
+                    </div>
+                  </div>
+
+                  <div v-if="p3Latest.status !== 'sent_to_student' || p3Latest.proofFileName" class="p3-section">
+                    <div class="p3-section-title">📥 Confirm Deposit Receipt</div>
+                    <div v-if="p3Latest.proofFileName" class="p3-proof-display">
+                      <div class="att-row">
+                        <span class="att-icon">📄</span>
+                        <div class="att-info">
+                          <div class="att-name">{{ p3Latest.proofFileName }}</div>
+                          <div class="att-meta">Uploaded {{ formatDateTime(p3Latest.proofUploadedAt) }} by {{ p3Latest.proofUploadedBy || 'student' }}</div>
+                        </div>
+                        <button v-if="p3Latest.status === 'proof_uploaded'" class="btn-approve" @click="onP3Confirm">✅ Confirm Receipt</button>
+                        <span v-else class="status-pill status-pill-confirmed">✅ Confirmed</span>
+                      </div>
+                    </div>
+                    <p v-else class="p3-empty">Waiting for student to upload deposit proof…</p>
+                  </div>
+
+                  <div v-if="p3Latest.status === 'confirmed'" class="p3-confirmed-banner">
+                    ✅ Deposit confirmed. P3 complete. You can now proceed to P4 (Admission Documents).
                   </div>
                 </div>
 
-                <div v-if="ph.phase === 4" class="action-section">
-                  <div v-if="!isRejected">
-                    <div class="action-title">Offer & Acceptance</div>
-                    <div class="action-desc">Send offer letter and track acceptance</div>
-                    <div class="action-buttons">
-                      <button class="btn-primary" @click="uploadOfferLetter">📄 Upload Offer Letter</button>
-                      <button class="btn-secondary" @click="markDepositReceived">💰 Mark Deposit Received</button>
+                <!-- P4 Admission Documents (was P5, gate-guarded by P3) -->
+                <div v-if="ph.phase === 4">
+                  <div v-if="p3gate.isP3Confirmed.value" class="action-section">
+                    <div v-if="!isRejected">
+                      <div class="action-title">Admission Documents</div>
+                      <div class="action-desc">Prepare and upload admission documents</div>
+                      <div class="action-buttons">
+                        <button class="btn-primary" @click="uploadAdmissionDocs">📁 Upload Documents</button>
+                        <button class="btn-secondary" @click="markReady">✅ Mark Documents Ready</button>
+                      </div>
                     </div>
+                  </div>
+                  <div v-else class="p-locked-placeholder">
+                    🔒 Phase 4 is locked until Phase 3 (Deposit Exchange) is confirmed.
                   </div>
                 </div>
 
-                <div v-if="ph.phase === 5" class="action-section">
-                  <div v-if="!isRejected">
-                    <div class="action-title">Admission Documents</div>
-                    <div class="action-desc">Prepare and upload admission documents</div>
-                    <div class="action-buttons">
-                      <button class="btn-primary" @click="uploadAdmissionDocs">📁 Upload Documents</button>
-                      <button class="btn-secondary" @click="markReady">✅ Mark Documents Ready</button>
+                <!-- P5 Visa & Travel (was P6, gate-guarded by P3) -->
+                <div v-if="ph.phase === 5">
+                  <div v-if="p3gate.isP3Confirmed.value" class="action-section">
+                    <div v-if="!isRejected">
+                      <div class="action-title">Visa & Travel</div>
+                      <div class="action-desc">Track visa progress and travel arrangements</div>
+                      <div class="action-buttons">
+                        <button class="btn-primary" @click="updateVisaStatus">🛂 Update Visa Status</button>
+                        <button class="btn-secondary" @click="confirmTravel">✈️ Confirm Travel Arranged</button>
+                      </div>
                     </div>
+                  </div>
+                  <div v-else class="p-locked-placeholder">
+                    🔒 Phase 5 is locked until Phase 3 (Deposit Exchange) is confirmed.
                   </div>
                 </div>
 
-                <div v-if="ph.phase === 6" class="action-section">
-                  <div v-if="!isRejected">
-                    <div class="action-title">Visa & Travel</div>
-                    <div class="action-desc">Track visa progress and travel arrangements</div>
-                    <div class="action-buttons">
-                      <button class="btn-primary" @click="updateVisaStatus">🛂 Update Visa Status</button>
-                      <button class="btn-secondary" @click="confirmTravel">✈️ Confirm Travel Arranged</button>
+                <!-- P6 Enrolled (was P7, gate-guarded by P3) -->
+                <div v-if="ph.phase === 6">
+                  <div v-if="p3gate.isP3Confirmed.value" class="action-section">
+                    <div v-if="!isRejected">
+                      <div class="action-title">Enrolled</div>
+                      <div class="action-desc">Student has successfully enrolled</div>
+                      <div class="action-buttons">
+                        <button class="btn-secondary" @click="viewStudentRecord">📋 View Student Record</button>
+                      </div>
                     </div>
                   </div>
-                </div>
-
-                <div v-if="ph.phase === 7" class="action-section">
-                  <div v-if="!isRejected">
-                    <div class="action-title">Enrolled</div>
-                    <div class="action-desc">Student has successfully enrolled</div>
-                    <div class="action-buttons">
-                      <button class="btn-secondary" @click="viewStudentRecord">📋 View Student Record</button>
-                    </div>
+                  <div v-else class="p-locked-placeholder">
+                    🔒 Phase 6 is locked until Phase 3 (Deposit Exchange) is confirmed.
                   </div>
                 </div>
 
@@ -591,18 +648,17 @@ const enrolledMock = {
     { id: 'a1', fileName: 'Passport_Copy.pdf', fileSize: '1.2 MB', fileType: 'application/pdf', phase: 1, phaseLabel: 'Application Submitted', uploadedBy: 'student', uploadedByRole: 'Student', createdAt: '2024-10-15T10:05:00Z' },
     { id: 'a2', fileName: 'Academic_Transcript.pdf', fileSize: '2.4 MB', fileType: 'application/pdf', phase: 1, phaseLabel: 'Application Submitted', uploadedBy: 'student', uploadedByRole: 'Student', createdAt: '2024-10-15T10:06:00Z' },
     { id: 'a3', fileName: 'Interview_Assessment.pdf', fileSize: '0.8 MB', fileType: 'application/pdf', phase: 2, phaseLabel: 'Interview & Assessment', uploadedBy: 'school', uploadedByRole: 'School', createdAt: '2024-11-02T09:00:00Z' },
-    { id: 'a4', fileName: 'Offer_Letter.pdf', fileSize: '1.1 MB', fileType: 'application/pdf', phase: 4, phaseLabel: 'Offer & Acceptance', uploadedBy: 'school', uploadedByRole: 'School', createdAt: '2024-11-10T14:00:00Z' },
-    { id: 'a5', fileName: 'CAS_Letter.pdf', fileSize: '0.5 MB', fileType: 'application/pdf', phase: 6, phaseLabel: 'Visa & Travel', uploadedBy: 'school', uploadedByRole: 'School', createdAt: '2025-01-20T11:00:00Z' },
-    { id: 'a6', fileName: 'Enrolment_Confirmation.pdf', fileSize: '0.6 MB', fileType: 'application/pdf', phase: 7, phaseLabel: 'Enrolled', uploadedBy: 'school', uploadedByRole: 'School', createdAt: '2025-09-01T09:00:00Z' },
+    { id: 'a4', fileName: 'Offer_Letter.pdf', fileSize: '1.1 MB', fileType: 'application/pdf', phase: 3, phaseLabel: 'Deposit Exchange', uploadedBy: 'school', uploadedByRole: 'School', createdAt: '2024-11-10T14:00:00Z' },
+    { id: 'a5', fileName: 'CAS_Letter.pdf', fileSize: '0.5 MB', fileType: 'application/pdf', phase: 5, phaseLabel: 'Visa & Travel', uploadedBy: 'school', uploadedByRole: 'School', createdAt: '2025-01-20T11:00:00Z' },
+    { id: 'a6', fileName: 'Enrolment_Confirmation.pdf', fileSize: '0.6 MB', fileType: 'application/pdf', phase: 6, phaseLabel: 'Enrolled', uploadedBy: 'school', uploadedByRole: 'School', createdAt: '2025-09-01T09:00:00Z' },
   ],
   phaseHistory: [
     { phase: 1, label: 'Application Submitted', status: 'Completed', date: '2024-10-15', notes: 'Application received and documents uploaded.', attachments: ['Passport_Copy.pdf', 'Academic_Transcript.pdf'] },
     { phase: 2, label: 'Interview & Assessment', status: 'Completed', date: '2024-11-02', notes: 'Interview conducted. Assessment report uploaded.', attachments: ['Interview_Assessment.pdf'] },
-    { phase: 3, label: 'Decision', status: 'Completed', date: '2024-11-05', notes: 'Application approved by admissions committee.', attachments: [] },
-    { phase: 4, label: 'Offer & Acceptance', status: 'Completed', date: '2024-11-10', notes: 'Offer letter sent. Deposit received and place secured.', attachments: ['Offer_Letter.pdf'] },
-    { phase: 5, label: 'Admission Documents', status: 'Completed', date: '2024-12-01', notes: 'All admission documents prepared and verified.', attachments: [] },
-    { phase: 6, label: 'Visa & Travel', status: 'Completed', date: '2025-01-20', notes: 'CAS issued. Student visa granted. Travel arranged.', attachments: ['CAS_Letter.pdf'] },
-    { phase: 7, label: 'Enrolled', status: 'Completed', date: '2025-09-01', notes: 'Student successfully enrolled. Welcome pack issued.', attachments: ['Enrolment_Confirmation.pdf'] },
+    { phase: 3, label: 'Deposit Exchange', status: 'Completed', date: '2024-11-10', notes: 'Offer sent. Deposit received and confirmed.', attachments: ['Offer_Letter.pdf'] },
+    { phase: 4, label: 'Admission Documents', status: 'Completed', date: '2024-12-01', notes: 'All admission documents prepared and verified.', attachments: [] },
+    { phase: 5, label: 'Visa & Travel', status: 'Completed', date: '2025-01-20', notes: 'CAS issued. Student visa granted. Travel arranged.', attachments: ['CAS_Letter.pdf'] },
+    { phase: 6, label: 'Enrolled', status: 'Completed', date: '2025-09-01', notes: 'Student successfully enrolled. Welcome pack issued.', attachments: ['Enrolment_Confirmation.pdf'] },
   ]
 }
 
@@ -633,11 +689,10 @@ const defaultMock = {
   phaseHistory: [
     { phase: 1, label: 'Application Submitted', status: 'In Progress', date: new Date().toISOString().slice(0,10), notes: 'New application received. Awaiting school review.', attachments: ['Passport_Copy.pdf', 'Academic_Transcript.pdf', 'Reference_Letter_MrWang.pdf'] },
     { phase: 2, label: 'Interview & Assessment', status: 'Pending', date: null, notes: '', attachments: [] },
-    { phase: 3, label: 'Decision', status: 'Pending', date: null, notes: '', attachments: [] },
-    { phase: 4, label: 'Offer & Acceptance', status: 'Pending', date: null, notes: '', attachments: [] },
-    { phase: 5, label: 'Admission Documents', status: 'Pending', date: null, notes: '', attachments: [] },
-    { phase: 6, label: 'Visa & Travel', status: 'Pending', date: null, notes: '', attachments: [] },
-    { phase: 7, label: 'Enrolled', status: 'Pending', date: null, notes: '', attachments: [] },
+    { phase: 3, label: 'Deposit Exchange', status: 'Pending', date: null, notes: '', attachments: [] },
+    { phase: 4, label: 'Admission Documents', status: 'Pending', date: null, notes: '', attachments: [] },
+    { phase: 5, label: 'Visa & Travel', status: 'Pending', date: null, notes: '', attachments: [] },
+    { phase: 6, label: 'Enrolled', status: 'Pending', date: null, notes: '', attachments: [] },
   ]
 }
 
@@ -653,8 +708,7 @@ const INTERVIEW_KEY = computed(() => `bsp:interview:${id}`)
 const phaseLabels = [
   'Application Submitted',
   'Interview & Assessment',
-  'Decision',
-  'Offer & Acceptance',
+  'Deposit Exchange',
   'Admission Documents',
   'Visa & Travel',
   'Enrolled'
@@ -741,7 +795,7 @@ function advancePhase(newPhase, actionNote) {
   }
   application.value.currentPhase = newPhase
   application.value.subStatus = nextHist ? nextHist.label : ''
-  if (newPhase === 7) {
+  if (newPhase === 6) {
     application.value.status = 'completed'
   } else {
     application.value.status = 'active'
@@ -903,20 +957,20 @@ function uploadAdmissionDocs() {
 }
 
 function markReady() {
-  if (application.value.currentPhase === 5) {
-    advancePhase(6, 'Admission documents ready and verified')
+  if (application.value.currentPhase === 4) {
+    advancePhase(5, 'Admission documents ready and verified')
   }
 }
 
 function updateVisaStatus() {
-  if (application.value.currentPhase === 6) {
-    advancePhase(7, 'Visa issued, travel arrangements confirmed')
+  if (application.value.currentPhase === 5) {
+    advancePhase(6, 'Visa issued, travel arrangements confirmed')
   }
 }
 
 function confirmTravel() {
-  if (application.value.currentPhase === 6) {
-    advancePhase(7, 'Travel arrangements confirmed')
+  if (application.value.currentPhase === 5) {
+    advancePhase(6, 'Travel arrangements confirmed')
   }
 }
 
@@ -1214,7 +1268,7 @@ function onMakeDecision(outcome) {
     // in one click, not two (no more separate 'Mark P2 Complete' step).
     // Reject path stays on P2 with no phase transition (status = 'rejected' above).
     if (outcome === 'approved') {
-      advancePhase(3, 'P2 interview + decision approved — proceeding to P3 (Decision)')
+      advancePhase(3, 'P2 interview + decision approved — proceeding to P3 (Deposit Exchange)')
       nextTick(() => {
         if (typeof document === 'undefined') return
         const el = document.getElementById('phase-body-3')
@@ -1232,7 +1286,7 @@ function onMarkP2Complete() {
     return
   }
   if (!confirm('Mark P2 complete and move to Phase 3 (Offer)?')) return
-  advancePhase(3, 'P2 Interview + Decision completed — proceeding to P3 (Offer)')
+  advancePhase(3, 'P2 Interview + Decision completed — proceeding to P3 (Deposit Exchange)')
 }
 
 // ===== P2 helpers =====
@@ -1247,6 +1301,73 @@ function formatDateTime(iso) {
   const d = new Date(iso)
   if (isNaN(d.getTime())) return iso
   return d.toLocaleString('en-GB', { day: 'numeric', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' })
+}
+
+// ===== P3 (Deposit Exchange) helpers =====
+const p3store = useP3Store()
+const p3gate = useP3Gate(() => id)
+const p3Latest = computed(() => p3store.getLatest(id).value)
+const p3Form = ref({
+  accountName: '',
+  accountNumber: '',
+  sortCode: '',
+  amount: 0,
+  currency: 'GBP',
+  deadline: '',
+  reference: ''
+})
+const p3SchoolFile = ref(null)
+const p3Toast = ref('')
+
+function p3StatusLabel(status) {
+  if (status === 'sent_to_student') return 'Sent to Student'
+  if (status === 'proof_uploaded') return 'Proof Uploaded'
+  if (status === 'confirmed') return 'Confirmed'
+  return status
+}
+
+function onP3SchoolFile(e) {
+  const file = e.target.files?.[0]
+  if (!file) return
+  if (file.size > 5 * 1024 * 1024) {
+    alert('File too large (max 5MB)')
+    e.target.value = ''
+    return
+  }
+  const reader = new FileReader()
+  reader.onload = () => {
+    p3SchoolFile.value = { name: file.name, dataUrl: reader.result }
+  }
+  reader.readAsDataURL(file)
+}
+
+function onP3Send() {
+  if (!p3Form.value.accountName || !p3Form.value.amount) {
+    alert('Please fill in account name and amount')
+    return
+  }
+  p3store.sendDepositForm(id, p3Form.value, p3SchoolFile.value || undefined)
+  p3SchoolFile.value = null
+  p3Toast.value = '✅ Deposit form sent to student'
+  setTimeout(() => { p3Toast.value = '' }, 3000)
+}
+
+function onP3Confirm() {
+  try {
+    p3store.confirmDeposit(id)
+    advancePhase(4, 'P3 deposit confirmed by school — proceeding to P4 (Admission Documents)')
+    p3Toast.value = '✅ Deposit confirmed. P3 complete.'
+    setTimeout(() => { p3Toast.value = '' }, 3000)
+  } catch (e) {
+    alert(e.message)
+  }
+}
+
+function p3StatusClass(status) {
+  if (status === 'confirmed') return 'status-pill-confirmed'
+  if (status === 'proof_uploaded') return 'status-pill-pending'
+  if (status === 'sent_to_student') return 'status-pill-change'
+  return ''
 }
 
 // Phase Stack: reverse order, hide future phases
@@ -1775,6 +1896,20 @@ function restartApplication() {
   font-weight: 600;
   padding: 8px 12px;
 }
+
+/* ===== P3 Deposit Exchange styles ===== */
+.status-pill-p3-sent_to_student { background: #dbeafe; color: #1e40af; padding: 0.25rem 0.75rem; border-radius: 12px; font-size: 0.8rem; font-weight: 600; }
+.status-pill-p3-proof_uploaded { background: #fef3c7; color: #92400e; padding: 0.25rem 0.75rem; border-radius: 12px; font-size: 0.8rem; font-weight: 600; }
+.status-pill-p3-confirmed { background: #d1fae5; color: #065f46; padding: 0.25rem 0.75rem; border-radius: 12px; font-size: 0.8rem; font-weight: 600; }
+.p3-container { background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px; padding: 1rem; }
+.p3-section { background: #fff; border: 1px solid #e2e8f0; border-radius: 6px; padding: 1rem; margin-top: 0.75rem; }
+.p3-section-title { font-weight: 700; font-size: 0.95rem; margin-bottom: 0.75rem; color: #1e293b; }
+.p3-form-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 0.75rem; }
+.p3-proof-display { display: flex; justify-content: space-between; align-items: center; gap: 0.75rem; padding: 0.75rem; background: #f0fdf4; border: 1px solid #bbf7d0; border-radius: 6px; }
+.p3-file-attached { display: inline-block; padding: 0.25rem 0.5rem; background: #dbeafe; color: #1e40af; border-radius: 4px; font-size: 0.8rem; margin-left: 0.5rem; }
+.p3-confirmed-banner { margin-top: 0.75rem; padding: 0.75rem 1rem; background: #d1fae5; border: 1px solid #6ee7b7; border-radius: 6px; color: #065f46; font-weight: 600; }
+.p3-locked-banner { margin-top: 0.75rem; padding: 0.75rem 1rem; background: #fef3c7; border: 1px solid #fcd34d; border-radius: 6px; color: #92400e; font-weight: 600; display: flex; align-items: center; gap: 0.5rem; }
+
 .p2-next-action {
   align-items: flex-start;
   background: linear-gradient(135deg, #eff6ff 0%, #dbeafe 100%);

@@ -158,6 +158,20 @@
         <p>© 2026 British School Portal. All rights reserved.</p>
       </div>
     </footer>
+
+    <!-- Hidden file input for P3 deposit proof upload -->
+    <input
+      id="student-p3-file-input"
+      type="file"
+      accept="application/pdf,image/jpeg,image/png"
+      style="display:none"
+      @change="onP3StudentFile"
+    />
+    <div v-if="p3StudentFile" class="p3-upload-preview">
+      <span>📎 {{ p3StudentFile.name }} ready</span>
+      <button class="btn btn-primary" @click="onP3UploadProof">Upload Proof</button>
+      <button class="btn btn-secondary" @click="p3StudentFile = null">Cancel</button>
+    </div>
   </div>
 </template>
 
@@ -169,6 +183,40 @@ const id = route.params.id
 const editingChange = ref(false)
 const changeMessage = ref('')
 const INTERVIEW_KEY = computed(() => `bsp:interview:${id}`)
+
+// P3 deposit exchange (cross-portal sync with school)
+const p3store = useP3Store()
+const p3Latest = computed(() => p3store.getLatest(id).value)
+const p3StudentFile = ref(null)
+
+function onP3StudentFile(e) {
+  const file = e.target.files?.[0]
+  if (!file) return
+  if (file.size > 5 * 1024 * 1024) {
+    alert('File too large (max 5MB)')
+    e.target.value = ''
+    return
+  }
+  const reader = new FileReader()
+  reader.onload = () => {
+    p3StudentFile.value = { name: file.name, dataUrl: reader.result }
+  }
+  reader.readAsDataURL(file)
+}
+
+function onP3UploadProof() {
+  if (!p3StudentFile.value) {
+    alert('Please select a file first')
+    return
+  }
+  try {
+    p3store.uploadDepositProof(id, p3StudentFile.value)
+    p3StudentFile.value = null
+    alert('✅ Deposit proof uploaded. School will review and confirm.')
+  } catch (err) {
+    alert(err.message || 'Upload failed')
+  }
+}
 
 // Mock data — will be replaced by API
 const application = ref({
@@ -195,8 +243,7 @@ const application = ref({
 const phaseLabels = [
   'Application Submitted',
   'Interview & Assessment',
-  'Decision',
-  'Offer & Acceptance',
+  'Deposit Exchange',
   'Admission Documents',
   'Visa & Travel',
   'Enrolled'
@@ -223,16 +270,14 @@ const phaseActions = computed(() => {
     actions.push({ id: 'interview', icon: '📅', title: 'Interview Schedule', description: 'Confirm or reschedule your interview slot', buttonText: 'Manage', available: true })
     actions.push({ id: 'prep', icon: '📚', title: 'Interview Preparation', description: 'Guidance and tips for your interview', buttonText: 'View', available: true })
   } else if (phase === 3) {
-    actions.push({ id: 'await', icon: '⏳', title: 'Awaiting Decision', description: 'School is reviewing your application', buttonText: 'View', available: true })
+    actions.push({ id: 'deposit_form', icon: '📋', title: 'Deposit Form', description: 'View bank details and instructions from the school', buttonText: 'View', available: !!p3Latest.value })
+    actions.push({ id: 'deposit_proof', icon: '💳', title: 'Upload Deposit Proof', description: p3Latest.value?.status === 'proof_uploaded' ? 'Proof submitted, awaiting school confirmation' : 'Upload your deposit payment receipt', buttonText: p3Latest.value?.status === 'proof_uploaded' ? 'Re-upload' : 'Upload', available: !!p3Latest.value && p3Latest.value.status !== 'confirmed' })
   } else if (phase === 4) {
-    actions.push({ id: 'offer', icon: '📋', title: 'Offer Letter', description: 'Download and sign your offer letter', buttonText: 'View', available: true })
-    actions.push({ id: 'deposit', icon: '💳', title: 'Pay Deposit', description: 'Complete deposit payment to secure place', buttonText: 'Pay', available: true })
-  } else if (phase === 5) {
     actions.push({ id: 'docs', icon: '📁', title: 'Admission Documents', description: 'Download your admission documents', buttonText: 'Download', available: true })
-  } else if (phase === 6) {
+  } else if (phase === 5) {
     actions.push({ id: 'visa', icon: '🏛️', title: 'Visa Application', description: 'Track your visa application progress', buttonText: 'Track', available: application.value.visaRequired })
     actions.push({ id: 'travel', icon: '✈️', title: 'Travel Arrangements', description: 'Plan your journey to the UK', buttonText: 'Plan', available: true })
-  } else if (phase === 7) {
+  } else if (phase === 6) {
     actions.push({ id: 'enrolled', icon: '🎉', title: 'Enrolled', description: 'Welcome! Your enrolment is complete.', buttonText: 'View', available: true })
   }
 
@@ -245,7 +290,27 @@ function formatDate(iso) {
 }
 
 function doAction(action) {
-  alert(`${action.title} — This feature will connect to API later.`)
+  if (action.id === 'deposit_form') {
+    if (!p3Latest.value) {
+      alert('School has not sent a deposit form yet.')
+      return
+    }
+    const f = p3Latest.value.form || {}
+    const lines = [
+      `Bank: ${f.accountName || '-'}`,
+      `Account: ${f.accountNumber || '-'}`,
+      `Sort Code: ${f.sortCode || '-'}`,
+      `Amount: ${f.amount || '-'} ${f.currency || 'GBP'}`,
+      f.deadline ? `Deadline: ${f.deadline}` : null,
+      f.reference ? `Reference: ${f.reference}` : null
+    ].filter(Boolean).join('\n')
+    alert(`Deposit Form\n\n${lines}\n\nPlease make the payment and upload your proof in the next action.`)
+  } else if (action.id === 'deposit_proof') {
+    const input = document.getElementById('student-p3-file-input')
+    if (input) input.click()
+  } else {
+    alert(`${action.title} — This feature will connect to API later.`)
+  }
 }
 
 // --- Interview functions (P2 student-side) ---
@@ -326,6 +391,8 @@ onMounted(() => {
   if (shared !== null) {
     application.value.interview = shared
   }
+  // P3 deposit exchange sync: load any deposit form set by school
+  p3store.deposits.value = p3store.deposits.value
 })
 </script>
 
@@ -411,6 +478,14 @@ onMounted(() => {
 .form-actions { display: flex; gap: 0.5rem; padding-top: 0.25rem; }
 .confirmed-banner { background: #dcfce7; color: #15803d; padding: 0.75rem; border-radius: 8px; font-size: 0.9rem; text-align: center; }
 .change-banner { background: #fff7ed; color: #7c2d12; padding: 0.75rem; border-radius: 8px; font-size: 0.9rem; text-align: center; }
+
+/* P3 deposit upload preview (student) */
+.p3-upload-preview { position: fixed; bottom: 1.5rem; right: 1.5rem; background: #fff; border: 1px solid #e2e8f0; border-radius: 8px; padding: 0.75rem 1rem; box-shadow: 0 4px 12px rgba(0,0,0,0.1); display: flex; gap: 0.5rem; align-items: center; z-index: 200; }
+.btn { padding: 0.5rem 0.9rem; border-radius: 6px; font-size: 0.85rem; font-weight: 600; cursor: pointer; border: none; }
+.btn-primary { background: #3b82f6; color: #fff; }
+.btn-primary:hover { background: #2563eb; }
+.btn-secondary { background: #f1f5f9; color: #475569; border: 1px solid #e2e8f0; }
+.btn-secondary:hover { background: #e2e8f0; }
 
 /* Footer */
 .footer { background: #f8fafc; border-top: 1px solid #e2e8f0; padding: 1.5rem 0; margin-top: auto; }

@@ -194,11 +194,10 @@ const trialCountByCriticality = {
 const applicationPhases = [
   { num: 1, name: 'Application Submitted', desc: 'Student submits application with required documents and personal statement' },
   { num: 2, name: 'Interview & Assessment', desc: 'School reviews application and conducts interview or entrance assessment' },
-  { num: 3, name: 'Decision', desc: 'School makes admission decision: Accept, Reject, or Waitlist' },
-  { num: 4, name: 'Offer & Acceptance', desc: 'Offer letter sent, student accepts place and pays deposit' },
-  { num: 5, name: 'Admission Documents', desc: 'Collect official documents, references, medical forms, and agreements' },
-  { num: 6, name: 'Visa & Travel', desc: 'CAS letter issued, visa application, and travel arrangements' },
-  { num: 7, name: 'Enrolled', desc: 'Student arrives, completes registration, and begins studies' }
+  { num: 3, name: 'Deposit Exchange', desc: 'School sends deposit form, student pays and uploads proof, school confirms' },
+  { num: 4, name: 'Admission Documents', desc: 'Collect official documents, references, medical forms, and agreements' },
+  { num: 5, name: 'Visa & Travel', desc: 'CAS letter issued, visa application, and travel arrangements' },
+  { num: 6, name: 'Enrolled', desc: 'Student arrives, completes registration, and begins studies' }
 ]
 
 const commitHash = config.public.gitCommit || 'unknown'

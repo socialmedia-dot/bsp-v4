@@ -35,8 +35,7 @@ const props = defineProps({
 const phases = [
   { key: 'submitted', label: 'Application Submitted' },
   { key: 'interview', label: 'Interview & Assessment' },
-  { key: 'decision', label: 'Decision' },
-  { key: 'offer', label: 'Offer & Acceptance' },
+  { key: 'deposit', label: 'Deposit Exchange' },
   { key: 'documents', label: 'Admission Documents' },
   { key: 'visa', label: 'Visa & Travel' },
   { key: 'enrolled', label: 'Enrolled' }
@@ -46,7 +45,7 @@ const subStatusClass = computed(() => {
   const s = props.subStatus?.toLowerCase() || ''
   if (s.includes('reject')) return 'sub-rejected'
   if (s.includes('pending') || s.includes('awaiting')) return 'sub-pending'
-  if (s.includes('complete') || s.includes('approved') || s.includes('confirmed')) return 'sub-done'
+  if (s.includes('complete') || s.includes('approved') || s.includes('confirmed') || s.includes('deposit') || s.includes('proof') || s.includes('sent')) return 'sub-done'
   return 'sub-progress'
 })
 </script>
