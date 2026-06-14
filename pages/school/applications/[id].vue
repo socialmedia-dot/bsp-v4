@@ -498,7 +498,7 @@
                     </div>
 
                     <!-- File input + Add button (always available) -->
-                    <div v-if="p3Latest.status !== 'confirmed'" class="p3-add-file-row">
+                    <div v-if="p3Latest && p3Latest.status !== 'confirmed'" class="p3-add-file-row">
                       <input id="p3-school-file-input" type="file" multiple accept="application/pdf,image/jpeg,image/png" @change="onP3NewFiles" />
                       <button v-if="p3Latest" class="btn-secondary" :disabled="!p3NewFiles.length" @click="onP3AddFiles">📎 Add to Student</button>
                     </div>
@@ -521,7 +521,7 @@
                       <button v-if="!p3Latest" class="btn-primary" @click="onP3Send" :disabled="!p3Form.accountName || !p3Form.accountNumber || !p3Form.amount">
                         📤 Send Form to Student
                       </button>
-                      <button v-else-if="p3Latest.status !== 'confirmed'" class="btn-secondary" @click="onP3UpdateForm">
+                      <button v-else-if="p3Latest && p3Latest.status !== 'confirmed'" class="btn-secondary" @click="onP3UpdateForm">
                         📝 Update Bank Details
                       </button>
                     </div>
