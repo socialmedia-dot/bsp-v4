@@ -510,8 +510,7 @@ function tabCount(key) {
 }
 
 function openApplication(app) {
-  selectedApp.value = app
-  document.body.style.overflow = 'hidden'
+  navigateTo(`/student/applications/${app.id}`)
 }
 
 function closeApplication() {
