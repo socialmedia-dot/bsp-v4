@@ -668,7 +668,14 @@ interface P3Deposit {
 - Files are **append-only** on the student side after send — no delete button is exposed in the student UI. The store's `removeStudentFile` is kept dormant for potential future admin / correction flows.
 - Adding to `studentFiles` does NOT change `status` and does NOT write a `from`/`to` field in the audit log (the `to` field of the audit entry reflects the current unchanged status — purely informational).
 
-**School-side display:** New "📥 Files from Student" section on the school page, rendered read-only as a download list (mirror of how the student sees `schoolFiles` on their side). The school CANNOT delete student files from this list.
+**School-side display:** New "📥 Files from Student" section on the school page, rendered as a **collapsible button row** (default collapsed) on the school P3 view. Always visible once a P3 record exists, regardless of whether `studentFiles` has content. Click the button to expand the download list. The school CANNOT delete student files from this list.
+
+**Collapsible button UX (2026-06-15 update):**
+- The button is the **primary visual indicator** that the student has submitted files — the count badge `(N)` shows at a glance whether the student has uploaded anything yet.
+- Default state: collapsed, shows `▶️ 📥 Student Submitted Files (N)` where N = `studentFiles.length`. Green left-border accent when N > 0.
+- Expanded state: shows `🔽 📥 Student Submitted Files (N)` with the file list (download links + upload timestamps) below, or "No files submitted yet — waiting for student." empty state.
+- Toggle state is local page state (`showStudentFiles` ref), not persisted. Each page load starts collapsed.
+- Same button is rendered in **all P3 statuses** (sent_to_student, proof_uploaded, confirmed) — the count simply stays at the latest value as students append files.
 
 **Click-test scenarios (post-deploy):**
 

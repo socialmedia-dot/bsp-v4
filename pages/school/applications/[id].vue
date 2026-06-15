@@ -504,16 +504,28 @@
                     </div>
                   </div>
 
-                  <!-- 📥 Files from Student (read-only display, mirror of schoolFiles — see docs §16.1) -->
-                  <div v-if="p3Latest && p3Latest.studentFiles && p3Latest.studentFiles.length" class="p3-section">
-                    <div class="p3-section-title">📥 Files from Student</div>
-                    <div class="action-desc">Documents the student has sent back. Download only — these are part of the P3 audit trail.</div>
-                    <div class="p3-files-list">
-                      <div v-for="(f, i) in p3Latest.studentFiles" :key="i" class="p3-file-row">
-                        <span class="p3-file-icon">📄</span>
-                        <a class="p3-file-name" :href="f.dataUrl" target="_blank" rel="noopener">{{ f.name }}</a>
-                        <span class="p3-file-meta">{{ formatDateTime(f.uploadedAt) }}</span>
+                  <!-- 📥 Files from Student (collapsible — see docs §16.1) -->
+                  <div v-if="p3Latest" class="p3-section">
+                    <button
+                      type="button"
+                      class="p3-toggle-btn"
+                      :class="{ 'p3-toggle-btn-active': showStudentFiles, 'p3-toggle-btn-has-files': p3Latest.studentFiles && p3Latest.studentFiles.length }"
+                      @click="showStudentFiles = !showStudentFiles"
+                    >
+                      <span class="p3-toggle-icon">{{ showStudentFiles ? '🔽' : '▶️' }}</span>
+                      <span class="p3-toggle-label">📥 Student Submitted Files</span>
+                      <span class="p3-toggle-count">({{ p3Latest.studentFiles?.length || 0 }})</span>
+                    </button>
+                    <div v-if="showStudentFiles" class="p3-toggle-body">
+                      <div class="action-desc">Documents the student has sent back. Download only — these are part of the P3 audit trail.</div>
+                      <div v-if="p3Latest.studentFiles && p3Latest.studentFiles.length" class="p3-files-list">
+                        <div v-for="(f, i) in p3Latest.studentFiles" :key="i" class="p3-file-row">
+                          <span class="p3-file-icon">📄</span>
+                          <a class="p3-file-name" :href="f.dataUrl" target="_blank" rel="noopener">{{ f.name }}</a>
+                          <span class="p3-file-meta">{{ formatDateTime(f.uploadedAt) }}</span>
+                        </div>
                       </div>
+                      <p v-else class="p3-empty">No files submitted yet — waiting for student.</p>
                     </div>
                   </div>
 
@@ -1341,6 +1353,7 @@ const p3gate = useP3Gate(() => id)
 const p3Latest = computed(() => p3store.getLatest(id).value)
 const p3NewFiles = ref([])   // queued, not yet sent
 const p3Toast = ref('')
+const showStudentFiles = ref(false)   // toggle for "📥 Student Submitted Files" collapsible (see docs §16.1)
 
 function p3StatusLabel(status) {
   if (status === 'sent_to_student') return 'Sent to Student'
@@ -1971,6 +1984,16 @@ function restartApplication() {
 .p3-confirmed-banner { margin-top: 0.75rem; padding: 0.75rem 1rem; background: #d1fae5; border: 1px solid #6ee7b7; border-radius: 6px; color: #065f46; font-weight: 600; }
 .p3-locked-banner { margin-top: 0.75rem; padding: 0.75rem 1rem; background: #fef3c7; border: 1px solid #fcd34d; border-radius: 6px; color: #92400e; font-weight: 600; display: flex; align-items: center; gap: 0.5rem; }
 .p3-files-list { display: flex; flex-direction: column; gap: 0.5rem; margin: 0.75rem 0; }
+.p3-toggle-btn { display: flex; align-items: center; gap: 0.5rem; width: 100%; background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 6px; padding: 0.65rem 0.85rem; cursor: pointer; font: inherit; text-align: left; transition: background 120ms ease, border-color 120ms ease; }
+.p3-toggle-btn:hover { background: #f1f5f9; border-color: #cbd5e1; }
+.p3-toggle-btn-active { background: #eff6ff; border-color: #93c5fd; }
+.p3-toggle-btn-has-files { border-left: 4px solid #10b981; }
+.p3-toggle-icon { font-size: 0.85rem; color: #64748b; width: 1rem; text-align: center; }
+.p3-toggle-label { font-weight: 600; color: #1e293b; font-size: 0.95rem; }
+.p3-toggle-count { margin-left: auto; background: #e2e8f0; color: #475569; border-radius: 999px; padding: 0.15rem 0.55rem; font-size: 0.8rem; font-weight: 600; }
+.p3-toggle-btn-has-files .p3-toggle-count { background: #d1fae5; color: #065f46; }
+.p3-toggle-btn-active .p3-toggle-count { background: #dbeafe; color: #1e40af; }
+.p3-toggle-body { margin-top: 0.75rem; padding-top: 0.75rem; border-top: 1px dashed #e2e8f0; }
 .p3-file-row { display: grid; grid-template-columns: auto 1fr auto auto; gap: 0.75rem; align-items: center; padding: 0.5rem 0.75rem; background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 6px; }
 .p3-file-row-pending { background: #fffbeb; border-color: #fcd34d; }
 .p3-file-icon { font-size: 1rem; }
