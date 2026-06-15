@@ -566,28 +566,43 @@
                     ✅ Deposit confirmed. P3 complete. You can now proceed to P4 (Admission Documents).
                   </div>
 
-                  <!-- 🔬 DEV affordance — see docs §16.1.1 (dev note) -->
+                  <!-- 🔬 DEV affordance (collapsed by default) — see docs §16.1.1 (dev note) -->
                   <!-- Remove this panel + the onDevSimulateStudentResponse handler once -->
                   <!-- pages/student/applications/[id].vue wires up the real student flow. -->
-                  <div class="p3-dev-panel">
-                    <div class="p3-dev-title">🔬 Dev Mode — Simulate Student Response</div>
-                    <p class="p3-dev-note">
-                      Temporary: the student-side P3 page is not built yet, so school admins
-                      cannot receive student input. This button fakes the missing student
-                      actions (upload proof + send 1 file + click "I've uploaded everything")
-                      in one click so you can exercise the school's P3→P4 confirm flow.
-                      All audit entries are tagged <code>school-admin (dev sim)</code> for easy cleanup.
-                    </p>
+                  <div class="p3-dev-section">
                     <button
-                      v-if="!p3Latest || p3Latest.status !== 'confirmed'"
-                      class="btn-dev"
-                      @click="onDevSimulateStudentResponse"
+                      type="button"
+                      class="p3-dev-toggle"
+                      :class="{ 'p3-dev-toggle-open': showDevPanel }"
+                      @click="showDevPanel = !showDevPanel"
                     >
-                      🧪 Simulate: deposit proof + 1 student file + ready flag
+                      <span class="p3-dev-toggle-icon">{{ showDevPanel ? '🔽' : '▶️' }}</span>
+                      <span>🔬 Dev tools (temporary — remove when student P3 page exists)</span>
                     </button>
-                    <p v-else class="p3-dev-note">
-                      Already confirmed. Use "Restart" in the top bar to re-test from P1.
-                    </p>
+                    <div v-if="showDevPanel" class="p3-dev-panel">
+                      <div class="p3-dev-title">🧪 Simulate Student Response</div>
+                      <p class="p3-dev-note">
+                        The student-side P3 page is not built yet, so school admins
+                        cannot receive student input. This button fakes the missing
+                        student actions (upload proof + send 1 file + click "I've
+                        uploaded everything") in one click so you can exercise the
+                        school's P3→P4 confirm flow.
+                      </p>
+                      <p class="p3-dev-note">
+                        All audit entries are tagged <code>school-admin (dev sim)</code>
+                        for easy cleanup.
+                      </p>
+                      <button
+                        v-if="!p3Latest || p3Latest.status !== 'confirmed'"
+                        class="btn-dev"
+                        @click="onDevSimulateStudentResponse"
+                      >
+                        🧪 Run simulation
+                      </button>
+                      <p v-else class="p3-dev-note">
+                        Already confirmed. Use "Restart" in the top bar to re-test from P1.
+                      </p>
+                    </div>
                   </div>
                 </div>
 
@@ -1394,6 +1409,9 @@ const p3Latest = computed(() => p3store.getLatest(id).value)
 const p3NewFiles = ref([])   // queued, not yet sent
 const p3Toast = ref('')
 const showStudentFiles = ref(false)   // toggle for "📥 Student Submitted Files" collapsible (see docs §16.1)
+// 🔬 DEV affordance (remove when student P3 page is built) — collapsed by default
+// so the dev panel doesn't crowd the production "Confirm Receipt" button.
+const showDevPanel = ref(false)
 
 function p3StatusLabel(status) {
   if (status === 'sent_to_student') return 'Sent to Student'
@@ -2433,9 +2451,44 @@ function restartApplication() {
   .star { font-size: 2rem; }
 }
 
-/* 🔬 DEV affordance panel — see docs §16.1.1 (dev note). Remove with handler when student P3 page is built. */
+/* 🔬 DEV affordance — see docs §16.1.1 (dev note). Remove with handler when student P3 page is built. */
+.p3-dev-section {
+  margin-top: 2.5rem;
+  padding-top: 1.5rem;
+  border-top: 1px dashed #cbd5e1;
+}
+.p3-dev-toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  background: transparent;
+  border: 1px solid #e2e8f0;
+  border-radius: 6px;
+  padding: 0.4rem 0.8rem;
+  color: #64748b;
+  font-size: 0.78rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background 0.15s, border-color 0.15s, color 0.15s;
+}
+.p3-dev-toggle:hover {
+  background: #f1f5f9;
+  border-color: #cbd5e1;
+  color: #334155;
+}
+.p3-dev-toggle-open {
+  background: #fef3c7;
+  border-color: #f59e0b;
+  color: #78350f;
+}
+.p3-dev-toggle-icon {
+  font-size: 0.7rem;
+  display: inline-block;
+  width: 1rem;
+  text-align: center;
+}
 .p3-dev-panel {
-  margin-top: 1.5rem;
+  margin-top: 0.75rem;
   padding: 0.9rem 1rem;
   background: #fef3c7;
   border: 2px dashed #f59e0b;
@@ -2453,6 +2506,9 @@ function restartApplication() {
   color: #78350f;
   line-height: 1.45;
   margin: 0 0 0.6rem 0;
+}
+.p3-dev-note:last-child {
+  margin-bottom: 0;
 }
 .p3-dev-note code {
   background: rgba(120, 53, 15, 0.1);
