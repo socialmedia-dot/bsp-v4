@@ -150,15 +150,20 @@ export function useP3Store() {
   }
 
   function addSchoolFile(appRef: string, file: P3Attachment, by: string = 'school-admin') {
-    const record = deposits.value.find(d => d.applicationRef === appRef && d.status !== 'confirmed')
-    if (!record) throw new Error('No active deposit record — send the form first')
+    // Always allow — P3 file exchange stays open even after `confirmed` for late
+    // supplementary docs (e.g. follow-up clarifications, re-uploads). See docs §16.1.1.
+    const record = deposits.value.find(d => d.applicationRef === appRef)
+    if (!record) throw new Error('No deposit record — send the form first')
     record.schoolFiles = [...record.schoolFiles, file]
-    record.sentAt = new Date().toISOString()
-    // School added something for student to review — reset student's confirmation gate.
-    // See docs §16.1.1 — "loop" semantics: any add from either side clears the gate.
+    if (record.status !== 'confirmed') {
+      record.sentAt = new Date().toISOString()
+    }
+    // School added something for student to review — clear the advisory "student ready" indicator.
+    // This is just self-correcting UI (the flag is advisory, not a gate).
+    // See docs §16.1.1 — "loop" semantics.
     if (record.studentReadyForReview) {
       record.studentReadyForReview = false
-      audit(record, { by, byRole: 'school', action: 'school-added-file-resets-student-gate', to: record.status })
+      audit(record, { by, byRole: 'school', action: 'school-added-file-resets-student-notification', to: record.status })
     }
     audit(record, { by, byRole: 'school', action: 'add-school-file', to: record.status })
     return record
@@ -176,13 +181,17 @@ export function useP3Store() {
   // Does NOT change P3 status — studentFiles is a general-purpose side channel,
   // distinct from the single proofFile* fields that drive status transitions.
   function addStudentFile(appRef: string, file: P3Attachment, by: string = 'student') {
-    const record = deposits.value.find(d => d.applicationRef === appRef && d.status !== 'confirmed')
-    if (!record) throw new Error('No active deposit record — waiting for school')
+    // Always allow — P3 file exchange stays open even after `confirmed` for late
+    // supplementary uploads from student. See docs §16.1.1.
+    const record = deposits.value.find(d => d.applicationRef === appRef)
+    if (!record) throw new Error('No deposit record — waiting for school')
     record.studentFiles = [...record.studentFiles, file]
-    // Student added more files after confirming — must re-confirm. See docs §16.1.1.
+    // Student added more files after clicking "I've uploaded everything" — clear the
+    // advisory indicator so the school doesn't mistakenly assume the student is still done.
+    // See docs §16.1.1 — "loop" semantics (advisory, not a gate).
     if (record.studentReadyForReview) {
       record.studentReadyForReview = false
-      audit(record, { by, byRole: 'student', action: 'student-added-file-resets-own-gate', to: record.status })
+      audit(record, { by, byRole: 'student', action: 'student-added-file-resets-own-notification', to: record.status })
     }
     audit(record, { by, byRole: 'student', action: 'add-student-file', to: record.status })
     return record

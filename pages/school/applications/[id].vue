@@ -496,11 +496,11 @@
                       </div>
                     </div>
 
-                    <!-- File input + Send/Add button (always available until confirmed) -->
-                    <div v-if="!p3Latest || p3Latest.status !== 'confirmed'" class="p3-add-file-row">
+                    <!-- File input + Send/Add button (always available — even after `confirmed`, for late submissions / follow-ups. See docs §16.1.1 rev 2.) -->
+                    <div class="p3-add-file-row">
                       <input id="p3-school-file-input" type="file" multiple accept="application/pdf,image/jpeg,image/png" @change="onP3NewFiles" />
                       <button v-if="!p3Latest" class="btn-primary" :disabled="!p3NewFiles.length" @click="onP3Send" title="Send the queued documents to the student and create the deposit record">📤 Send to Student</button>
-                      <button v-else class="btn-secondary" :disabled="!p3NewFiles.length" @click="onP3AddFiles" title="Append the queued documents to the existing deposit record">📎 Add to Student</button>
+                      <button v-else class="btn-secondary" :disabled="!p3NewFiles.length" @click="onP3AddFiles" :title="p3Latest.status === 'confirmed' ? 'Append a follow-up document to the existing deposit record (late submission support)' : 'Append the queued documents to the existing deposit record'">📎 Add to Student</button>
                     </div>
                   </div>
 
@@ -530,7 +530,7 @@
                     </div>
                   </div>
 
-                  <!-- 📥 Confirm Deposit Receipt (gated by studentReadyForReview — see docs §16.1.1) -->
+                  <!-- 📥 Confirm Deposit Receipt (school unilateral — see docs §16.1.1 rev 2. Always enabled when status === 'proof_uploaded'.) -->
                   <div v-if="p3Latest && p3Latest.status !== 'sent_to_student'" class="p3-section">
                     <div class="p3-section-title">📥 Confirm Deposit Receipt</div>
                     <div v-if="p3Latest.proofFileName" class="p3-proof-display">
@@ -543,17 +543,16 @@
                         <button
                           v-if="p3Latest.status === 'proof_uploaded'"
                           class="btn-approve"
-                          :disabled="!p3Latest.studentReadyForReview"
-                          :title="!p3Latest.studentReadyForReview ? 'Waiting for student to confirm upload is complete' : 'Click to confirm deposit receipt'"
+                          title="Click to confirm deposit receipt and advance to P4 (school is the final authority)"
                           @click="onP3Confirm"
                         >✅ Confirm Receipt</button>
                         <span v-else class="status-pill status-pill-confirmed">✅ Confirmed</span>
                       </div>
-                      <div v-if="p3Latest.status === 'proof_uploaded' && !p3Latest.studentReadyForReview" class="p3-gate-hint">
-                        ⏳ Waiting for student to confirm upload is complete (they need to click "✅ I've uploaded everything" on their side).
+                      <div v-if="p3Latest.status === 'proof_uploaded' && p3Latest.studentReadyForReview" class="p3-gate-ready">
+                        ✅ Student has indicated they're done — you can confirm anytime.
                       </div>
-                      <div v-else-if="p3Latest.status === 'proof_uploaded' && p3Latest.studentReadyForReview" class="p3-gate-ready">
-                        ✅ Student has confirmed all uploads. You may now confirm receipt.
+                      <div v-else-if="p3Latest.status === 'proof_uploaded'" class="p3-gate-hint">
+                        ℹ️ Student hasn't clicked "✅ I've uploaded everything" — but you can confirm anytime if you have what you need.
                       </div>
                     </div>
                     <p v-else class="p3-empty">Waiting for student to upload deposit proof…</p>
@@ -1436,11 +1435,8 @@ function onP3Send() {
 
 function onP3Confirm() {
   try {
-    // Gate check: student must have clicked "✅ I've uploaded everything" — see docs §16.1.1
-    if (!p3Latest.value || !p3Latest.value.studentReadyForReview) {
-      alert('Cannot confirm yet — waiting for student to confirm they have uploaded everything.')
-      return
-    }
+    // No gate — school is the unilateral final authority. See docs §16.1.1 rev 2.
+    // (The button is only rendered when status === 'proof_uploaded', so the call is always valid.)
     p3store.confirmDeposit(id)
     advancePhase(4, 'P3 deposit confirmed by school — proceeding to P4 (Admission Documents)')
     p3Toast.value = '✅ Deposit confirmed. P3 complete.'

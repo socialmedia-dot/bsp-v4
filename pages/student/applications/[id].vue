@@ -159,8 +159,8 @@
       </div>
     </footer>
 
-    <!-- 📤 Send Files to School (P3 general file exchange, mirror of schoolFiles — see docs §16.1) -->
-    <div v-if="p3Latest && p3Latest.status !== 'confirmed'" class="info-card p3-section">
+    <!-- 📤 Send Files to School (P3 general file exchange, mirror of schoolFiles — see docs §16.1. Always open, even after `confirmed`, for late submissions. See §16.1.1 rev 2.) -->
+    <div v-if="p3Latest" class="info-card p3-section">
       <h3>📤 Send Files to School</h3>
       <div class="action-desc">Send signed forms, additional documents, or attachments to the school. PDF, JPG, or PNG, max 5MB each.</div>
 
@@ -191,14 +191,14 @@
         <button v-if="p3StudentNewFiles.length" class="btn btn-primary" @click="onP3StudentSendFiles">📤 Send to School</button>
       </div>
 
-      <!-- Student confirmation gate (docs §16.1.1) — must confirm upload complete before school can advance -->
+      <!-- Student confirmation indicator (advisory — see docs §16.1.1 rev 2). Not a gate, but a courtesy signal. -->
       <div v-if="p3Latest.studentFiles && p3Latest.studentFiles.length" class="p3-ready-section">
         <div v-if="!p3Latest.studentReadyForReview" class="p3-ready-action">
           <button class="btn btn-primary btn-mark-ready" @click="onStudentMarkReady">
             ✅ I've uploaded everything
           </button>
           <div class="p3-ready-hint">
-            Click when you have finished uploading all documents. The school will then review and confirm receipt.
+            Click to let the school know you've finished uploading all documents. This is a courtesy signal only — the school can still confirm receipt anytime if they have what they need.
           </div>
         </div>
         <div v-else class="p3-ready-banner">
