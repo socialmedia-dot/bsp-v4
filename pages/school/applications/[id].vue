@@ -576,13 +576,21 @@
                   </div>
                 </div>
 
-                <div v-if="!isRejected" class="action-section divider">
+                <!-- P1-P2: editable. P3+: locked (consultant is part of financial audit trail, see docs §P1 Consultant Assignment — Phase Lock) -->
+                <div v-if="!isRejected && application.currentPhase <= 2" class="action-section divider">
                   <div class="action-title">Consultant Assignment</div>
                   <div class="action-desc">Assign or change consultant for this application</div>
                   <div class="action-buttons">
                     <button class="btn-secondary" @click="assignConsultant">
                       {{ application.consultantName ? '👤 Change Consultant' : '👤 Assign Consultant' }}
                     </button>
+                  </div>
+                </div>
+                <div v-else-if="!isRejected && application.currentPhase >= 3" class="action-section divider">
+                  <div class="action-title">🔒 Consultant (Locked)</div>
+                  <div class="action-desc">
+                    Consultant: <strong>{{ application.consultantName || 'Unassigned' }}</strong><br>
+                    <small>Locked once the application enters P3 (Deposit Exchange). The consultant is part of the financial audit trail.</small>
                   </div>
                 </div>
 

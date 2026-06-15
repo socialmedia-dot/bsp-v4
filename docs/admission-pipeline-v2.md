@@ -220,6 +220,18 @@ Example: `2026-X7K9M2P4`
 | P7 — School Actions | `📋 View Student Record` | No further action (P7 not reachable when rejected) |
 | All phases | Consultant Assignment (`👤 Assign / Change Consultant`) | No further state change |
 
+**Consultant Assignment — Phase Lock (2026-06-15 update):**
+
+- Consultant can be **assigned or changed** in **P1 (Application)** and **P2 (Interview + Decision)**.
+- Once the application enters **P3 (Deposit Exchange) or later**, the consultant assignment is **locked** — the section becomes read-only and shows the assigned consultant's name with a 🔒 indicator and a short reason. The P1 phase header still shows the consultant name in the info grid (read-only display).
+- **Reason:** P3 = financial transaction. The consultant of record is part of the deposit audit trail; changing it post-P3 would break chain-of-custody.
+- **Applies to both** the current `window.prompt()` handler (legacy) and the future pool picker modal (per pending pool picker spec).
+- **Click-test scenarios:**
+  - (a) P1 active, no consultant assigned → section shows `👤 Assign Consultant` button. Click opens picker.
+  - (b) P2 active, consultant assigned → section shows `👤 Change Consultant` button. Click opens picker.
+  - (c) P3+ active (any phase ≥ 3) → section shows `🔒 Consultant (Locked)` with name + reason, no button.
+  - (d) Restart app back to P1 → section reverts to editable (button visible again).
+
 **What stays visible (read-only data):**
 
 - `RejectedBanner` at top (always shown on rejection — see Section 9)
