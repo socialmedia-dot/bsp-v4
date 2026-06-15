@@ -802,3 +802,27 @@ School page (`pages/school/applications/[id].vue`):
 | (d) School sent 1 file (status `sent_to_student` or later) | Sent files list shows the file with download link, **no delete button**. Pending queue (if any) still has delete buttons. |
 | (e) After student uploads proof, school reviews | Same as (d) — sent files still have no delete button. The school can only "Add to Student" (append more files) or "Confirm Receipt". |
 
+### §16.1.1 Dev affordance — temporary (KC 2026-06-15)
+
+**Status:** TEMPORARY — remove when the student-side P3 page (`pages/student/applications/[id].vue`) is built.
+
+**Why:** Student page isn't built yet, so school admins have no way to receive student input during dev/testing of the P3→P4 confirm flow.
+
+**What it does:** A dev-mode panel at the bottom of the school's P3 section exposes a single button that fakes the missing student actions in one click:
+
+1. Calls `p3store.sendDepositForm(id, {}, [], 'school-admin (dev sim)')` — only if no deposit record exists yet.
+2. Calls `p3store.uploadDepositProof(id, {name, dataUrl}, 'school-admin (dev sim)')` — transitions status to `proof_uploaded`.
+3. Calls `p3store.addStudentFile(id, {name, dataUrl, uploadedAt, uploadedBy}, 'school-admin (dev sim)')` — adds 1 file to `studentFiles`.
+4. Calls `p3store.markStudentReady(id, 'school-admin (dev sim)')` — sets the advisory `studentReadyForReview` flag.
+
+After the click, the school's "✅ Confirm Receipt" button is enabled (per the rev 2.1 gate), and KC can continue testing the rest of the P3→P4 flow.
+
+**Audit signature:** All four actions above stamp `by: 'school-admin (dev sim)'` so the simulated entries are trivial to grep, filter, and remove when the real student flow lands.
+
+**Removal checklist (when student P3 page is built):**
+1. Delete `onDevSimulateStudentResponse()` from `pages/school/applications/[id].vue` (search for `🔬 DEV affordance`).
+2. Delete the `<div class="p3-dev-panel">` block from the same file.
+3. Delete the `.p3-dev-panel` / `.p3-dev-title` / `.p3-dev-note` / `.btn-dev` CSS block.
+4. Delete this whole `### §16.1.1 Dev affordance` section from this doc.
+
+

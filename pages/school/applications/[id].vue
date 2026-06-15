@@ -565,6 +565,30 @@
                   <div v-if="p3Latest && p3Latest.status === 'confirmed'" class="p3-confirmed-banner">
                     ✅ Deposit confirmed. P3 complete. You can now proceed to P4 (Admission Documents).
                   </div>
+
+                  <!-- 🔬 DEV affordance — see docs §16.1.1 (dev note) -->
+                  <!-- Remove this panel + the onDevSimulateStudentResponse handler once -->
+                  <!-- pages/student/applications/[id].vue wires up the real student flow. -->
+                  <div class="p3-dev-panel">
+                    <div class="p3-dev-title">🔬 Dev Mode — Simulate Student Response</div>
+                    <p class="p3-dev-note">
+                      Temporary: the student-side P3 page is not built yet, so school admins
+                      cannot receive student input. This button fakes the missing student
+                      actions (upload proof + send 1 file + click "I've uploaded everything")
+                      in one click so you can exercise the school's P3→P4 confirm flow.
+                      All audit entries are tagged <code>school-admin (dev sim)</code> for easy cleanup.
+                    </p>
+                    <button
+                      v-if="!p3Latest || p3Latest.status !== 'confirmed'"
+                      class="btn-dev"
+                      @click="onDevSimulateStudentResponse"
+                    >
+                      🧪 Simulate: deposit proof + 1 student file + ready flag
+                    </button>
+                    <p v-else class="p3-dev-note">
+                      Already confirmed. Use "Restart" in the top bar to re-test from P1.
+                    </p>
+                  </div>
                 </div>
 
                 <!-- P4 Admission Documents (was P5, gate-guarded by P3) -->
@@ -1448,6 +1472,50 @@ function onP3Confirm() {
   } catch (e) {
     alert(e.message)
   }
+}
+
+// 🔬 DEV affordance — see docs §16.1.1 rev 2.1 (dev note)
+// Fakes the student-side actions (deposit proof + 1 file + "ready" flag) in one click,
+// so KC can exercise the school's P3→P4 confirm flow before the student page is built.
+// All audit entries are stamped with `by: 'school-admin (dev sim)'` so they're trivial
+// to filter / remove later. REMOVE THIS WHOLE HANDLER + UI PANEL when the student P3
+// page (pages/student/applications/[id].vue) is wired up.
+function onDevSimulateStudentResponse() {
+  const devBy = 'school-admin (dev sim)'
+
+  // 1. Make sure a deposit record exists. sendDepositForm needs `bankInfo: {}` is fine
+  //    — bank details live on the uploaded PDF (per docs §16.1 design).
+  if (!p3Latest.value) {
+    p3store.sendDepositForm(id, {}, [], devBy)
+  }
+
+  // 2. Simulate student uploading the deposit proof (transitions status → 'proof_uploaded').
+  //    1×1 transparent PNG base64 is enough — UI just renders the filename.
+  const proofDataUrl =
+    'data:application/pdf;base64,JVBERi0xLjQKJcOkw7zDtsOfCjIgMCBvYmoKPDwvTGVuZ3RoIDMgMCBSL0ZpbHRlci9GbGF0ZURlY29kZT4+CnN0cmVhbQp4nDPQM1Qo5ypUMABCBV1DPUM9c0NTPRMjAyMDQyMzAyOFEKuQrA0MjAyOFEKuQrAzMjAyOFEKuQrA0MjAyOFEKuQrA1MjAyOFEKuQrA2MjAyOFEKuQrA3MjAyOFEKuQrA4MjAyOFEKuQrA5MjAyOFEKuQrCGAZU1qgaXBsYWNlaG9sZGVyCnN0YXJ0eHJlZgozIDAgUgo1MCA1IFIKZW5kc3RyZWFtCmVuZG9iagoyIDAgb2JqCjw8L1R5cGUvUGFnZS9NZWRpYUJveFswIDAgMjEwIDU5NF0vUGFyZW50IDEgMCBSL1Jlc291cmNlczw8Pj4vQ29udGVudHMgNCAwIFI+PgplbmRvYmoKNCAwIG9iago8PC9MZW5ndGggNDcvRmlsdGVyL0ZsYXRlRGVjb2RlPj5zdHJlYW0KeJxjYGRgYGBiZDBiYDBgYAJCA0NTAwMTAGIANFBiAuQwYH0C8pmBhAaIBYPz/wXQHBuYGZgZmBgZWNlYGZhY2ZjZWNmZWNlY2VjZWNlY2VjZWNlY2VjZWNlY2VjZWNlY2VjZWNlY2VjZWNlY2VjZWNlAwB3UQz5CnVuZG9iagoxIDAgb2JqCjw8L1R5cGUvUGFnZS9Db3VudCAxL0tpZHNbMiAwIFJdPj4KZW5kb2JqCjUgMCBvYmoKPDwvVHlwZS9DYXRhbG9nL1BhZ2VzIDEgMCBSPj4KZW5kb2JqCnhyZWYKMCA2CjAwMDAwMDAwMCA2NTUzNSBmIAowMDAwMDAwMDE1IDAwMDAwIG4gCjAwMDAwMDAxMjUgMDAwMDAgbiAKMDAwMDAwMDIyMSAwMDAwMCBuIAowMDAwMDAwMzE4IDAwMDAwIG4gCjAwMDAwMDA0MDAgMDAwMDAgbiAKdHJhaWxlciA8PC9TaXplIDYvUm9vdCA1IDAgUj4+CnN0YXJ0eHJlZgoxMTMKJSVFT0YK'
+  p3store.uploadDepositProof(
+    id,
+    { name: 'dev_simulated_proof_receipt.pdf', dataUrl: proofDataUrl },
+    devBy
+  )
+
+  // 3. Simulate student sending 1 file back through "📤 Send Files to School".
+  p3store.addStudentFile(
+    id,
+    {
+      name: 'dev_simulated_signed_refund_agreement.pdf',
+      dataUrl: proofDataUrl,    // same placeholder — UI just shows filename
+      uploadedAt: new Date().toISOString(),
+      uploadedBy: devBy
+    },
+    devBy
+  )
+
+  // 4. Simulate student clicking "✅ I've uploaded everything" — sets the advisory flag.
+  p3store.markStudentReady(id, devBy)
+
+  p3Toast.value = '🧪 Simulated: 1 proof + 1 student file + ready flag'
+  setTimeout(() => { p3Toast.value = '' }, 4000)
 }
 
 function p3StatusClass(status) {
@@ -2364,4 +2432,46 @@ function restartApplication() {
   }
   .star { font-size: 2rem; }
 }
+
+/* 🔬 DEV affordance panel — see docs §16.1.1 (dev note). Remove with handler when student P3 page is built. */
+.p3-dev-panel {
+  margin-top: 1.5rem;
+  padding: 0.9rem 1rem;
+  background: #fef3c7;
+  border: 2px dashed #f59e0b;
+  border-radius: 8px;
+}
+.p3-dev-title {
+  font-weight: 700;
+  font-size: 0.95rem;
+  color: #78350f;
+  margin-bottom: 0.4rem;
+  letter-spacing: 0.02em;
+}
+.p3-dev-note {
+  font-size: 0.82rem;
+  color: #78350f;
+  line-height: 1.45;
+  margin: 0 0 0.6rem 0;
+}
+.p3-dev-note code {
+  background: rgba(120, 53, 15, 0.1);
+  padding: 1px 5px;
+  border-radius: 3px;
+  font-size: 0.78rem;
+  font-family: 'SF Mono', Monaco, Consolas, monospace;
+}
+.btn-dev {
+  background: #f59e0b;
+  color: #fff;
+  border: none;
+  padding: 0.55rem 1.1rem;
+  border-radius: 6px;
+  font-size: 0.88rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.15s;
+}
+.btn-dev:hover { background: #d97706; }
+.btn-dev:active { background: #b45309; }
 </style>
