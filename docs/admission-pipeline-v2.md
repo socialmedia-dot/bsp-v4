@@ -688,11 +688,15 @@ interface P3Deposit {
 | (e) Status = `confirmed` | Student page: "📤 Send Files to School" section STILL VISIBLE (file input + send button remain open for late submissions / follow-ups). School page: "📎 Documents for Student" file input + "Add to Student" button STILL VISIBLE. The "📥 Files from Student" section remains visible (read-only audit trail). See §16.1.1 (rev 2). |
 | (f) Open browser console, check `localStorage['bsp-v4-deposits']` | Each P3 record has both `schoolFiles: [...]` and `studentFiles: [...]`. Audit log has `add-student-file` entries. |
 
-### 16.1.1 School unilateral confirmation + always-open P3 file exchange (2026-06-15, rev 2)
+### 16.1.1 School unilateral confirmation + always-open P3 file exchange (2026-06-15, rev 2.1)
 
-**Rule (rev 2, supersedes rev 1):** The P3 → P4 advance is controlled by the school **unilaterally** once `status === 'proof_uploaded'`. The school's "✅ Confirm Receipt" button is **always enabled** at that point — there is no gate. The student's "✅ I've uploaded everything" button is retained as an **advisory notification** (school sees a ✅ indicator on the "📥 Student Submitted Files" toggle) but is **not a prerequisite** for the school to advance.
+**Rule (rev 2.1, supersedes rev 2):** The P3 → P4 advance is controlled by the school **unilaterally** once BOTH:
+- `status === 'proof_uploaded'` (student has uploaded the deposit payment proof)
+- `studentFiles.length >= 1` (student has sent at least 1 file through the 📤 Send Files to School general file channel)
 
-**Why this changed (rev 1 → rev 2):** The rev-1 rule (school must wait for student to click "I've uploaded everything") slowed down the flow with no real safety benefit. In production the school is the final authority on whether the deposit is acceptable — they may have a phone confirmation with the student, may see a follow-up email, or simply trust the proof that's already in. The student confirm button is preserved as a courtesy signal that "the student thinks they're done", but the school doesn't have to wait.
+The school's "✅ Confirm Receipt" button is enabled when both conditions hold. The student's "✅ I've uploaded everything" button is retained as an **advisory notification** (school sees a ✅ indicator on the "📥 Student Submitted Files" toggle) but is **not a prerequisite** for the school to advance.
+
+**Why this changed (rev 2 → rev 2.1):** Rev 2 allowed the school to confirm with `status === 'proof_uploaded'` alone, which meant a student who uploaded only the payment proof (and never sent any other deposit documents like signed forms, refund agreements, etc.) would still let the school advance to P4. That bypassed the file exchange entirely. Rev 2.1 closes that hole by requiring at least one `studentFiles` entry — the student must have used the general file channel at least once. The proof file itself does NOT count (it's a status-changing field, not a general exchange entry). Late supplementary uploads are still always permitted (the file channel is still open after confirm; see below).
 
 **Always-open file exchange:** Both `schoolFiles` and `studentFiles` arrays remain **writable at any phase** — even after `status === 'confirmed'` and `currentPhase >= 4`. This handles real production cases: student discovers they forgot a form AFTER confirmation; school wants to send a follow-up clarification document; auditor asks for a re-scan. The pre-existing read-only rule (each side cannot delete files that have been sent to the other side) is unchanged. The new rule is about *adding* files, not deleting.
 
@@ -700,64 +704,67 @@ interface P3Deposit {
 - Student clicks "✅ I've uploaded everything" → `studentReadyForReview = true`. School sees a `✅` indicator on the "📥 Student Submitted Files" toggle button.
 - Either side adds a file after student marked ready → `studentReadyForReview` resets to `false` (self-correcting UI, no longer blocking).
 - Student can manually click "↩️ Mark as not ready" to undo their confirmation.
-- **None of this affects the school's "Confirm Receipt" button enablement** — that button is always enabled when `status === 'proof_uploaded'`.
+- **None of this affects the school's "Confirm Receipt" button enablement** — that button is gated only by `status === 'proof_uploaded' AND studentFiles.length >= 1`.
 
-**Store method changes (rev 2):**
-- `p3store.addSchoolFile(id, file)` — **filter removed.** Was `d.status !== 'confirmed'`, now `d.applicationRef === appRef` (any status). Late uploads accepted. `sentAt` only updated when `status !== 'confirmed'` (don't overwrite original send time).
-- `p3store.addStudentFile(id, file)` — **filter removed.** Was `d.status !== 'confirmed'`, now `d.applicationRef === appRef` (any status). Late uploads accepted.
+**Store method changes (rev 2, retained in 2.1):**
+- `p3store.addSchoolFile(id, file)` — filter `d.status !== 'confirmed'` removed. Late uploads accepted. `sentAt` only updated when `status !== 'confirmed'` (don't overwrite original send time).
+- `p3store.addStudentFile(id, file)` — filter `d.status !== 'confirmed'` removed. Late uploads accepted.
 - `p3store.sendDepositForm(id, ...)` — unchanged. Still creates the initial record.
 - `p3store.markStudentReady(id)` / `markStudentNotReady(id)` — unchanged. Still advisory.
 - `p3store.confirmDeposit(id)` — unchanged. School is the only caller.
 
-**UI changes (rev 2):**
+**UI changes (rev 2.1):**
 
 Student page (`pages/student/applications/[id].vue`):
-- "📤 Send Files to School" section — **always visible** when `p3Latest` exists (was hidden after `confirmed`). File input + queue + send button all stay open.
+- "📤 Send Files to School" section — **always visible** when `p3Latest` exists. File input + queue + send button all stay open.
 - "✅ I've uploaded everything" + "↩️ Mark as not ready" buttons — **always visible** when `p3Latest` exists. They continue to set/clear `studentReadyForReview` for the advisory indicator, but the indicator now has no gate function.
-- Banner / proof display when `status === 'confirmed'` — still shows the "✅ Confirmed" pill so the student knows the school has moved on, but the file exchange sections stay open for late additions.
+- Hint text on the "I've uploaded everything" button: explains it's a courtesy signal AND reminds the student to use the 📤 Send Files to School channel for any documents the school needs to see.
 
 School page (`pages/school/applications/[id].vue`):
-- "📎 Documents for Student" file input row — **always visible** when `p3Latest` exists (was hidden after `confirmed`). The "📤 Send to Student" / "📎 Add to Student" button stays open. After `confirmed` it stays as "📎 Add to Student" (appendable).
-- "📥 Confirm Deposit Receipt" button — `:disabled="!p3Latest.studentReadyForReview"` binding **REMOVED**. Now just:
+- "📎 Documents for Student" file input row — **always visible** when `p3Latest` exists. "📤 Send to Student" / "📎 Add to Student" button stays open. After `confirmed` it stays as "📎 Add to Student" (appendable).
+- "📥 Confirm Deposit Receipt" button — enablement binding:
   ```vue
   <button
     v-if="p3Latest.status === 'proof_uploaded'"
     class="btn-approve"
+    :disabled="!p3Latest.studentFiles || p3Latest.studentFiles.length === 0"
+    :title="(!p3Latest.studentFiles || p3Latest.studentFiles.length === 0) ? 'Student has not sent any files through the file exchange yet' : 'Click to confirm deposit receipt and advance to P4 (school is the final authority)'"
     @click="onP3Confirm"
   >✅ Confirm Receipt</button>
   ```
-  Inline helper text changes from "Waiting for student to confirm upload is complete" to the advisory variants below.
-- Helper text variants (replaces the old `p3-gate-hint` / `p3-gate-ready`):
-  - When `studentReadyForReview === true`: `✅ Student has indicated they're done — you can confirm anytime.`
-  - When `studentReadyForReview === false`: `ℹ️ Student hasn't clicked "I've uploaded everything" — but you can confirm anytime if you have what you need.`
+  Helper text variants (replaces the rev 2 hints — three cases now):
+  - `studentFiles.length === 0` (gate not met): `⏳ Waiting for student to send at least 1 file through "📤 Send Files to School". Proof alone is not enough — the school needs at least one supplementary document (signed form, refund agreement, etc.).`
+  - `studentFiles.length >= 1 && studentReadyForReview === true`: `✅ Student has indicated they're done — you can confirm anytime.`
+  - `studentFiles.length >= 1 && studentReadyForReview === false`: `ℹ️ Student hasn't clicked "✅ I've uploaded everything" — but you can confirm anytime if you have what you need.`
 - "📥 Student Submitted Files" toggle button — `✅` indicator behavior unchanged (reflects `studentReadyForReview`), but is now informational only.
 
-**State transitions (rev 2):**
+**State transitions (rev 2.1):**
 
 | From | To | Trigger |
 |------|----|---------|
 | (none) | `sent_to_student` | School clicks "Send to Student" with ≥1 queued file |
 | `sent_to_student` | `proof_uploaded` | Student uploads deposit proof |
 | `proof_uploaded` | `proof_uploaded` (indicator reset) | Either side adds a file after student marked ready (advisory flag flips; no status change) |
-| `proof_uploaded` | `confirmed` + `currentPhase = 4` | School clicks "Confirm Receipt" — **always available**, no gate |
+| `proof_uploaded` | `confirmed` + `currentPhase = 4` | School clicks "Confirm Receipt" — **enabled only when `studentFiles.length >= 1`**. No waiting on `studentReadyForReview`. |
 | `confirmed` | `confirmed` (file appended) | Either side adds a file post-confirm (no status change, but audit log entry created) |
 
-**Click-test scenarios (rev 2, post-deploy):**
+**Click-test scenarios (rev 2.1, post-deploy):**
 
 | # | Scenario | Expected |
 |---|----------|----------|
-| (g) Student uploads 1 PDF, has NOT clicked "I've uploaded everything" | School's "Confirm Receipt" button **ENABLED** (no longer disabled). Helper text: "ℹ️ Student hasn't clicked 'I've uploaded everything' — but you can confirm anytime if you have what you need." Student page shows `✅ I've uploaded everything` button. |
-| (h) Student clicks `✅ I've uploaded everything` | `studentReadyForReview = true`. School's toggle button label shows `✅` indicator. Helper text changes to "✅ Student has indicated they're done". **Confirm Receipt still enabled.** Student page shows `↩️ Mark as not ready` undo button. |
-| (i) After (h), student adds another file (e.g. supplementary receipt) | `studentReadyForReview` auto-resets to `false`. School's `✅` indicator on toggle disappears. **Confirm Receipt still enabled** (no impact on gate). |
-| (j) After (h), school clicks "Add to Student" to send a follow-up doc | `studentReadyForReview` auto-resets. Student page shows new school file in "📎 Documents from School" list. **Confirm Receipt still enabled.** |
-| (k) Student clicks `↩️ Mark as not ready` after (h) | `studentReadyForReview = false`. **Confirm Receipt still enabled.** |
-| (l) School clicks `✅ Confirm Receipt` while `status === 'proof_uploaded'` | status → `confirmed`, currentPhase → 4, P4 phase card auto-expands. Toast: "✅ Deposit confirmed. P3 complete." |
-| (m) `localStorage['bsp-v4-deposits']` after (l) | Deposit has `studentReadyForReview: <true|false>` (frozen at time of confirm, ignored post-confirmed). Audit log has `confirm-deposit` event. |
-| **(n) NEW** | After (l), on school page, "📎 Documents for Student" file input + "📎 Add to Student" button **STILL VISIBLE**. School picks a follow-up PDF, clicks Add → file appended to `schoolFiles`. Audit log has new `add-school-file` entry. Student page sees the new file in "📎 Documents from School" section (read-only). |
-| **(o) NEW** | After (l), on student page, "📤 Send Files to School" section **STILL VISIBLE**. Student picks a late supplementary doc, clicks Send → file appended to `studentFiles`. School's "📥 Student Submitted Files" section shows the new file. Audit log has new `add-student-file` entry. |
-| **(p) NEW** | After (n) or (o), student clicks `✅ I've uploaded everything` again → `studentReadyForReview = true`. School sees `✅` indicator. Click `↩️ Mark as not ready` → indicator disappears. Indicator behavior unchanged from rev 1, just no longer functional as a gate. |
+| (g) Student uploaded proof, has NOT sent any file through file exchange | School's "Confirm Receipt" button **DISABLED** (new in rev 2.1). Helper text: "⏳ Waiting for student to send at least 1 file through '📤 Send Files to School'. Proof alone is not enough." |
+| (h) Student uploaded proof, sent 1 PDF through file exchange, has NOT clicked "I've uploaded everything" | School's "Confirm Receipt" button **ENABLED** (gate met because `studentFiles.length >= 1`). Helper text: "ℹ️ Student hasn't clicked '✅ I've uploaded everything' — but you can confirm anytime if you have what you need." |
+| (i) Student uploaded proof, sent 1 PDF, then clicked "✅ I've uploaded everything" | School's "Confirm Receipt" button **ENABLED**. Toggle shows ✅ indicator. Helper text: "✅ Student has indicated they're done — you can confirm anytime." |
+| (j) After (i), student adds another file (e.g. supplementary receipt) | `studentReadyForReview` auto-resets to `false`. **Confirm Receipt still enabled** (gate still met, no impact on `studentReadyForReview`). |
+| (k) After (i), school clicks "Add to Student" to send a follow-up doc | `studentReadyForReview` auto-resets. Student page shows new school file. **Confirm Receipt still enabled.** |
+| (l) Student clicks `↩️ Mark as not ready` after (i) | `studentReadyForReview = false`. **Confirm Receipt still enabled** (no impact on gate). |
+| (m) School clicks `✅ Confirm Receipt` | status → `confirmed`, currentPhase → 4, P4 phase card auto-expands. Toast: "✅ Deposit confirmed. P3 complete." |
+| (n) `localStorage['bsp-v4-deposits']` after (m) | Deposit has `studentFiles.length >= 1` (gate was met). Audit log has `confirm-deposit` event. |
+| **(o) NEW** | After (m), on school page, "📎 Documents for Student" file input + "📎 Add to Student" button **STILL VISIBLE**. School picks a follow-up PDF, clicks Add → file appended to `schoolFiles`. Audit log has new `add-school-file` entry. Student page sees the new file in "📎 Documents from School" section (read-only). |
+| **(p) NEW** | After (m), on student page, "📤 Send Files to School" section **STILL VISIBLE**. Student picks a late supplementary doc, clicks Send → file appended to `studentFiles`. School's "📥 Student Submitted Files" section shows the new file. Audit log has new `add-student-file` entry. |
+| **(q) NEW** | After (m), student clicks `✅ I've uploaded everything` again → `studentReadyForReview = true`. School sees `✅` indicator. Click `↩️ Mark as not ready` → indicator disappears. Indicator behavior unchanged, just no longer functional as a gate. |
 
-**Defensive note (rev 2):** The `confirmDeposit` store method still does NOT re-check `studentReadyForReview` (rev 1 pattern retained for forward compatibility — a future strict mode could re-enable the check via a config flag). The school is the final authority; store primitives stay open, UI gates the action (the `v-if` on the button is the only gate, and it checks `status === 'proof_uploaded'`).
+**Defensive note (rev 2.1):** The `confirmDeposit` store method does NOT re-check `studentFiles.length` (mirroring the rev 1 pattern of not checking `studentReadyForReview`). The school page's `onP3Confirm` is the only caller and the button is the only gate, so the store primitive stays open. A future strict mode could re-enable the check via a config flag.
 
 **State transitions:**
 
