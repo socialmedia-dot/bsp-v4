@@ -504,6 +504,19 @@
                     </div>
                   </div>
 
+                  <!-- 📥 Files from Student (read-only display, mirror of schoolFiles — see docs §16.1) -->
+                  <div v-if="p3Latest && p3Latest.studentFiles && p3Latest.studentFiles.length" class="p3-section">
+                    <div class="p3-section-title">📥 Files from Student</div>
+                    <div class="action-desc">Documents the student has sent back. Download only — these are part of the P3 audit trail.</div>
+                    <div class="p3-files-list">
+                      <div v-for="(f, i) in p3Latest.studentFiles" :key="i" class="p3-file-row">
+                        <span class="p3-file-icon">📄</span>
+                        <a class="p3-file-name" :href="f.dataUrl" target="_blank" rel="noopener">{{ f.name }}</a>
+                        <span class="p3-file-meta">{{ formatDateTime(f.uploadedAt) }}</span>
+                      </div>
+                    </div>
+                  </div>
+
                   <!-- Section C: Confirm student proof -->
                   <div v-if="p3Latest && p3Latest.status !== 'sent_to_student'" class="p3-section">
                     <div class="p3-section-title">📥 Confirm Deposit Receipt</div>

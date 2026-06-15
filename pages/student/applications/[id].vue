@@ -159,6 +159,39 @@
       </div>
     </footer>
 
+    <!-- 📤 Send Files to School (P3 general file exchange, mirror of schoolFiles — see docs §16.1) -->
+    <div v-if="p3Latest && p3Latest.status !== 'confirmed'" class="info-card p3-section">
+      <h3>📤 Send Files to School</h3>
+      <div class="action-desc">Send signed forms, additional documents, or attachments to the school. PDF, JPG, or PNG, max 5MB each.</div>
+
+      <!-- Sent files (read-only — no delete per docs §16 spec, mirrors schoolFiles) -->
+      <div v-if="p3Latest.studentFiles && p3Latest.studentFiles.length" class="p3-files-list">
+        <div v-for="(f, i) in p3Latest.studentFiles" :key="i" class="p3-file-row">
+          <span class="p3-file-icon">📄</span>
+          <a class="p3-file-name" :href="f.dataUrl" target="_blank" rel="noopener">{{ f.name }}</a>
+          <span class="p3-file-meta">{{ formatDateTime(f.uploadedAt) }}</span>
+        </div>
+      </div>
+      <p v-else class="p3-empty">No files sent yet. Add the first one below.</p>
+
+      <!-- Pending files queue (local state, not yet sent) -->
+      <div v-if="p3StudentNewFiles.length" class="p3-files-list">
+        <div v-for="(f, i) in p3StudentNewFiles" :key="`new-${i}`" class="p3-file-row p3-file-row-pending">
+          <span class="p3-file-icon">📎</span>
+          <span class="p3-file-name">{{ f.name }}</span>
+          <span class="p3-file-meta">pending</span>
+          <button class="p3-file-remove" @click="removeP3StudentNewFile(i)" title="Remove">✕</button>
+        </div>
+      </div>
+
+      <!-- Add to queue + Send -->
+      <div class="p3-add-file-row">
+        <input ref="p3StudentFileInput" type="file" accept=".pdf,.jpg,.jpeg,.png" @change="onP3StudentFileSelected" style="display: none;" />
+        <button class="btn btn-secondary" @click="$refs.p3StudentFileInput.click()">➕ Add File</button>
+        <button v-if="p3StudentNewFiles.length" class="btn btn-primary" @click="onP3StudentSendFiles">📤 Send to School</button>
+      </div>
+    </div>
+
     <!-- Hidden file input for P3 deposit proof upload -->
     <input
       id="student-p3-file-input"
@@ -216,6 +249,50 @@ function onP3UploadProof() {
   } catch (err) {
     alert(err.message || 'Upload failed')
   }
+}
+
+// P3 student general file exchange (docs §16.1) — mirror of school's schoolFiles.
+// Uses p3StudentNewFiles (plural) to avoid collision with the existing
+// p3StudentFile (singular) proof flow above. Status-agnostic side channel.
+const p3StudentNewFiles = ref([])
+
+function onP3StudentFileSelected(e) {
+  const input = e.target
+  const file = input.files && input.files[0]
+  if (!file) return
+  if (file.size > 5 * 1024 * 1024) {
+    alert('File too large (max 5MB).')
+    input.value = ''
+    return
+  }
+  const reader = new FileReader()
+  reader.onload = () => {
+    p3StudentNewFiles.value.push({ name: file.name, dataUrl: reader.result })
+    input.value = ''  // reset so the same file can be re-selected
+  }
+  reader.readAsDataURL(file)
+}
+
+function removeP3StudentNewFile(i) {
+  p3StudentNewFiles.value.splice(i, 1)
+}
+
+function onP3StudentSendFiles() {
+  if (!p3StudentNewFiles.value.length) return
+  if (p3Latest.value && p3Latest.value.status === 'confirmed') {
+    alert('Already confirmed. Contact the school to revise.')
+    return
+  }
+  for (const f of p3StudentNewFiles.value) {
+    p3store.addStudentFile(id, {
+      name: f.name,
+      dataUrl: f.dataUrl,
+      uploadedAt: new Date().toISOString(),
+      uploadedBy: 'student'
+    })
+  }
+  p3StudentNewFiles.value = []
+  alert('✅ Files sent to school.')
 }
 
 // Mock data — will be replaced by API
@@ -287,6 +364,13 @@ const phaseActions = computed(() => {
 function formatDate(iso) {
   const d = new Date(iso)
   return d.toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' })
+}
+
+function formatDateTime(iso) {
+  if (!iso) return ''
+  const d = new Date(iso)
+  if (isNaN(d.getTime())) return iso
+  return d.toLocaleString('en-GB', { day: 'numeric', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' })
 }
 
 function doAction(action) {
@@ -484,6 +568,21 @@ onMounted(() => {
 .btn-primary:hover { background: #2563eb; }
 .btn-secondary { background: #f1f5f9; color: #475569; border: 1px solid #e2e8f0; }
 .btn-secondary:hover { background: #e2e8f0; }
+
+/* P3 file exchange (student) — mirrors school page styles for consistency (docs §16.1) */
+.p3-section { margin-top: 0.5rem; }
+.p3-section h3 { font-size: 1rem; }
+.p3-files-list { display: flex; flex-direction: column; gap: 0.5rem; margin: 0.75rem 0; }
+.p3-file-row { display: grid; grid-template-columns: auto 1fr auto auto; gap: 0.75rem; align-items: center; padding: 0.5rem 0.75rem; background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 6px; }
+.p3-file-row-pending { background: #fffbeb; border-color: #fcd34d; }
+.p3-file-icon { font-size: 1rem; }
+.p3-file-name { color: #1e40af; text-decoration: none; font-weight: 500; font-size: 0.9rem; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.p3-file-name:hover { text-decoration: underline; }
+.p3-file-meta { color: #64748b; font-size: 0.75rem; }
+.p3-file-remove { background: transparent; border: none; color: #ef4444; cursor: pointer; font-size: 1rem; padding: 0 0.25rem; line-height: 1; }
+.p3-file-remove:hover { color: #b91c1c; }
+.p3-add-file-row { display: flex; gap: 0.5rem; align-items: center; margin-top: 0.5rem; flex-wrap: wrap; }
+.p3-empty { color: #64748b; font-size: 0.85rem; font-style: italic; margin: 0.5rem 0; }
 
 /* Footer */
 .footer { background: #f8fafc; border-top: 1px solid #e2e8f0; padding: 1.5rem 0; margin-top: auto; }

@@ -639,6 +639,48 @@ The old message in Section B's empty state said "Use Section A above to schedule
 - Implementation: the `<button class="p3-file-remove">` on the sent files list is removed entirely. The pending queue's button is unchanged. The store's `removeSchoolFile` function is kept (dormant) for potential future admin / correction flows.
 - Defensive note: the spec rule is a UI rule. The store primitive is not gated. A future agent who re-introduces the button should also add an explicit "Why sent files are read-only" comment so they don't reverse the rule by accident.
 
+### 16.1 Student-to-school file exchange (2026-06-15 update)
+
+**Rule:** Asymmetric to the school's `schoolFiles` mechanism, the student can now also send **multiple** files to the school via a new "📤 Send Files to School" section on the student P3 view. Once sent, files are read-only on the student side (mirror of the school's read-only rule above). The school sees them in a new "📥 Files from Student" section, also read-only (audit trail).
+
+**Why this exists:** The school's `schoolFiles` already supports N files. The student's contribution was limited to a **single** deposit proof (`proofFileName/proofFileData/proofUploadedAt`) which doubles as a status-changing action. KC needs a general-purpose multi-file channel for the student to send back signed forms, additional supporting documents, replies to school questions, etc. — without conflating those exchanges with the canonical "I have paid" proof.
+
+**Storage:** New `studentFiles: P3Attachment[]` field on `P3Deposit` (mirror of `schoolFiles`):
+
+```ts
+interface P3Deposit {
+  // ... existing fields ...
+  schoolFiles: P3Attachment[]   // documents school sends to student
+  studentFiles: P3Attachment[]  // documents student sends to school (NEW, 2026-06-15)
+  // ... existing fields ...
+}
+```
+
+**localStorage migration:** Existing deposit records persisted before this change are missing `studentFiles`. The store's `load()` MUST back-fill `studentFiles: []` on every read so old records don't crash the read path. Same defensive pattern as the existing `schoolFiles` migration.
+
+**Distinction from deposit proof (do not conflate):**
+- The existing `proofFileName / proofFileData / proofUploadedAt` fields stay as-is. They represent the **single** payment proof that drives the `sent_to_student → proof_uploaded` status transition.
+- The new `studentFiles` is **general-purpose, multi-file, and does NOT change P3 status**. Uploading files to `studentFiles` is a side-channel for attachments only.
+- The student page keeps two completely separate UI surfaces: (1) the "💳 Upload Deposit Proof" action button (existing — drives status), and (2) the "📤 Send Files to School" section (new — general attachments). The two flows MUST NOT collide: use `p3StudentNewFiles` (plural) and `p3StudentFileInput` ref for the new flow, leaving `p3StudentFile` (singular) and `student-p3-file-input` for the existing proof flow.
+
+**Status rules:**
+- Student can send files in any non-terminal P3 status: `sent_to_student`, `proof_uploaded`. (Mirror of schoolFiles: cannot add once `confirmed`.)
+- Files are **append-only** on the student side after send — no delete button is exposed in the student UI. The store's `removeStudentFile` is kept dormant for potential future admin / correction flows.
+- Adding to `studentFiles` does NOT change `status` and does NOT write a `from`/`to` field in the audit log (the `to` field of the audit entry reflects the current unchanged status — purely informational).
+
+**School-side display:** New "📥 Files from Student" section on the school page, rendered read-only as a download list (mirror of how the student sees `schoolFiles` on their side). The school CANNOT delete student files from this list.
+
+**Click-test scenarios (post-deploy):**
+
+| Scenario | Expected |
+|----------|----------|
+| (a) Open P3 student page (status = `sent_to_student`) | "📤 Send Files to School" section visible, file input + "➕ Add File" button. No sent files yet → "No files sent yet" empty state. |
+| (b) Student adds 1 PDF, then clicks "📤 Send to School" | Section shows PDF in sent list (read-only, no delete). Pending queue empty. New "📥 Files from Student" section appears on school page with same PDF. |
+| (c) School refreshes P3 page | New "📥 Files from Student" section visible with the PDF, download link works. |
+| (d) Student adds 2nd PDF after sending 1st | First PDF still in sent list (read-only). Second PDF appears in pending queue with ✕ button. Send it → both PDFs in sent list. |
+| (e) Status = `confirmed` | Student page: "📤 Send Files to School" section HIDDEN (locked). School page: "📥 Files from Student" section still visible (read-only, audit trail). |
+| (f) Open browser console, check `localStorage['bsp-v4-deposits']` | Each P3 record has both `schoolFiles: [...]` and `studentFiles: [...]`. Audit log has `add-student-file` entries. |
+
 **State transitions:**
 
 | From | To | Trigger |

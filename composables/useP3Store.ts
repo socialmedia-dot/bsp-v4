@@ -33,6 +33,7 @@ export interface P3Deposit {
   createdAt: string
   bankInfo: P3BankInfo
   schoolFiles: P3Attachment[]       // documents school sends to student
+  studentFiles: P3Attachment[]      // documents student sends to school (mirror of schoolFiles, 2026-06-15)
   sentAt?: string
   proofFileName?: string
   proofFileData?: string
@@ -60,6 +61,8 @@ function load() {
           delete d.schoolFileName
           delete d.schoolFileData
         }
+        // Migrate missing studentFiles (added 2026-06-15) — see docs §16.1
+        if (!d.studentFiles) d.studentFiles = []
         return d
       })
     }
@@ -133,6 +136,7 @@ export function useP3Store() {
       createdAt: new Date().toISOString(),
       bankInfo,
       schoolFiles: files,
+      studentFiles: [],   // student-side file exchange — see docs §16.1
       sentAt: new Date().toISOString(),
       auditLog: []
     }
@@ -155,6 +159,27 @@ export function useP3Store() {
     if (!record) return
     record.schoolFiles = record.schoolFiles.filter(f => f.name !== fileName)
     audit(record, { by, byRole: 'school', action: 'remove-school-file' })
+  }
+
+  // Student-to-school file exchange (2026-06-15) — see docs §16.1
+  // Mirror of addSchoolFile: blocks on 'confirmed' for symmetry.
+  // Does NOT change P3 status — studentFiles is a general-purpose side channel,
+  // distinct from the single proofFile* fields that drive status transitions.
+  function addStudentFile(appRef: string, file: P3Attachment, by: string = 'student') {
+    const record = deposits.value.find(d => d.applicationRef === appRef && d.status !== 'confirmed')
+    if (!record) throw new Error('No active deposit record — waiting for school')
+    record.studentFiles = [...record.studentFiles, file]
+    audit(record, { by, byRole: 'student', action: 'add-student-file', to: record.status })
+    return record
+  }
+
+  // Dormant — UI does not expose delete on student files (read-only after send).
+  // Kept for future admin / correction flows, mirror of removeSchoolFile.
+  function removeStudentFile(appRef: string, fileName: string, by: string = 'student') {
+    const record = deposits.value.find(d => d.applicationRef === appRef)
+    if (!record) return
+    record.studentFiles = record.studentFiles.filter(f => f.name !== fileName)
+    audit(record, { by, byRole: 'student', action: 'remove-student-file' })
   }
 
   function uploadDepositProof(
@@ -202,6 +227,8 @@ export function useP3Store() {
     sendDepositForm,
     addSchoolFile,
     removeSchoolFile,
+    addStudentFile,
+    removeStudentFile,
     uploadDepositProof,
     confirmDeposit,
     clearForApp,
