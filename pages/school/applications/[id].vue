@@ -514,6 +514,7 @@
                     >
                       <span class="p3-toggle-icon">{{ showStudentFiles ? '🔽' : '▶️' }}</span>
                       <span class="p3-toggle-label">📥 Student Submitted Files</span>
+                      <span v-if="p3Latest.studentReadyForReview" class="p3-toggle-ready-mark" title="Student has confirmed all uploads">✅</span>
                       <span class="p3-toggle-count">({{ p3Latest.studentFiles?.length || 0 }})</span>
                     </button>
                     <div v-if="showStudentFiles" class="p3-toggle-body">
@@ -529,7 +530,7 @@
                     </div>
                   </div>
 
-                  <!-- Section C: Confirm student proof -->
+                  <!-- 📥 Confirm Deposit Receipt (gated by studentReadyForReview — see docs §16.1.1) -->
                   <div v-if="p3Latest && p3Latest.status !== 'sent_to_student'" class="p3-section">
                     <div class="p3-section-title">📥 Confirm Deposit Receipt</div>
                     <div v-if="p3Latest.proofFileName" class="p3-proof-display">
@@ -539,8 +540,20 @@
                           <div class="att-name">{{ p3Latest.proofFileName }}</div>
                           <div class="att-meta">Uploaded {{ formatDateTime(p3Latest.proofUploadedAt) }} by {{ p3Latest.proofUploadedBy || 'student' }}</div>
                         </div>
-                        <button v-if="p3Latest.status === 'proof_uploaded'" class="btn-approve" @click="onP3Confirm">✅ Confirm Receipt</button>
+                        <button
+                          v-if="p3Latest.status === 'proof_uploaded'"
+                          class="btn-approve"
+                          :disabled="!p3Latest.studentReadyForReview"
+                          :title="!p3Latest.studentReadyForReview ? 'Waiting for student to confirm upload is complete' : 'Click to confirm deposit receipt'"
+                          @click="onP3Confirm"
+                        >✅ Confirm Receipt</button>
                         <span v-else class="status-pill status-pill-confirmed">✅ Confirmed</span>
+                      </div>
+                      <div v-if="p3Latest.status === 'proof_uploaded' && !p3Latest.studentReadyForReview" class="p3-gate-hint">
+                        ⏳ Waiting for student to confirm upload is complete (they need to click "✅ I've uploaded everything" on their side).
+                      </div>
+                      <div v-else-if="p3Latest.status === 'proof_uploaded' && p3Latest.studentReadyForReview" class="p3-gate-ready">
+                        ✅ Student has confirmed all uploads. You may now confirm receipt.
                       </div>
                     </div>
                     <p v-else class="p3-empty">Waiting for student to upload deposit proof…</p>
@@ -1423,6 +1436,11 @@ function onP3Send() {
 
 function onP3Confirm() {
   try {
+    // Gate check: student must have clicked "✅ I've uploaded everything" — see docs §16.1.1
+    if (!p3Latest.value || !p3Latest.value.studentReadyForReview) {
+      alert('Cannot confirm yet — waiting for student to confirm they have uploaded everything.')
+      return
+    }
     p3store.confirmDeposit(id)
     advancePhase(4, 'P3 deposit confirmed by school — proceeding to P4 (Admission Documents)')
     p3Toast.value = '✅ Deposit confirmed. P3 complete.'
@@ -1994,6 +2012,14 @@ function restartApplication() {
 .p3-toggle-btn-has-files .p3-toggle-count { background: #d1fae5; color: #065f46; }
 .p3-toggle-btn-active .p3-toggle-count { background: #dbeafe; color: #1e40af; }
 .p3-toggle-body { margin-top: 0.75rem; padding-top: 0.75rem; border-top: 1px dashed #e2e8f0; }
+.p3-toggle-ready-mark { background: #d1fae5; color: #065f46; border-radius: 999px; padding: 0.15rem 0.55rem; font-size: 0.9rem; font-weight: 700; margin-left: 0.25rem; }
+.p3-gate-hint { margin-top: 0.65rem; padding: 0.5rem 0.75rem; background: #fffbeb; border: 1px solid #fcd34d; border-radius: 6px; color: #92400e; font-size: 0.85rem; line-height: 1.4; }
+.p3-gate-ready { margin-top: 0.65rem; padding: 0.5rem 0.75rem; background: #d1fae5; border: 1px solid #6ee7b7; border-radius: 6px; color: #065f46; font-size: 0.85rem; font-weight: 600; line-height: 1.4; }
+.btn-approve:disabled { background: #cbd5e1; border-color: #94a3b8; color: #475569; cursor: not-allowed; opacity: 0.7; }
+.btn-approve:disabled:hover { background: #cbd5e1; }
+.p3-ready-banner { margin-top: 0.75rem; padding: 0.75rem 1rem; background: #eff6ff; border: 1px solid #93c5fd; border-radius: 6px; color: #1e40af; font-weight: 600; display: flex; align-items: center; gap: 0.5rem; flex-wrap: wrap; }
+.p3-ready-banner-secondary { background: transparent; color: #1e40af; border: 1px solid #93c5fd; padding: 0.25rem 0.65rem; border-radius: 6px; font-size: 0.85rem; cursor: pointer; font-weight: 500; }
+.p3-ready-banner-secondary:hover { background: #dbeafe; }
 .p3-file-row { display: grid; grid-template-columns: auto 1fr auto auto; gap: 0.75rem; align-items: center; padding: 0.5rem 0.75rem; background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 6px; }
 .p3-file-row-pending { background: #fffbeb; border-color: #fcd34d; }
 .p3-file-icon { font-size: 1rem; }

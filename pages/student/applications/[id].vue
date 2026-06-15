@@ -190,6 +190,25 @@
         <button class="btn btn-secondary" @click="$refs.p3StudentFileInput.click()">➕ Add File</button>
         <button v-if="p3StudentNewFiles.length" class="btn btn-primary" @click="onP3StudentSendFiles">📤 Send to School</button>
       </div>
+
+      <!-- Student confirmation gate (docs §16.1.1) — must confirm upload complete before school can advance -->
+      <div v-if="p3Latest.studentFiles && p3Latest.studentFiles.length" class="p3-ready-section">
+        <div v-if="!p3Latest.studentReadyForReview" class="p3-ready-action">
+          <button class="btn btn-primary btn-mark-ready" @click="onStudentMarkReady">
+            ✅ I've uploaded everything
+          </button>
+          <div class="p3-ready-hint">
+            Click when you have finished uploading all documents. The school will then review and confirm receipt.
+          </div>
+        </div>
+        <div v-else class="p3-ready-banner">
+          <span>✅ Marked as ready for school review.</span>
+          <span class="p3-ready-banner-spacer"></span>
+          <button class="p3-ready-banner-secondary" @click="onStudentMarkNotReady">
+            ↩️ Mark as not ready
+          </button>
+        </div>
+      </div>
     </div>
 
     <!-- Hidden file input for P3 deposit proof upload -->
@@ -293,6 +312,25 @@ function onP3StudentSendFiles() {
   }
   p3StudentNewFiles.value = []
   alert('✅ Files sent to school.')
+}
+
+// Student confirmation gate — see docs §16.1.1
+function onStudentMarkReady() {
+  try {
+    p3store.markStudentReady(id)
+    alert('✅ Marked as ready. The school will review and confirm receipt shortly.')
+  } catch (err) {
+    alert(err.message || 'Failed to mark ready')
+  }
+}
+
+function onStudentMarkNotReady() {
+  try {
+    p3store.markStudentNotReady(id)
+    alert('↩️ Marked as not ready. You can add more files before confirming again.')
+  } catch (err) {
+    alert(err.message || 'Failed to update')
+  }
 }
 
 // Mock data — will be replaced by API
@@ -583,6 +621,15 @@ onMounted(() => {
 .p3-file-remove:hover { color: #b91c1c; }
 .p3-add-file-row { display: flex; gap: 0.5rem; align-items: center; margin-top: 0.5rem; flex-wrap: wrap; }
 .p3-empty { color: #64748b; font-size: 0.85rem; font-style: italic; margin: 0.5rem 0; }
+.p3-ready-section { margin-top: 1rem; padding-top: 0.75rem; border-top: 1px dashed #e2e8f0; }
+.p3-ready-action { display: flex; flex-direction: column; gap: 0.5rem; }
+.btn-mark-ready { background: #2563eb; color: #fff; padding: 0.65rem 1rem; font-weight: 600; }
+.btn-mark-ready:hover { background: #1d4ed8; }
+.p3-ready-hint { color: #64748b; font-size: 0.85rem; line-height: 1.4; }
+.p3-ready-banner { margin-top: 0.5rem; padding: 0.65rem 0.85rem; background: #eff6ff; border: 1px solid #93c5fd; border-radius: 6px; color: #1e40af; font-weight: 600; display: flex; align-items: center; gap: 0.5rem; flex-wrap: wrap; }
+.p3-ready-banner-spacer { flex: 1; }
+.p3-ready-banner-secondary { background: transparent; color: #1e40af; border: 1px solid #93c5fd; padding: 0.25rem 0.65rem; border-radius: 6px; font-size: 0.85rem; cursor: pointer; font-weight: 500; }
+.p3-ready-banner-secondary:hover { background: #dbeafe; }
 
 /* Footer */
 .footer { background: #f8fafc; border-top: 1px solid #e2e8f0; padding: 1.5rem 0; margin-top: auto; }

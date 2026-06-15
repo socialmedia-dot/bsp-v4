@@ -34,6 +34,7 @@ export interface P3Deposit {
   bankInfo: P3BankInfo
   schoolFiles: P3Attachment[]       // documents school sends to student
   studentFiles: P3Attachment[]      // documents student sends to school (mirror of schoolFiles, 2026-06-15)
+  studentReadyForReview: boolean    // student clicked "✅ I've uploaded everything" — see docs §16.1.1
   sentAt?: string
   proofFileName?: string
   proofFileData?: string
@@ -63,6 +64,8 @@ function load() {
         }
         // Migrate missing studentFiles (added 2026-06-15) — see docs §16.1
         if (!d.studentFiles) d.studentFiles = []
+        // Migrate missing studentReadyForReview (added 2026-06-15) — see docs §16.1.1
+        if (typeof d.studentReadyForReview !== 'boolean') d.studentReadyForReview = false
         return d
       })
     }
@@ -137,6 +140,7 @@ export function useP3Store() {
       bankInfo,
       schoolFiles: files,
       studentFiles: [],   // student-side file exchange — see docs §16.1
+      studentReadyForReview: false,   // student confirmation gate — see docs §16.1.1
       sentAt: new Date().toISOString(),
       auditLog: []
     }
@@ -150,6 +154,12 @@ export function useP3Store() {
     if (!record) throw new Error('No active deposit record — send the form first')
     record.schoolFiles = [...record.schoolFiles, file]
     record.sentAt = new Date().toISOString()
+    // School added something for student to review — reset student's confirmation gate.
+    // See docs §16.1.1 — "loop" semantics: any add from either side clears the gate.
+    if (record.studentReadyForReview) {
+      record.studentReadyForReview = false
+      audit(record, { by, byRole: 'school', action: 'school-added-file-resets-student-gate', to: record.status })
+    }
     audit(record, { by, byRole: 'school', action: 'add-school-file', to: record.status })
     return record
   }
@@ -169,6 +179,11 @@ export function useP3Store() {
     const record = deposits.value.find(d => d.applicationRef === appRef && d.status !== 'confirmed')
     if (!record) throw new Error('No active deposit record — waiting for school')
     record.studentFiles = [...record.studentFiles, file]
+    // Student added more files after confirming — must re-confirm. See docs §16.1.1.
+    if (record.studentReadyForReview) {
+      record.studentReadyForReview = false
+      audit(record, { by, byRole: 'student', action: 'student-added-file-resets-own-gate', to: record.status })
+    }
     audit(record, { by, byRole: 'student', action: 'add-student-file', to: record.status })
     return record
   }
@@ -196,6 +211,12 @@ export function useP3Store() {
     record.proofFileData = file.dataUrl
     record.proofUploadedAt = new Date().toISOString()
     record.status = 'proof_uploaded'
+    // New proof = new thing for school to review — reset student's confirmation gate.
+    // See docs §16.1.1 — "loop" semantics.
+    if (record.studentReadyForReview) {
+      record.studentReadyForReview = false
+      audit(record, { by, byRole: 'student', action: 'student-uploaded-proof-resets-gate', to: 'proof_uploaded' })
+    }
     audit(record, { by, byRole: 'student', action: 'upload-proof', from: prevStatus, to: 'proof_uploaded' })
     return record
   }
@@ -203,11 +224,34 @@ export function useP3Store() {
   function confirmDeposit(appRef: string, by: string = 'school-admin') {
     const record = deposits.value.find(d => d.applicationRef === appRef && d.status === 'proof_uploaded')
     if (!record) throw new Error('No proof uploaded yet')
+    // Defensive: caller (school page's onP3Confirm) MUST check studentReadyForReview first.
+    // We do not re-check here — see docs §16.1.1 defensive note.
     record.status = 'confirmed'
     record.confirmedAt = new Date().toISOString()
     record.confirmedBy = by
     audit(record, { by, byRole: 'school', action: 'confirm-deposit', from: 'proof_uploaded', to: 'confirmed' })
     return record
+  }
+
+  // Student confirmation gate — see docs §16.1.1
+  // Sets the gate to true. School's "Confirm Receipt" button will then enable
+  // (gated additionally on status === 'proof_uploaded' in the UI).
+  function markStudentReady(appRef: string, by: string = 'student') {
+    const record = deposits.value.find(d => d.applicationRef === appRef && d.status !== 'confirmed')
+    if (!record) throw new Error('No active deposit record')
+    if (record.studentReadyForReview) return record   // idempotent — already ready
+    record.studentReadyForReview = true
+    audit(record, { by, byRole: 'student', action: 'student-marked-ready', to: record.status })
+    return record
+  }
+
+  // Manual undo — student changed their mind, want to add more files first.
+  function markStudentNotReady(appRef: string, by: string = 'student') {
+    const record = deposits.value.find(d => d.applicationRef === appRef && d.status !== 'confirmed')
+    if (!record) return
+    if (!record.studentReadyForReview) return   // idempotent — already not ready
+    record.studentReadyForReview = false
+    audit(record, { by, byRole: 'student', action: 'student-marked-not-ready', to: record.status })
   }
 
   function clearForApp(appRef: string) {
@@ -231,6 +275,8 @@ export function useP3Store() {
     removeStudentFile,
     uploadDepositProof,
     confirmDeposit,
+    markStudentReady,
+    markStudentNotReady,
     clearForApp,
     clearAll
   }
