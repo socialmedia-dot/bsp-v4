@@ -458,7 +458,7 @@
                 <div v-if="ph.phase === 3" class="action-section p3-container">
                   <div class="p3-status-header">
                     <div>
-                      <div class="action-title">💰 Phase 3 — Deposit Exchange</div>
+                      <div class="action-title">💰 Phase 3 — Offering</div>
                       <div class="action-desc">Upload deposit documents for the student, receive proof, confirm receipt.</div>
                     </div>
                     <div>
@@ -622,7 +622,7 @@
                     </div>
                   </div>
                   <div v-else class="p-locked-placeholder">
-                    🔒 Phase 4 is locked until Phase 3 (Deposit Exchange) is confirmed.
+                    🔒 Phase 4 is locked until Phase 3 (Offering) is confirmed.
                   </div>
                 </div>
 
@@ -630,7 +630,7 @@
                 <div v-if="ph.phase === 5">
                   <div v-if="p3gate.isP3Confirmed.value" class="action-section">
                     <div v-if="!isRejected">
-                      <div class="action-title">Visa & Travel</div>
+                      <div class="action-title">Pre-Departure</div>
                       <div class="action-desc">Track visa progress and travel arrangements</div>
                       <div class="action-buttons">
                         <button class="btn-primary" @click="updateVisaStatus">🛂 Update Visa Status</button>
@@ -639,7 +639,7 @@
                     </div>
                   </div>
                   <div v-else class="p-locked-placeholder">
-                    🔒 Phase 5 is locked until Phase 3 (Deposit Exchange) is confirmed.
+                    🔒 Phase 5 is locked until Phase 3 (Offering) is confirmed.
                   </div>
                 </div>
 
@@ -655,7 +655,7 @@
                     </div>
                   </div>
                   <div v-else class="p-locked-placeholder">
-                    🔒 Phase 6 is locked until Phase 3 (Deposit Exchange) is confirmed.
+                    🔒 Phase 6 is locked until Phase 3 (Offering) is confirmed.
                   </div>
                 </div>
 
@@ -673,7 +673,7 @@
                   <div class="action-title">🔒 Consultant (Locked)</div>
                   <div class="action-desc">
                     Consultant: <strong>{{ application.consultantName || 'Unassigned' }}</strong><br>
-                    <small>Locked once the application enters P3 (Deposit Exchange). The consultant is part of the financial audit trail.</small>
+                    <small>Locked once the application enters P3 (Offering). The consultant is part of the financial audit trail.</small>
                   </div>
                 </div>
 
@@ -839,9 +839,9 @@ const INTERVIEW_KEY = computed(() => `bsp:interview:${id}`)
 const phaseLabels = [
   'Application Submitted',
   'Interview & Assessment',
-  'Deposit Exchange',
+  'Offering',
   'Admission Documents',
-  'Visa & Travel',
+  'Pre-Departure',
   'Enrolled'
 ]
 
@@ -1003,7 +1003,7 @@ function cancelInterview() {
 }
 
 function completeInterview() {
-  if (!confirm('Mark this interview as complete?\n\nThis will advance the application to Phase 3 (Decision).')) return
+  if (!confirm('Mark this interview as complete?\n\nThis will advance the application to Phase 3 (Offering).')) return
   if (application.value.interview) {
     application.value.interview.history = [
       ...(application.value.interview.history || []),
@@ -1062,7 +1062,7 @@ function scheduleInterview() {
 }
 
 function uploadAssessment() {
-  alert('After the student confirms the interview, you can mark it as complete (which uploads the assessment and advances to Phase 3).')
+  alert('After the student confirms the interview, you can mark it as complete (which uploads the assessment and advances to Phase 3 (Offering)).')
 }
 
 function makeOffer() {
@@ -1332,7 +1332,7 @@ const p2NextAction = computed(() => {
   if (latestDecision.value) {
     return {
       title: '✅ Decision Made',
-      subtitle: 'Review the decision summary below and click "Mark P2 Complete" to proceed to Phase 3 (Offer).',
+      subtitle: 'Review the decision summary below and click "Mark P2 Complete" to proceed to Phase 3 (Offering).',
     }
   }
   if (!hasAnyInterview.value) {
@@ -1434,7 +1434,7 @@ function formatDateTime(iso) {
   return d.toLocaleString('en-GB', { day: 'numeric', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' })
 }
 
-// ===== P3 (Deposit Exchange) helpers =====
+// ===== P3 (Offering) helpers =====
 const p3store = useP3Store()
 const p3gate = useP3Gate(() => id)
 const p3Latest = computed(() => p3store.getLatest(id).value)
