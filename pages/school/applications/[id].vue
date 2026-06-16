@@ -1411,7 +1411,16 @@ const p3gate = useP3Gate(() => id)
 const p3Latest = computed(() => p3store.getLatest(id).value)
 const p3NewFiles = ref([])   // queued, not yet sent
 const p3Toast = ref('')
-const showStudentFiles = ref(false)   // toggle for "📥 Student Submitted Files" collapsible (see docs §16.1)
+const showStudentFiles = ref(false)   // legacy initial; rev 2.4 rule overrides below — see docs §16.1.4
+// rev 2.4: open the toggle by default when the Confirm Receipt action is actually enabled
+// (status === 'proof_uploaded' AND studentFiles.length >= 1). Otherwise keep collapsed.
+// Setting this once at mount-time mimics the rev 2.2 collapsed-by-default for non-actionable
+// states, but exposes the confirm button for the state where the school needs to act.
+const _initialStudentFilesOpen = (() => {
+  const dep = p3Latest.value
+  return !!(dep && dep.status === 'proof_uploaded' && (dep.studentFiles?.length || 0) >= 1)
+})()
+if (_initialStudentFilesOpen) showStudentFiles.value = true
 // 🔬 DEV affordance (remove when student P3 page is built) — collapsed by default
 // so the dev panel doesn't crowd the production "Confirm Receipt" button.
 const showDevPanel = ref(false)

@@ -866,6 +866,32 @@ School page (`pages/school/applications/[id].vue`):
 
 **State transitions:** Unchanged (rev 2.3 is CSS-only).
 
+### 16.1.4 Toggle default state — expanded when action is required (2026-06-16, rev 2.4)
+
+**Rule (rev 2.4):** The "📥 Student Submitted Files" toggle (Section B2) defaults to **expanded** when the school's `Confirm Receipt` action is pending — specifically when `p3Latest.status === 'proof_uploaded' AND p3Latest.studentFiles.length >= 1` (the rev 2.1 enablement condition). Otherwise the toggle defaults to its prior collapsed state (`status === 'sent_to_student'` with no files yet, or `status === 'confirmed'` after receipt is acknowledged).
+
+**Why:** KC reported (post-rev-2.3 deploy, mobile + desktop-on-mobile) that the toggle being collapsed by default made the "✅ Confirm Receipt" button invisible until they happened to click the toggle. Before rev 2.2, this was harmless because the confirm button lived in a separate standalone Section C card and was always visible. After rev 2.2 relocated the button into the toggle body, collapsed-by-default became a UX regression: the primary action for a `proof_uploaded` state was hidden until the user remembered to expand the toggle. This was the same default-state pattern KC had flagged before (commit `6b256d6` "collapse by default to avoid overlap with Confirm Receipt" was about the *dev affordance* panel, but the principle applies here too — when a primary action is gated behind a collapsible, the collapsible should be open by default for the state where that action is relevant).
+
+**What stays the same:**
+- Toggle still clickable to collapse / expand at any time (school can still hide the body if they want to reduce visual noise).
+- All rev 2.1 enablement logic on the button itself (still disabled if `studentFiles.length === 0`).
+- All rev 2.3 mobile responsive behavior.
+- The `✅` indicator and `(N)` count badge on the toggle header remain as at-a-glance signals.
+
+**What changes (rev 2.4):**
+- `showStudentFiles` initial value: `ref(false)` → `ref(true)` when the rev 2.1 enablement condition holds. Implementation pattern: a `computed` returns the initial value at component mount, and the user-driven toggle still flips `showStudentFiles` afterwards (so it behaves like normal user state once interacted with).
+- Mobile: this also fixes the desktop-on-mobile case where the user couldn't see the confirm button unless they happened to expand the toggle. With rev 2.4, on a mobile browser (whether native or in "Request Desktop" mode), the toggle opens by default and the button is visible.
+
+**Click-test scenarios (rev 2.4, post-deploy):**
+
+| # | Scenario | Expected |
+|---|----------|----------|
+| (bb) | Open school P3, status = `proof_uploaded`, studentFiles = 0 | Toggle shows ▶️ collapsed (no action possible — button would be disabled anyway, no point expanding). |
+| (cc) | Open school P3, status = `proof_uploaded`, studentFiles = 1+ (button enabled — the actionable state) | Toggle shows 🔽 expanded by default. Confirm Receipt button visible immediately. School can collapse it manually if desired. |
+| (dd) | Open school P3, status = `sent_to_student` (no files yet) | Toggle shows ▶️ collapsed (no action possible). |
+| (ee) | Open school P3, status = `confirmed` | Toggle shows ▶️ collapsed (action already complete — confirmed banner carries the message). |
+| (ff) | After manually collapsing then refreshing | Local state resets; the rule applies again based on `p3Latest`. If state still says actionable, toggle reopens. |
+
 ### §16.1.1 Dev affordance — temporary (KC 2026-06-15)
 
 **Status:** TEMPORARY — remove when the student-side P3 page (`pages/student/applications/[id].vue`) is built.
