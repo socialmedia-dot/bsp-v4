@@ -614,8 +614,13 @@ The old message in Section B's empty state said "Use Section A above to schedule
 │                  [Add to Student]               │
 └─────────────────────────────────────────────────┘
 ┌─────────────────────────────────────────────────┐
-│  📥 Confirm Deposit Receipt                     │
+│  📥 Student Submitted Files  ▶️ (N)  [✅]       │  ← collapsible toggle
+│  ─────────────────────────────────────────────  │
+│  [📄 Student files list (download links)]       │
+│  ─────────────────────────────────────────────  │
+│  📥 Confirm Deposit Receipt                     │  ← only when status !== 'sent_to_student'
 │  [Student's uploaded proof + Confirm button]    │
+│  [Helper text variants — see §16.1.1 rev 2.1]  │
 └─────────────────────────────────────────────────┘
 [✅ Confirmed banner — P3 complete]
 ```
@@ -628,7 +633,9 @@ The old message in Section B's empty state said "Use Section A above to schedule
     - `p3Latest && p3Latest.status !== 'confirmed'` → button: **"📎 Add to Student"** (`btn-secondary`, disabled when `p3NewFiles.length === 0`). Calls `onP3AddFiles` which appends to the existing record.
   - "📤 Send to Student" validation: requires ≥1 file queued. No bank details required (those are on the file).
 - **Section B: ~~Bank / Payment Details~~ — REMOVED.** Bank info lives on the uploaded PDF. No typed bank form. The deposit record stores `bankInfo: {}` (empty).
-- **Section C: Confirm Deposit Receipt** (only when `p3Latest && p3Latest.status !== 'sent_to_student'`). Shows student's proof + "✅ Confirm Receipt" button when status is `proof_uploaded`.
+- **Section B2: Student Submitted Files + Confirm Receipt** (collapsible toggle, when `p3Latest` exists). Toggle shows `▶️ / 🔽` icon, count badge `(N)` = `studentFiles.length`, and `✅` indicator when `studentReadyForReview` is true. When expanded, the body shows:
+  1. The student's uploaded files list (download links + timestamps, read-only audit trail).
+  2. The student's uploaded proof display + "✅ Confirm Receipt" button (when `status !== 'sent_to_student'`). Enablement + helper text per §16.1.1 rev 2.1.
 - **Confirmed banner** (only when `p3Latest.status === 'confirmed'`).
 
 **Sent files are read-only (2026-06-15 update):**
@@ -722,7 +729,7 @@ Student page (`pages/student/applications/[id].vue`):
 
 School page (`pages/school/applications/[id].vue`):
 - "📎 Documents for Student" file input row — **always visible** when `p3Latest` exists. "📤 Send to Student" / "📎 Add to Student" button stays open. After `confirmed` it stays as "📎 Add to Student" (appendable).
-- "📥 Confirm Deposit Receipt" button — enablement binding:
+- "📥 Confirm Deposit Receipt" button — enablement binding (relocated into the "📥 Student Submitted Files" toggle body in rev 2.2; see §16.1.2):
   ```vue
   <button
     v-if="p3Latest.status === 'proof_uploaded'"
@@ -766,6 +773,34 @@ School page (`pages/school/applications/[id].vue`):
 
 **Defensive note (rev 2.1):** The `confirmDeposit` store method does NOT re-check `studentFiles.length` (mirroring the rev 1 pattern of not checking `studentReadyForReview`). The school page's `onP3Confirm` is the only caller and the button is the only gate, so the store primitive stays open. A future strict mode could re-enable the check via a config flag.
 
+### 16.1.2 Confirm Receipt button relocated into Student Submitted Files (2026-06-16, rev 2.2)
+
+**Rule (rev 2.2):** The "✅ Confirm Receipt" button + proof display + helper text variants move from the standalone **Section C** (a separate `.p3-section` block under the student files toggle) into the **expanded body of Section B2** ("📥 Student Submitted Files"), positioned directly under the student files list. After this change, the previously-separate Section C `.p3-section` block is **deleted** from the school P3 view.
+
+**Why:** KC observed on the demo that separating the confirm action into its own card below the student files toggle made the action feel disconnected from the documents it approves. Co-locating the confirm button with the files list makes the relationship explicit ("I've reviewed these files → confirm"). It also reduces vertical scroll: the bottom of the P3 section is no longer a disjoint "Confirm" card.
+
+**What stays the same (rev 2.2 is pure layout):**
+- All enablement logic (`status === 'proof_uploaded' AND studentFiles.length >= 1`).
+- All helper text variants (waiting / student ready / advisory — three cases from rev 2.1).
+- The `studentReadyForReview` `✅` indicator on the toggle button.
+- The toggle's collapsed-by-default behavior (`showStudentFiles` is local page state, persists across renders within a session).
+- The audit/event sequencing: `onP3Confirm` is still the single gate for `proof_uploaded → confirmed`.
+
+**What changes (rev 2.2):**
+- DOM structure: the standalone `<div class="p3-section">` that previously held the Confirm Deposit Receipt title + proof + button is **removed**. Its contents (proof display + button + three helper text variants) move into `<div class="p3-toggle-body">` of Section B2, after the files list, gated by `v-if="p3Latest && p3Latest.status !== 'sent_to_student'"`.
+- Discoverability: when the toggle is collapsed, the confirm action is hidden (same as the files list it sits under). KC must click the toggle to expand and see the button. The count badge `(N)` and the `✅` indicator on the toggle header remain the primary at-a-glance signals.
+
+**Click-test scenarios (rev 2.2, post-deploy):**
+
+| # | Scenario | Expected |
+|---|----------|----------|
+| (r) | Open school P3 view, status = `sent_to_student`, no student files yet | Section B2 toggle collapsed, shows `▶️ 📥 Student Submitted Files (0)`. No standalone "Confirm Deposit Receipt" card anywhere on the page. |
+| (s) | Status = `proof_uploaded`, studentFiles has 0 entries | Click toggle to expand. Body shows "No files submitted yet — waiting for student." + proof display + "✅ Confirm Receipt" button (DISABLED) + waiting helper text. No separate Confirm card. |
+| (t) | Status = `proof_uploaded`, studentFiles has 1+ entries, studentReadyForReview = false | Click toggle to expand. Body shows files list + proof + "✅ Confirm Receipt" button (ENABLED) + advisory helper text. No separate Confirm card. |
+| (u) | Status = `confirmed` | Click toggle to expand. Body shows files list + proof + `✅ Confirmed` pill (button replaced). No separate Confirm card. Confirmed banner still renders below Section B2. |
+| (v) | After clicking "Confirm Receipt" → status flips to `confirmed` | Page re-renders with `✅ Confirmed` pill replacing the button (still inside Section B2 body). Banner appears. No page-level refetch needed. |
+| (w) | `localStorage['bsp-v4-deposits']` after confirm | Deposit has `studentFiles.length >= 1`, status `confirmed`, audit log has `confirm-deposit` entry — unchanged from rev 2.1. |
+
 **State transitions:**
 
 | From | To | Trigger |
@@ -780,7 +815,7 @@ School page (`pages/school/applications/[id].vue`):
 
 **What stays visible on terminal state (`status === 'confirmed'`):**
 - Section A: file list (read-only — uploaded docs are viewable). File input + buttons hidden.
-- Section C: proof display + "✅ Confirmed" pill.
+- Section B2 (collapsed toggle): "📥 Student Submitted Files" toggle + ✅ indicator + count badge. When expanded, body shows files list + proof + `✅ Confirmed` pill (replaces the confirm button).
 - Confirmed banner.
 
 **State sync invariant:** When Section A's "Send to Student" creates a deposit, the page MUST also be ready to re-render with `p3Latest` now non-null (Section A's "Add" button replaces "Send"). No page-level `application.value` change is needed (deposit record is in `p3store`, not in the local page ref). The `p3Latest` computed auto-updates from the store.

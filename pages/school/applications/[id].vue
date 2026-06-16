@@ -505,6 +505,8 @@
                   </div>
 
                   <!-- 📥 Files from Student (collapsible — see docs §16.1) -->
+                  <!-- As of rev 2.2 (2026-06-16): this toggle body also hosts the Confirm Deposit Receipt block, -->
+                  <!-- so the school can review student files + confirm receipt in one place. -->
                   <div v-if="p3Latest" class="p3-section">
                     <button
                       type="button"
@@ -527,39 +529,40 @@
                         </div>
                       </div>
                       <p v-else class="p3-empty">No files submitted yet — waiting for student.</p>
-                    </div>
-                  </div>
 
-                  <!-- 📥 Confirm Deposit Receipt (school unilateral, gated by studentFiles.length >= 1 — see docs §16.1.1 rev 2.1) -->
-                  <div v-if="p3Latest && p3Latest.status !== 'sent_to_student'" class="p3-section">
-                    <div class="p3-section-title">📥 Confirm Deposit Receipt</div>
-                    <div v-if="p3Latest.proofFileName" class="p3-proof-display">
-                      <div class="att-row">
-                        <span class="att-icon">📄</span>
-                        <div class="att-info">
-                          <div class="att-name">{{ p3Latest.proofFileName }}</div>
-                          <div class="att-meta">Uploaded {{ formatDateTime(p3Latest.proofUploadedAt) }} by {{ p3Latest.proofUploadedBy || 'student' }}</div>
+                      <!-- 📥 Confirm Deposit Receipt — moved into this toggle body in rev 2.2 (was standalone Section C). -->
+                      <!-- Enablement + helper text variants per docs §16.1.1 rev 2.1. -->
+                      <div v-if="p3Latest.status !== 'sent_to_student'" class="p3-confirm-receipt-block">
+                        <div class="p3-section-title">📥 Confirm Deposit Receipt</div>
+                        <div v-if="p3Latest.proofFileName" class="p3-proof-display">
+                          <div class="att-row">
+                            <span class="att-icon">📄</span>
+                            <div class="att-info">
+                              <div class="att-name">{{ p3Latest.proofFileName }}</div>
+                              <div class="att-meta">Uploaded {{ formatDateTime(p3Latest.proofUploadedAt) }} by {{ p3Latest.proofUploadedBy || 'student' }}</div>
+                            </div>
+                            <button
+                              v-if="p3Latest.status === 'proof_uploaded'"
+                              class="btn-approve"
+                              :disabled="!p3Latest.studentFiles || p3Latest.studentFiles.length === 0"
+                              :title="(!p3Latest.studentFiles || p3Latest.studentFiles.length === 0) ? 'Student has not sent any files through the file exchange yet' : 'Click to confirm deposit receipt and advance to P4 (school is the final authority)'"
+                              @click="onP3Confirm"
+                            >✅ Confirm Receipt</button>
+                            <span v-else class="status-pill status-pill-confirmed">✅ Confirmed</span>
+                          </div>
+                          <div v-if="p3Latest.status === 'proof_uploaded' && (!p3Latest.studentFiles || p3Latest.studentFiles.length === 0)" class="p3-gate-hint">
+                            ⏳ Waiting for student to send at least 1 file through "📤 Send Files to School". Proof alone is not enough — the school needs at least one supplementary document (signed form, refund agreement, etc.).
+                          </div>
+                          <div v-else-if="p3Latest.status === 'proof_uploaded' && p3Latest.studentReadyForReview" class="p3-gate-ready">
+                            ✅ Student has indicated they're done — you can confirm anytime.
+                          </div>
+                          <div v-else-if="p3Latest.status === 'proof_uploaded'" class="p3-gate-hint">
+                            ℹ️ Student hasn't clicked "✅ I've uploaded everything" — but you can confirm anytime if you have what you need.
+                          </div>
                         </div>
-                        <button
-                          v-if="p3Latest.status === 'proof_uploaded'"
-                          class="btn-approve"
-                          :disabled="!p3Latest.studentFiles || p3Latest.studentFiles.length === 0"
-                          :title="(!p3Latest.studentFiles || p3Latest.studentFiles.length === 0) ? 'Student has not sent any files through the file exchange yet' : 'Click to confirm deposit receipt and advance to P4 (school is the final authority)'"
-                          @click="onP3Confirm"
-                        >✅ Confirm Receipt</button>
-                        <span v-else class="status-pill status-pill-confirmed">✅ Confirmed</span>
-                      </div>
-                      <div v-if="p3Latest.status === 'proof_uploaded' && (!p3Latest.studentFiles || p3Latest.studentFiles.length === 0)" class="p3-gate-hint">
-                        ⏳ Waiting for student to send at least 1 file through "📤 Send Files to School". Proof alone is not enough — the school needs at least one supplementary document (signed form, refund agreement, etc.).
-                      </div>
-                      <div v-else-if="p3Latest.status === 'proof_uploaded' && p3Latest.studentReadyForReview" class="p3-gate-ready">
-                        ✅ Student has indicated they're done — you can confirm anytime.
-                      </div>
-                      <div v-else-if="p3Latest.status === 'proof_uploaded'" class="p3-gate-hint">
-                        ℹ️ Student hasn't clicked "✅ I've uploaded everything" — but you can confirm anytime if you have what you need.
+                        <p v-else class="p3-empty">Waiting for student to upload deposit proof…</p>
                       </div>
                     </div>
-                    <p v-else class="p3-empty">Waiting for student to upload deposit proof…</p>
                   </div>
 
                   <div v-if="p3Latest && p3Latest.status === 'confirmed'" class="p3-confirmed-banner">
