@@ -103,6 +103,8 @@ function triggerAttach() {
   display: flex;
   flex-direction: column;
   height: 480px;
+  overflow: hidden;  /* safety net: clip anything that escapes the flex children */
+  min-height: 0;     /* allow flex container itself to be a proper flex parent in nested flex layouts */
 }
 .chat-header {
   padding: 1rem 1.25rem;
@@ -110,13 +112,16 @@ function triggerAttach() {
   display: flex;
   justify-content: space-between;
   align-items: center;
+  flex-shrink: 0;  /* header must never be pushed off-screen by long messages */
 }
 .chat-header h3 { margin: 0; font-size: 1rem; }
 .chat-ref { font-size: 0.75rem; color: #64748b; background: #f1f5f9; padding: 2px 8px; border-radius: 12px; }
 
 .chat-messages {
-  flex: 1;
+  flex: 1 1 0;          /* explicit flex-basis: 0 so the item can shrink to fit the container */
+  min-height: 0;        /* CRITICAL: default min-height:auto would prevent shrinking when content overflows; iOS Safari is stricter than Chromium on this and can otherwise blow the 480px parent height */
   overflow-y: auto;
+  -webkit-overflow-scrolling: touch;  /* smooth inertial scrolling on iOS */
   padding: 1rem;
   display: flex;
   flex-direction: column;
@@ -190,6 +195,7 @@ function triggerAttach() {
   display: flex;
   gap: 8px;
   align-items: center;
+  flex-shrink: 0;  /* input must never be pushed off-screen by long messages */
 }
 .chat-input-area input {
   flex: 1;
@@ -214,4 +220,14 @@ function triggerAttach() {
 .btn-attach { background: #f1f5f9; }
 .btn-send { background: #3b82f6; color: #fff; }
 .btn-send:disabled { opacity: 0.5; cursor: not-allowed; }
+
+/* Responsive: shrink the chat room on tablet/mobile so it doesn't dominate the viewport
+   (the detail-grid stacks to a single column at ≤1024px, and the chat room sits at the bottom).
+   360px keeps the messages area usable on phone screens while leaving room for header/input. */
+@media (max-width: 1024px) {
+  .chat-room { height: 360px; }
+}
+@media (max-width: 480px) {
+  .chat-room { height: 320px; }
+}
 </style>
