@@ -9,7 +9,7 @@
           <p class="subtitle">{{ application.studentDob }} · {{ application.studentNationality }} · Applied {{ formatDate(application.appliedAt) }}</p>
         </div>
         <div class="header-actions">
-          <button v-if="!isRejected" class="btn-restart" @click="restartApplication" title="Reset this application to Phase 1">
+          <button v-if="!isRejected" class="btn-restart" @click="requestRestart" title="Reset this application to Phase 1">
             Restart
           </button>
           <div class="status-badge" :class="'status-' + application.status">
@@ -696,6 +696,35 @@
       </div>
     </div>
   </main>
+
+  <!-- rev 2.5: Restart confirmation modal — see docs §14.1. -->
+  <!-- Replaces window.confirm() (unreliable on iOS Safari / WebView). -->
+  <Teleport to="body">
+    <div v-if="showRestartModal" class="restart-modal-overlay" @click.self="cancelRestart" role="dialog" aria-modal="true" aria-labelledby="restart-modal-title">
+      <div class="restart-modal" role="document">
+        <h3 id="restart-modal-title">Restart this application?</h3>
+        <p class="restart-modal-warning">
+          This is a destructive action and cannot be undone.
+        </p>
+        <p class="restart-modal-intro">This will:</p>
+        <ul class="restart-modal-list">
+          <li>Reset to Phase 1 (fresh application)</li>
+          <li>Clear all P2 interviews, reports, and decisions</li>
+          <li>Clear all P3 deposit data</li>
+          <li>Clear localStorage for the page, P2 store, and P3 store</li>
+          <li>Collapse all expanded past phases</li>
+        </ul>
+        <div class="restart-modal-actions">
+          <button type="button" class="btn-restart-cancel" @click="cancelRestart" :disabled="restarting">
+            Cancel
+          </button>
+          <button type="button" class="btn-restart-confirm" @click="confirmRestart" :disabled="restarting" autofocus>
+            {{ restarting ? 'Restarting…' : 'Yes, restart' }}
+          </button>
+        </div>
+      </div>
+    </div>
+  </Teleport>
 </template>
 
 <script setup>
@@ -1626,30 +1655,68 @@ function getPhaseAttachments(phaseNum) {
 // RESTART: full reset to Phase 1 (fresh application) + clear all P2 store data + clear localStorage
 // This makes the click-through demo work cleanly: after Restart, the user can advance P1 → P7
 // without any pre-populated interviews/reports/decisions. See docs/admission-pipeline-v2.md §14.
-function restartApplication() {
-  if (!confirm('Restart this application?\n\nThis will:\n- Reset to Phase 1 (fresh application)\n- Clear all P2 interviews, reports, and decisions\n- Clear all P3 deposit data\n- Clear localStorage for the page, P2 store, and P3 store\n- Collapse all expanded past phases\n\nProceed?')) return
-  // 1. Clear the P2 store (interviews, reports, decisions) and persist empty arrays
-  if (typeof window !== 'undefined') {
-    try { p2.clearAllData() } catch (e) {}
+// rev 2.5: Restart now uses an in-page Vue modal (no window.confirm) — see docs §14.1.
+// Why: window.confirm() is unreliable on iOS Safari and embedded WebViews (silently dismissed,
+// returns false). The actual reset logic below is unchanged from §14 — only the confirmation UX.
+const showRestartModal = ref(false)
+const restarting = ref(false)
+
+function requestRestart() {
+  // Re-entry guard: if the modal is already open, ignore the second click. See docs §14.1 (mm).
+  if (showRestartModal.value) return
+  showRestartModal.value = true
+}
+
+function cancelRestart() {
+  // Disallow cancel while the action is actually running (synchronous in practice, but defensive).
+  if (restarting.value) return
+  showRestartModal.value = false
+}
+
+function confirmRestart() {
+  restarting.value = true
+  try {
+    // 1. Clear the P2 store (interviews, reports, decisions) and persist empty arrays
+    if (typeof window !== 'undefined') {
+      try { p2.clearAllData() } catch (e) {}
+    }
+    // 1b. Clear the P3 store (deposits) and persist empty array — see docs §16
+    if (typeof window !== 'undefined') {
+      try { p3store.clearForApp(id) } catch (e) {}
+    }
+    // 2. Clear the page's own localStorage for this application
+    if (typeof window !== 'undefined') {
+      try { localStorage.removeItem(STORAGE_KEY.value) } catch (e) {}
+    }
+    // 3. Always reset to defaultMock (Phase 1, fresh) — regardless of which mock was loaded.
+    //    This lets the user click through all phases from the start.
+    application.value = clone(defaultMock)
+    expandedPhases.value = []  // Collapse any expanded past phases
+    p3NewFiles.value = []      // Reset P3 transient UI ref (queued files) — see docs §16
+    saveState()  // Persist fresh state so reload stays at Phase 1
+  } finally {
+    showRestartModal.value = false
+    restarting.value = false
   }
-  // 1b. Clear the P3 store (deposits) and persist empty array — see docs §16
-  if (typeof window !== 'undefined') {
-    try { p3store.clearForApp(id) } catch (e) {}
-  }
-  // 2. Clear the page's own localStorage for this application
-  if (typeof window !== 'undefined') {
-    try { localStorage.removeItem(STORAGE_KEY.value) } catch (e) {}
-  }
-  // 3. Always reset to defaultMock (Phase 1, fresh) — regardless of which mock was loaded.
-  //    This lets the user click through all phases from the start.
-  application.value = clone(defaultMock)
-  expandedPhases.value = []  // Collapse any expanded past phases
-  p3NewFiles.value = []      // Reset P3 transient UI ref (queued files) — see docs §16
-  saveState()  // Persist fresh state so reload stays at Phase 1
   nextTick(() => {
     if (typeof window !== 'undefined') window.scrollTo({ top: 0, behavior: 'smooth' })
   })
 }
+
+// Escape closes the modal (= Cancel). See docs §14.1 (ll).
+function onRestartKeydown(e) {
+  if (e.key === 'Escape' && showRestartModal.value && !restarting.value) {
+    e.preventDefault()
+    cancelRestart()
+  }
+}
+if (typeof window !== 'undefined') {
+  window.addEventListener('keydown', onRestartKeydown)
+}
+// Note: this handler is registered once per page mount. Nuxt's [id].vue is mounted per route, so
+// in practice the same page re-mounts (with a fresh handler) when the user navigates to a different
+// application. The old handler becomes unreachable and gets GC'd with the page. No manual cleanup
+// is needed for the click-through demo (single-page flow per visit).
 
 // (expandedPhase/togglePhase removed — Phase History is gone)
 </script>
@@ -1895,6 +1962,123 @@ function restartApplication() {
   background: #fef2f2;
   border-color: #dc2626;
   transform: translateY(-1px);
+}
+
+/* rev 2.5: Restart confirmation modal — see docs §14.1. */
+.restart-modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(15, 23, 42, 0.55);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 9999;
+  padding: 16px;
+  animation: restart-fade-in 0.15s ease-out;
+}
+.restart-modal {
+  background: #fff;
+  border-radius: 12px;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.25);
+  max-width: 440px;
+  width: 100%;
+  padding: 24px;
+  animation: restart-pop-in 0.18s ease-out;
+}
+.restart-modal h3 {
+  font-size: 1.15rem;
+  font-weight: 700;
+  margin: 0 0 8px;
+  color: #0f172a;
+}
+.restart-modal-warning {
+  background: #fef3c7;
+  border-left: 3px solid #f59e0b;
+  border-radius: 6px;
+  color: #92400e;
+  font-size: 0.85rem;
+  margin: 0 0 14px;
+  padding: 8px 12px;
+}
+.restart-modal-intro {
+  color: #475569;
+  font-size: 0.9rem;
+  margin: 0 0 6px;
+}
+.restart-modal-list {
+  background: #f8fafc;
+  border-radius: 8px;
+  color: #1e293b;
+  font-size: 0.88rem;
+  list-style: disc inside;
+  margin: 0 0 18px;
+  padding: 10px 14px;
+}
+.restart-modal-list li {
+  margin: 4px 0;
+}
+.restart-modal-actions {
+  display: flex;
+  gap: 10px;
+  justify-content: flex-end;
+}
+.btn-restart-cancel,
+.btn-restart-confirm {
+  border-radius: 8px;
+  cursor: pointer;
+  font-size: 0.9rem;
+  font-weight: 700;
+  min-height: 40px;
+  min-width: 100px;
+  padding: 8px 18px;
+  transition: all 0.15s;
+}
+.btn-restart-cancel {
+  background: #fff;
+  border: 2px solid #cbd5e1;
+  color: #475569;
+}
+.btn-restart-cancel:hover:not(:disabled) {
+  background: #f1f5f9;
+  border-color: #94a3b8;
+}
+.btn-restart-confirm {
+  background: #dc2626;
+  border: 2px solid #dc2626;
+  color: #fff;
+}
+.btn-restart-confirm:hover:not(:disabled) {
+  background: #b91c1c;
+  border-color: #b91c1c;
+  transform: translateY(-1px);
+}
+.btn-restart-cancel:disabled,
+.btn-restart-confirm:disabled {
+  cursor: not-allowed;
+  opacity: 0.6;
+}
+@media (max-width: 480px) {
+  .restart-modal {
+    padding: 18px;
+  }
+  .restart-modal h3 {
+    font-size: 1.05rem;
+  }
+  .restart-modal-actions {
+    flex-direction: column-reverse;  /* Confirm on top on mobile (primary action) */
+  }
+  .btn-restart-cancel,
+  .btn-restart-confirm {
+    width: 100%;
+  }
+}
+@keyframes restart-fade-in {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+@keyframes restart-pop-in {
+  from { opacity: 0; transform: scale(0.96); }
+  to { opacity: 1; transform: scale(1); }
 }
 .demo-banner {
   background: linear-gradient(90deg, #fef3c7 0%, #fed7aa 100%);

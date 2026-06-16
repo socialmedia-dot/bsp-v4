@@ -513,6 +513,51 @@ function restartApplication() {
 
 **Audit trail preserved:** The `phaseHistory` is reset by the underlying `application.value = clone(defaultMock)` (P1 only has P1 marked "In Progress"; P2-P7 are "Pending"). This is the same shape as a fresh application.
 
+### 14.1 Mobile reliability — replace `window.confirm()` with in-page modal (2026-06-16, rev 2.5)
+
+**Rule (rev 2.5):** The Restart button no longer uses `window.confirm()` for the "Are you sure?" step. It opens an in-page Vue modal (`<Teleport to="body">`) with explicit Cancel / Confirm buttons. The actual restart logic stays identical to §14 above — only the confirmation UX changes.
+
+**Why:** KC reported (post-rev-2.4) that on a completed application, clicking the Restart button appeared to do nothing — the application stayed in its `completed` state. Investigation showed the restart *handler* itself was correct (verified via Playwright on iPhone SE + desktop — both reset to P1 cleanly). The most likely root cause is `window.confirm()` unreliability on iOS Safari and embedded WebViews:
+
+- `window.confirm()` is a synchronous browser dialog. On iOS Safari it can be silently dismissed (returning `false`) if the page is in a state where dialog rendering is suppressed (e.g. an in-flight scroll animation, a pending `nextTick` scrollTo from a previous action, or when the page has registered multiple `beforeunload` handlers).
+- On Android Chrome with "Request Desktop Site" mode, the dialog can be auto-dismissed by the OS-level "unsupported dialog" warning.
+- Inside the Telegram / WhatsApp in-app browser, `window.confirm()` is often blocked entirely and returns `false` without any visible prompt.
+- The dialog text is also long (5-bullet list) which can be clipped on small mobile screens, making the OK button hard to tap.
+
+In all these cases the click handler exits at `if (!confirm(...)) return` without resetting, and the user concludes "the button is broken."
+
+**What stays the same:**
+- All destructive behavior in §14 (clear P2 store, clear P3 store, remove localStorage, reset `application.value = clone(defaultMock)`, collapse expanded phases, saveState, scroll to top).
+- The button location (top-right of application detail page, `v-if="!isRejected"`).
+- The button text "Restart".
+
+**What changes (rev 2.5):**
+- `window.confirm(...)` → a Vue modal component (`<Teleport to="body">`) with:
+  - A backdrop overlay (clicking it dismisses — equivalent to Cancel).
+  - The same 5-bullet explanation of what Restart will clear.
+  - Two buttons: **Cancel** (secondary style) and **Yes, restart** (destructive style, matches the existing `.btn-restart` colour).
+  - While the action runs (synchronous in current code, but the pattern allows async later), the Confirm button shows `Restarting…` and is disabled. The Cancel button is also disabled during this window.
+- `restartApplication` is split into:
+  - `requestRestart()` — sets `showRestartModal = true` (the click handler the button calls).
+  - `confirmRestart()` — runs the existing §14 logic, then `showRestartModal = false`, then scroll-to-top.
+  - `cancelRestart()` — sets `showRestartModal = false`.
+- Keyboard support: Escape closes the modal (= Cancel). Focus is trapped inside the modal while open (Tab cycles between Cancel / Confirm only).
+
+**Click-test scenarios (rev 2.5, post-deploy):**
+
+| # | Scenario | Expected |
+|---|----------|----------|
+| (gg) | Desktop, click Restart on a P6-completed app | Modal opens with the 5-bullet message. Cancel button visible. Yes, restart button visible (destructive style). Page behind is dimmed by overlay. |
+| (hh) | Click Cancel | Modal closes. Application stays at P6 completed. No state change. |
+| (ii) | Click the backdrop overlay | Same as Cancel — modal closes, no state change. |
+| (jj) | Click Yes, restart | Modal closes, page resets to P1 (status=`active`, subStatus=`Application Submitted`). Scroll to top. |
+| (kk) | iOS Safari (real device or simulated via WebView) | Modal opens reliably (no silent dismiss). Same as (gg) + (jj). The previous `confirm()` unreliability is gone. |
+| (ll) | Press Escape while modal is open | Modal closes (= Cancel). |
+| (mm) | Click Restart, then click Restart again before confirming | Second click is a no-op while modal is already open (`showRestartModal` already true). |
+| (nn) | P3-confirmed state (currentPhase=3, status=`active`, not yet P6) | Restart works the same as P6 case. The bug was not phase-specific; only the entry point was. |
+
+**State transitions:** Unchanged (the underlying reset logic is identical to §14).
+
 ---
 
 ## 15. P2 Action-Priority Section Ordering (2026-06-11)
