@@ -1,6 +1,26 @@
 // BSP v4 — P2 Interview + Decision Store
 // Manages applications, interview rounds, reports, and manager decisions.
 // All state persisted to localStorage. Cross-portal sync (school/consultant/student).
+//
+// rev 3.0 (2026-06-17) — see docs/admission-pipeline-v2.md §17-§19:
+//   + DocumentTemplate interface (school default doc templates per phase)
+//   + P2Application: visaRequested, phase{3,4,5}Templates, phase5VisaGranted*
+//   + P5 sub-step status constants (visa application → granted → travel → arrived)
+
+// rev 3.0: DocumentTemplate — school default doc template per phase
+// Used by §17 Document Template System. Auto-populated from school settings to
+// application record. Per-app override (add/remove individual doc) is allowed.
+export interface DocumentTemplate {
+  id: string
+  phase: 3 | 4 | 5
+  category: 'admission' | 'identity' | 'financial' | 'travel' | 'medical' | 'other'
+  name: string
+  description: string
+  required: boolean
+  sampleUrl?: string
+  displayOrder: number
+  active: boolean
+}
 
 export interface P2Interview {
   id: string
@@ -53,11 +73,29 @@ export interface P2Application {
   entryGrade: string
   consultantName: string | null
   consultantAssignedToP2: boolean
-  currentPhase: number  // 1=App, 2=Interview+Decision, 3=Offer, 4=Docs, 5=Visa, 6=Enrolled
+  currentPhase: number  // 1=App, 2=Interview+Decision, 3=Offering, 4=Admission Documents, 5=Pre-Departure, 6=Enrolled
   subStatus: string
   status: 'active' | 'rejected' | 'completed' | 'pending-decision'
   appliedAt: string
+  // rev 3.0 — see docs/admission-pipeline-v2.md §19 (P1 visaRequested Selection)
+  visaRequested: boolean
+  // rev 3.0 — see §17 (Document Template System). Auto-populated snapshot of school defaults; per-app override allowed.
+  phase3Templates: DocumentTemplate[]
+  phase4Templates: DocumentTemplate[]
+  phase5Templates: DocumentTemplate[]
+  // rev 3.0 — see §18 (P5 Visa Step Detail). Set when student confirms visa granted.
+  phase5VisaGrantedDocument: { name: string; dataUrl: string; uploadedAt: string } | null
+  phase5VisaGrantedAt: string | null  // ISO
 }
+
+// rev 3.0: P5 sub-step status (encoded in subStatus field)
+// See §18.1 sub-step flow.
+export const P5_SUB_STATUS = {
+  P5_VISA_APPLYING: 'Visa Applying',          // CAS issued, student applying externally
+  P5_VISA_GRANTED: 'Visa Granted',            // student confirmed visa granted (§18.2)
+  P5_TRAVEL_ARRANGED: 'Travel Arranged',      // flight/taxi/arrival details submitted
+  P5_ARRIVED: 'Arrived',                      // school confirmed arrival → triggers P6
+} as const
 
 const KEYS = {
   applications: 'bsp-v4-applications',
@@ -69,7 +107,7 @@ const KEYS = {
 // ---- Sample / Seeded Data ----
 // Default application: a P1-fresh record so the P2 demo URL (`/school/applications/2026-X7K9M2P4/`)
 // loads as a fresh P1 application (no preset interviews/reports). The user can then click
-// through phases P1 → P7 from a clean slate (see docs/admission-pipeline-v2.md §14).
+// through phases P1 → P6 from a clean slate (see docs/admission-pipeline-v2.md §14).
 const SEED_APP: P2Application = {
   refNumber: '2026-X7K9M2P4',
   studentName: 'Zhang Xiaoming',
@@ -87,6 +125,13 @@ const SEED_APP: P2Application = {
   subStatus: 'Application Submitted',
   status: 'active',
   appliedAt: '2026-05-15T10:00:00Z',
+  // rev 3.0 defaults
+  visaRequested: false,  // legacy default — student can change in real submission (§19)
+  phase3Templates: [],   // empty until application enters P3
+  phase4Templates: [],
+  phase5Templates: [],
+  phase5VisaGrantedDocument: null,
+  phase5VisaGrantedAt: null,
 }
 
 // No preset interview rounds. Users schedule their own rounds from P2.
