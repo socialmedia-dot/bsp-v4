@@ -1,8 +1,15 @@
-# BSP v4 — Admission Pipeline v2 (6 Phases)
+# BSP v4 — Admission Pipeline v2 (rev 3.0)
 
-**Last updated:** 2026-06-09
+**Last updated:** 2026-06-17
 **Status:** Spec confirmed by KC, ready for development
-**Supersedes:** Earlier 7-phase spec (App / Interview / Decision / Offer / Docs / Visa / Enrolled)
+**Supersedes:** rev 2.x (6 phases: Application / Interview+Decision / Deposit Exchange / Documents / Visa+Travel / Enrolled)
+
+**Rev 3.0 changes (2026-06-17):**
+- **§1 Phase rename:** P3 "Deposit Exchange" → **P3 Offering**; P4 "Documents" → **P4 Admission Documents**; P5 "Visa / Travel" → **P5 Pre-Departure** (merged visa + travel); P6 unchanged
+- **§17 (NEW) Document Template System** — school settings configures default document templates per phase; auto-populate to application; student can add/remove individual docs
+- **§18 (NEW) P5 Visa Step Detail** — conditional sub-step visibility based on `visaRequested`; **student "Confirm Visa Granted" button is mandatory** (cannot be skipped)
+- **§19 (NEW) P1 visaRequested Selection** — student selects at application submit; data carries through to P4 (CAS paperwork) + P5 (visa sub-step)
+- **Data model:** `application.visaRequested: boolean` (new), `phase3_templates / phase4_templates / phase5_templates: DocumentTemplate[]` (new)
 
 ---
 
@@ -10,12 +17,19 @@
 
 | # | Phase | Trigger In | Activities | Trigger Out |
 |---|-------|-----------|-----------|-------------|
-| **P1** | Application | Student submit | School / Consultant receive | → P2 |
+| **P1** | Application | Student submit + `visaRequested` selection | School / Consultant receive; `visaRequested` carries forward to P4 (CAS paperwork) + P5 (visa sub-step visibility) | → P2 |
 | **P2** | Interview + Decision | P1 done | Schedule interview, multi-round reports, Manager decision | Approve → P3, Reject → Closed |
-| **P3** | Deposit Exchange | P2 approved | School uploads deposit docs (PDF) → student pays + uploads proof → school confirms | Confirmed → P4 |
-| **P4** | Documents | P3 accepted | Submit docs, School verify | Verified → P5 |
-| **P5** | Visa / Travel | P4 verified | Apply visa (if needed), Travel arrangement | Arrived → P6 |
-| **P6** | Enrolled | P5 arrived | Official enrollment | Done |
+| **P3** | **Offering** | P2 approved | School sends conditional offer + payment instructions (per §17 template) → Student accepts + pays deposit + uploads proof → School confirms | Confirmed → P4 |
+| **P4** | **Admission Documents** | P3 confirmed | School prepares admission docs per §17 template (incl. **CAS Letter** if `visaRequested`); parents fill supplementary forms; uniform ordering | Verified → P5 |
+| **P5** | **Pre-Departure** | P4 verified | **If `visaRequested`:** (Step 1) School issues CAS → (Step 2) Student applies visa → (Step 3) **Student confirms visa granted** (mandatory) → (Step 4) Travel arrangements (flight/taxi/arrival) → (Step 5) School confirms arrival | Arrived → P6 |
+| **P6** | Enrolled | P5 arrived | School confirms pupil begin; official enrollment complete | Done |
+
+**Key changes from rev 2.x:**
+- **P3 rename** — was "Deposit Exchange" (covered both offer-issuing and deposit-receiving); now "Offering" emphasizes the conditional-offer-and-deposit contract milestone
+- **P4 scope expansion** — now includes parents' supplementary forms + uniform ordering + CAS paperwork (if `visaRequested`)
+- **P5 merge** — was split into "Visa / Travel"; now merged into "Pre-Departure" with conditional sub-steps (§18)
+- **P6 unchanged content** — semantic and final state preserved
+- **`visaRequested` field** — captured at P1 (see §19); drives P4 CAS inclusion + P5 visa sub-step visibility
 
 ---
 
@@ -115,8 +129,10 @@ All P2 interview date / time fields and displays are marked as UK time (Europe/L
 
 ## 3. Reject & Reopen Rules
 
-**Reopen allowed at:** P1 (Application), P3 (Offer), P5 (Visa)
-**No reopen at:** P2 (Interview+Decision), P4 (Documents), P6 (Enrolled)
+**Reopen allowed at:** P1 (Application), P3 (Offering), P5 (Pre-Departure)
+**No reopen at:** P2 (Interview+Decision), P4 (Admission Documents), P6 (Enrolled)
+
+**Note (rev 3.0):** P3 was previously "Deposit Exchange" and is now "Offering" — same reject/reopen behavior, just renamed. P5 was previously "Visa / Travel" and is now "Pre-Departure" — same reject/reopen behavior, just renamed.
 
 **Re-open behavior:**
 - Re-open resets phase to Active
@@ -968,4 +984,139 @@ After the click, the school's "✅ Confirm Receipt" button is enabled (per the r
 3. Delete the `.p3-dev-panel` / `.p3-dev-title` / `.p3-dev-note` / `.btn-dev` CSS block.
 4. Delete this whole `### §16.1.1 Dev affordance` section from this doc.
 
+---
 
+## 17. Document Template System (NEW in rev 3.0)
+
+**Rule:** School settings configures a **default document template** per phase (P3, P4, P5). When an application enters a phase, the per-phase template **auto-populates** to both the school's application page and the student's application page. The student can **add or remove** individual documents (each application can deviate from the school default).
+
+**Configuration location:** `/school/settings/document-templates` (school admin) — global, applies to all applications in the school.
+
+**Per-phase display location:** `/school/applications/[ref]/` and `/student/applications/[ref]/` — auto-populated, per-application override allowed.
+
+### 17.1 DocumentTemplate shape
+
+```ts
+interface DocumentTemplate {
+  id: string                       // stable id (uuid)
+  phase: 3 | 4 | 5                 // which phase this template belongs to
+  category: 'admission' | 'identity' | 'financial' | 'travel' | 'medical' | 'other'
+  name: string                     // e.g. "Offer Letter", "CAS Letter", "Medical Form"
+  description: string              // e.g. "School's conditional offer letter to the student"
+  required: boolean                // advisory flag (⚠️ indicator on missing required docs)
+  sampleUrl?: string               // optional link to a sample/template PDF
+  displayOrder: number             // sort order in UI
+  active: boolean                  // soft-delete: false = hidden but kept for audit
+}
+```
+
+### 17.2 Default required documents (rev 3.0 baseline)
+
+| Phase | Required Doc | Category | Notes |
+|-------|--------------|----------|-------|
+| P3 (Offering) | **Offer Letter** | `admission` | School's conditional offer. Always required. |
+| P4 (Admission Documents) | **CAS Letter** | `admission` | Required only if `application.visaRequested === true`. School generates once student accepts. |
+| P4 (Admission Documents) | (extension point) | — | Future: Medical Form, Refund Agreement, Uniform Order Form, Parents Info Form |
+| P5 (Pre-Departure) | **Visa Granted PDF** | `identity` | Required only if `application.visaRequested === true`. Student uploads after visa issued. |
+| P5 (Pre-Departure) | (extension point) | — | Future: Flight Details Form, Arrival Info Form, Taxi Arrangement Form |
+
+**Amendments:** New required documents can be added in future revisions (rev 3.1, rev 3.2, etc.). The `DocumentTemplate` interface supports `active: false` for soft-deletion — old templates remain in the database for audit, hidden from new applications.
+
+### 17.3 Behavior
+
+- **Auto-populate:** When an application enters a phase, the school's default template for that phase is **copied** into the application record (`phase3_templates / phase4_templates / phase5_templates`). The copy is a snapshot — future school-wide template edits do NOT retroactively change existing applications.
+- **Per-app override:** School staff or student can:
+  - **Add** a custom doc (e.g. "School-specific medical form for athletics")
+  - **Remove** an auto-populated doc (e.g. "Refund Agreement not needed for this applicant")
+  - **Mark as required / not required** (advisory only — does not block submit)
+- **Required flag enforcement:** Display ⚠️ "Required doc missing" hint for any required doc that has no uploaded file. **Advisory only** — does NOT block phase advance. School makes the final human judgment.
+
+### 17.4 Click-test scenarios
+
+| # | Scenario | Expected |
+|---|----------|----------|
+| (a) School admin opens `/school/settings/document-templates` | Page lists default templates for P3, P4, P5 grouped by phase. School can add/edit/remove. |
+| (b) New application enters P3 | Application's P3 section auto-populates with school's default P3 templates (e.g. "Offer Letter" required). |
+| (c) Student opens P3 | Student's P3 section shows auto-populated docs with checkboxes / upload slots. Can add custom doc, can mark auto-populated doc as not-applicable. |
+| (d) School admin edits school-default template (e.g. adds "Medical Form" to P4) | New applications going forward inherit the new template. Existing applications unaffected (snapshot). |
+| (e) Student does not upload a required doc | UI shows ⚠️ hint next to the missing doc. Submit still allowed. School receives the application with the missing-doc warning. |
+
+---
+
+## 18. P5 Visa Step Detail (NEW in rev 3.0)
+
+**Rule:** P5 (Pre-Departure) has **conditional sub-steps** driven by `application.visaRequested`. The student's **"Confirm Visa Granted"** action is **mandatory** when `visaRequested === true` — it cannot be skipped, hidden, or omitted from the UI.
+
+### 18.1 Sub-step flow
+
+**If `visaRequested === true`:**
+1. **🛂 Step 1: Apply for Visa** — School issues CAS Letter (per §17 template); student receives + applies for student visa externally
+2. **✅ Step 2: Confirm Visa Granted** — Student uploads the visa-granted PDF + clicks **"✅ Confirm Visa Granted"** button (mandatory action — see §18.2)
+3. **✈️ Step 3: Travel Arrangements** — Student submits flight details, arrival time, taxi arrangement; school acknowledges
+4. **🏫 Step 4: School Confirms Arrival** — School confirms the pupil has arrived and boarded; triggers P5 → P6
+
+**If `visaRequested === false`:**
+1. ✈️ **Step 1: Travel Arrangements** (skip Step 1-2 from the `visaRequested === true` flow)
+2. 🏫 **Step 2: School Confirms Arrival** (triggers P5 → P6)
+
+### 18.2 "Confirm Visa Granted" — mandatory action
+
+**Visibility rule:** The "✅ Confirm Visa Granted" button is **always visible** on the student P5 view when `application.visaRequested === true`. It is **never hidden** behind a gate, accordion, or conditional UI. The button is the canonical confirmation that the student visa has been issued.
+
+**UI placement:**
+- Student P5 view: Top of the P5 stepper, prominent placement
+- School P5 view: Read-only display showing whether the student has confirmed + uploaded PDF
+
+**Pre-condition for enabling:**
+- Student must upload at least 1 file in the "Visa Granted Document" upload slot
+- Once uploaded, the "✅ Confirm Visa Granted" button is enabled
+- Clicking it sets `phase5.visaGrantedAt: Date` and `phase5.visaGrantedDocument: FileRef`; status transitions to `visa_confirmed` (sub-status, not a new main phase)
+
+### 18.3 Click-test scenarios
+
+| # | Scenario | Expected |
+|---|----------|----------|
+| (a) Student opens P5 with `visaRequested = true` | "✅ Confirm Visa Granted" button **prominently visible**. Hint: "Upload your visa granted page, then click Confirm Visa Granted to proceed." |
+| (b) Student clicks button before uploading | Button **disabled**. Title attribute: "Please upload your visa granted page first." |
+| (c) Student uploads PDF, then clicks button | Status transitions to `visa_confirmed`. Sub-status badge "✅ Visa Granted" appears. P5 advances to Step 3 (Travel Arrangements). |
+| (d) School P5 view | Shows "✅ Visa Granted" status + uploaded PDF link + date confirmed. |
+| (e) Student with `visaRequested = false` | "✅ Confirm Visa Granted" button **NOT rendered** (only Travel Arrangements flow). |
+
+---
+
+## 19. P1 visaRequested Selection (NEW in rev 3.0)
+
+**Rule:** At P1 (Application), the student must select whether they require a student visa. This is captured as `application.visaRequested: boolean` and **carries forward** to all downstream phases.
+
+### 19.1 UI location
+
+- **Student apply form:** `/student/apply/[schoolId]` — radio group with two options:
+  - ☐ **Yes, I need a student visa**
+  - ☐ **No, I have the right to study in the UK** (e.g. UK/EU passport, ILR, etc.)
+- The field is **required** — application submit is blocked if neither is selected.
+
+### 19.2 Data model
+
+```ts
+interface P2Application {
+  // ... existing fields ...
+  visaRequested: boolean  // NEW in rev 3.0 — captures student visa need
+}
+```
+
+### 19.3 Downstream impact
+
+| Phase | Impact of `visaRequested` |
+|-------|---------------------------|
+| P4 (Admission Documents) | If `true`: **CAS Letter** template is included in the §17 default template list for P4. |
+| P5 (Pre-Departure) | If `true`: §18 visa sub-steps (Step 1 Apply + Step 2 Confirm Granted) are shown. If `false`: skipped. |
+| School info card (any phase) | `Visa Requested: Yes / No` displayed in the application's info grid. |
+
+### 19.4 Click-test scenarios
+
+| # | Scenario | Expected |
+|---|----------|----------|
+| (a) Student opens apply form | Radio group visible with "Yes" / "No" options. Required validation on submit. |
+| (b) Student selects "Yes" + submits | `application.visaRequested = true` saved. School info card shows "Visa Requested: Yes". P4 template includes CAS Letter. P5 shows §18 visa sub-steps. |
+| (c) Student selects "No" + submits | `application.visaRequested = false`. P4 template excludes CAS Letter. P5 skips §18 visa sub-steps. |
+| (d) Student changes mind after submit | Not allowed at P1 (already submitted). If application is reopened (§3), student can amend during re-submission — see reopen flow. |
