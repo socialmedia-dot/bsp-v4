@@ -35,9 +35,9 @@ const props = defineProps({
 const phases = [
   { key: 'submitted', label: 'Application Submitted' },
   { key: 'interview', label: 'Interview & Assessment' },
-  { key: 'deposit', label: 'Deposit Exchange' },
+  { key: 'deposit', label: 'Offering' },
   { key: 'documents', label: 'Admission Documents' },
-  { key: 'visa', label: 'Visa & Travel' },
+  { key: 'visa', label: 'Pre-Departure' },
   { key: 'enrolled', label: 'Enrolled' }
 ]
 

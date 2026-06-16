@@ -454,7 +454,7 @@
                   </template>
                 </div>
 
-                <!-- P3 Deposit Exchange (full UI, replaces old P3 Decision + P4 Offer & Acceptance) -->
+                <!-- P3 Offering (full UI, replaces old P3 Decision + P4 Offer & Acceptance) — rev 3.0 -->
                 <div v-if="ph.phase === 3" class="action-section p3-container">
                   <div class="p3-status-header">
                     <div>
@@ -651,7 +651,7 @@
                   </div>
                 </div>
 
-                <!-- P5 Visa & Travel (was P6, gate-guarded by P3) — per §18 conditional sub-steps -->
+                <!-- P5 Pre-Departure (gate-guarded by P3) — per §18 conditional sub-steps -->
                 <div v-if="ph.phase === 5">
                   <div v-if="p3gate.isP3Confirmed.value" class="action-section">
                     <div v-if="!isRejected">
@@ -1539,7 +1539,7 @@ function onMakeDecision(outcome) {
     // in one click, not two (no more separate 'Mark P2 Complete' step).
     // Reject path stays on P2 with no phase transition (status = 'rejected' above).
     if (outcome === 'approved') {
-      advancePhase(3, 'P2 interview + decision approved — proceeding to P3 (Deposit Exchange)')
+      advancePhase(3, 'P2 interview + decision approved — proceeding to P3 (Offering)')  // rev 3.0
       nextTick(() => {
         if (typeof document === 'undefined') return
         const el = document.getElementById('phase-body-3')
@@ -1557,7 +1557,7 @@ function onMarkP2Complete() {
     return
   }
   if (!confirm('Mark P2 complete and move to Phase 3 (Offer)?')) return
-  advancePhase(3, 'P2 Interview + Decision completed — proceeding to P3 (Deposit Exchange)')
+  advancePhase(3, 'P2 Interview + Decision completed — proceeding to P3 (Offering)')  // rev 3.0
 }
 
 // ===== P2 helpers =====
@@ -2418,7 +2418,7 @@ if (typeof window !== 'undefined') {
   padding: 8px 12px;
 }
 
-/* ===== P3 Deposit Exchange styles ===== */
+/* ===== P3 Offering styles ===== — rev 3.0 */
 .status-pill-p3-sent_to_student { background: #dbeafe; color: #1e40af; padding: 0.25rem 0.75rem; border-radius: 12px; font-size: 0.8rem; font-weight: 600; }
 .status-pill-p3-proof_uploaded { background: #fef3c7; color: #92400e; padding: 0.25rem 0.75rem; border-radius: 12px; font-size: 0.8rem; font-weight: 600; }
 .status-pill-p3-confirmed { background: #d1fae5; color: #065f46; padding: 0.25rem 0.75rem; border-radius: 12px; font-size: 0.8rem; font-weight: 600; }
