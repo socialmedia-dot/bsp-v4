@@ -73,6 +73,10 @@
                 <span class="info-label">Current Phase</span>
                 <span class="info-value">{{ currentPhaseLabel }}</span>
               </div>
+              <div class="info-item">
+                <span class="info-label">Visa Requested</span>
+                <span class="info-value">{{ application.visaRequested ? 'Yes' : 'No' }}</span>
+              </div>
             </div>
           </div>
 
@@ -211,6 +215,36 @@
       </div>
     </div>
 
+    <!-- 📄 Document Checklist — P3 / Offering (read-only for student, shows school-prepared templates) -->
+    <div v-if="application.currentPhase >= 3" class="info-card doc-checklist-section">
+      <h3>📄 Document Checklist — Phase 3 (Offering)</h3>
+      <div v-if="application.phase3Templates && application.phase3Templates.length" class="doc-checklist">
+        <div v-for="(t, i) in application.phase3Templates" :key="i" class="doc-checklist-item">
+          <span class="doc-check-icon">📋</span>
+          <span class="doc-check-name">{{ t.name }}</span>
+          <span class="doc-check-badge" :class="t.signed ? 'badge-signed' : 'badge-pending'">
+            {{ t.signed ? '✅ Signed' : '⏳ Awaiting signature' }}
+          </span>
+        </div>
+      </div>
+      <p v-else class="p3-empty">No documents prepared by the school yet.</p>
+    </div>
+
+    <!-- 📄 Document Checklist — P4 / Admission Documents (read-only for student) -->
+    <div v-if="application.currentPhase >= 4" class="info-card doc-checklist-section">
+      <h3>📄 Document Checklist — Phase 4 (Admission Documents)</h3>
+      <div v-if="application.phase4Templates && application.phase4Templates.length" class="doc-checklist">
+        <div v-for="(t, i) in application.phase4Templates" :key="i" class="doc-checklist-item">
+          <span class="doc-check-icon">📋</span>
+          <span class="doc-check-name">{{ t.name }}</span>
+          <span class="doc-check-badge" :class="t.signed ? 'badge-signed' : 'badge-pending'">
+            {{ t.signed ? '✅ Signed' : '⏳ Awaiting signature' }}
+          </span>
+        </div>
+      </div>
+      <p v-else class="p3-empty">No admission documents prepared yet.</p>
+    </div>
+
     <!-- Hidden file input for P3 deposit proof upload -->
     <input
       id="student-p3-file-input"
@@ -224,6 +258,35 @@
       <button class="btn btn-primary" @click="onP3UploadProof">Upload Proof</button>
       <button class="btn btn-secondary" @click="p3StudentFile = null">Cancel</button>
     </div>
+
+    <!-- 📄 Document Checklist — P5 / Pre-Departure (read-only for student) -->
+    <div v-if="application.currentPhase >= 5" class="info-card doc-checklist-section">
+      <h3>📄 Document Checklist — Phase 5 (Pre-Departure)</h3>
+      <div v-if="application.phase5Templates && application.phase5Templates.length" class="doc-checklist">
+        <div v-for="(t, i) in application.phase5Templates" :key="i" class="doc-checklist-item">
+          <span class="doc-check-icon">📋</span>
+          <span class="doc-check-name">{{ t.name }}</span>
+          <span class="doc-check-badge" :class="t.signed ? 'badge-signed' : 'badge-pending'">
+            {{ t.signed ? '✅ Signed' : '⏳ Awaiting signature' }}
+          </span>
+        </div>
+      </div>
+      <p v-else class="p3-empty">No pre-departure documents prepared yet.</p>
+    </div>
+
+    <!-- ✈️ P5 Pre-Departure — VisaConfirmStep (student uploads visa PDF + confirms) -->
+    <div v-if="application.currentPhase === 5" class="info-card p5-visa-section">
+      <h3>✈️ Pre-Departure</h3>
+      <VisaConfirmStep
+        :application-ref="application.refNumber"
+        :phase5-visa-granted-document="application.phase5VisaGrantedDocument"
+        :phase5-visa-granted-at="application.phase5VisaGrantedAt"
+        :visa-requested="application.visaRequested"
+        @upload="onVisaGrantedUpload"
+        @confirm-granted="onVisaGrantedConfirm"
+      />
+    </div>
+
   </div>
 </template>
 
@@ -347,6 +410,21 @@ const application = ref({
   subStatus: 'Awaiting Confirmation',
   status: 'active',
   appliedAt: '2026-05-15T10:00:00Z',
+  visaRequested: true,
+  phase5VisaGrantedDocument: null,
+  phase5VisaGrantedAt: null,
+  phase3Templates: [
+    { name: 'Deposit Agreement Form', signed: false },
+    { name: 'School Terms & Conditions', signed: true },
+  ],
+  phase4Templates: [
+    { name: 'Admission Offer Letter', signed: true },
+    { name: 'Medical Form', signed: false },
+  ],
+  phase5Templates: [
+    { name: 'CAS Letter', signed: true },
+    { name: 'Pre-Departure Checklist', signed: false },
+  ],
   interview: null,
   attachments: [
     { id: 'a1', fileName: 'Passport_Copy.pdf', fileSize: '1.2 MB', fileType: 'application/pdf', phase: 1, phaseLabel: 'Application Submitted', uploadedBy: 'student', uploadedByRole: 'Student', createdAt: '2026-05-15T10:05:00Z' },
@@ -358,9 +436,9 @@ const application = ref({
 const phaseLabels = [
   'Application Submitted',
   'Interview & Assessment',
-  'Deposit Exchange',
+  'Offering',
   'Admission Documents',
-  'Visa & Travel',
+  'Pre-Departure',
   'Enrolled'
 ]
 
@@ -390,7 +468,7 @@ const phaseActions = computed(() => {
   } else if (phase === 4) {
     actions.push({ id: 'docs', icon: '📁', title: 'Admission Documents', description: 'Download your admission documents', buttonText: 'Download', available: true })
   } else if (phase === 5) {
-    actions.push({ id: 'visa', icon: '🏛️', title: 'Visa Application', description: 'Track your visa application progress', buttonText: 'Track', available: application.value.visaRequired })
+    actions.push({ id: 'visa', icon: '🏛️', title: 'Visa Application', description: 'Track your visa application progress', buttonText: 'Track', available: application.value.visaRequested })
     actions.push({ id: 'travel', icon: '✈️', title: 'Travel Arrangements', description: 'Plan your journey to the UK', buttonText: 'Plan', available: true })
   } else if (phase === 6) {
     actions.push({ id: 'enrolled', icon: '🎉', title: 'Enrolled', description: 'Welcome! Your enrolment is complete.', buttonText: 'View', available: true })
@@ -505,14 +583,59 @@ function formatInterviewDate(iso) {
   return d.toLocaleDateString('en-GB', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })
 }
 
+const P5_SUB_STATUS = {
+  P5_VISA_GRANTED: 'visa_granted',
+}
+
+const VISA_STATE_KEY = computed(() => `bsp:visa:${id}`)
+
+function saveVisaState() {
+  if (typeof window === 'undefined') return
+  try {
+    localStorage.setItem(VISA_STATE_KEY.value, JSON.stringify({
+      phase5VisaGrantedDocument: application.value.phase5VisaGrantedDocument,
+      phase5VisaGrantedAt: application.value.phase5VisaGrantedAt,
+      subStatus: application.value.subStatus,
+    }))
+  } catch (e) { /* ignore */ }
+}
+
+function loadVisaState() {
+  if (typeof window === 'undefined') return
+  try {
+    const raw = localStorage.getItem(VISA_STATE_KEY.value)
+    if (!raw) return
+    const saved = JSON.parse(raw)
+    if (saved.phase5VisaGrantedDocument !== undefined)
+      application.value.phase5VisaGrantedDocument = saved.phase5VisaGrantedDocument
+    if (saved.phase5VisaGrantedAt)
+      application.value.phase5VisaGrantedAt = saved.phase5VisaGrantedAt
+    if (saved.subStatus)
+      application.value.subStatus = saved.subStatus
+  } catch (e) { /* ignore */ }
+}
+
+function onVisaGrantedUpload(doc) {
+  application.value.phase5VisaGrantedDocument = doc
+  saveVisaState()
+}
+
+function onVisaGrantedConfirm() {
+  application.value.phase5VisaGrantedAt = new Date().toISOString()
+  application.value.subStatus = P5_SUB_STATUS.P5_VISA_GRANTED
+  saveVisaState()
+}
+
 onMounted(() => {
   // Cross-portal sync: load interview set by school
   const shared = loadSharedInterview()
   if (shared !== null) {
     application.value.interview = shared
   }
+  // Load persisted visa state
+  loadVisaState()
   // P3 deposit exchange sync: load any deposit form set by school
-  p3store.deposits.value = p3store.deposits.value
+  if (p3store?.deposits) p3store.deposits.value = p3store.deposits.value
 })
 </script>
 
@@ -630,6 +753,21 @@ onMounted(() => {
 .p3-ready-banner-spacer { flex: 1; }
 .p3-ready-banner-secondary { background: transparent; color: #1e40af; border: 1px solid #93c5fd; padding: 0.25rem 0.65rem; border-radius: 6px; font-size: 0.85rem; cursor: pointer; font-weight: 500; }
 .p3-ready-banner-secondary:hover { background: #dbeafe; }
+
+/* Document Checklist — shared across P3/P4/P5 (read-only for student) */
+.doc-checklist-section { margin-top: 0.5rem; }
+.doc-checklist-section h3 { font-size: 1rem; }
+.doc-checklist { display: flex; flex-direction: column; gap: 0.5rem; margin: 0.75rem 0; }
+.doc-checklist-item { display: flex; align-items: center; gap: 0.625rem; padding: 0.5rem 0.75rem; background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 6px; }
+.doc-check-icon { font-size: 1rem; flex-shrink: 0; }
+.doc-check-name { flex: 1; font-size: 0.875rem; color: #1e293b; font-weight: 500; }
+.doc-check-badge { font-size: 0.72rem; font-weight: 700; padding: 0.2rem 0.55rem; border-radius: 999px; }
+.badge-signed { background: #dcfce7; color: #15803d; }
+.badge-pending { background: #fef3c7; color: #92400e; }
+
+/* P5 Pre-Departure section */
+.p5-visa-section { margin-top: 0.5rem; }
+.p5-visa-section h3 { font-size: 1rem; }
 
 /* Footer */
 .footer { background: #f8fafc; border-top: 1px solid #e2e8f0; padding: 1.5rem 0; margin-top: auto; }
