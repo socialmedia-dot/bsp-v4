@@ -20,8 +20,8 @@
         <div class="stat-label">Interview</div>
       </div>
       <div class="stat-card">
-        <div class="stat-number">{{ depositCount }}</div>
-        <div class="stat-label">Deposit</div>
+        <div class="stat-number">{{ offeringCount }}</div>
+        <div class="stat-label">Offering</div>
       </div>
     </div>
 
@@ -91,7 +91,7 @@ const applications = ref([
     schoolName: 'Westminster School',
     yearOfEntry: 'September 2026',
     currentPhase: 3,
-    subStatus: 'Deposit Exchange',
+    subStatus: 'Offering',
     consultantName: 'James Wong',
     appliedAt: '2026-04-20T14:00:00Z'
   },
@@ -111,9 +111,10 @@ const applications = ref([
 
 const pendingCount = computed(() => applications.value.filter(a => a.currentPhase === 1).length)
 const interviewCount = computed(() => applications.value.filter(a => a.currentPhase === 2).length)
-const depositCount = computed(() => applications.value.filter(a => a.currentPhase === 3).length)
+const offeringCount = computed(() => applications.value.filter(a => a.currentPhase === 3).length)
 
-const phaseLabels = ['', 'Review', 'Interview', 'Deposit', 'Documents', 'Visa', 'Enrolled']
+// rev 3.0 phase labels — see docs/admission-pipeline-v2.md §14
+const phaseLabels = ['', 'Review', 'Interview', 'Offering', 'Admission Documents', 'Pre-Departure', 'Enrolled']
 
 function phaseLabel(phase) {
   return phaseLabels[phase] || 'Unknown'
