@@ -73,6 +73,7 @@ const activeItem = computed(() => {
   if (path === '/school/reports') return 'reports'
   if (path === '/school/partnerships') return 'partnerships'
   if (path === '/school/admissions') return 'admissions'
+  if (path === '/school/settings/document-templates') return 'document-templates'
   return ''
 })
 </script>

@@ -4,6 +4,16 @@
       <h1>🎓 Admission Settings</h1>
       <p class="subtitle">Manage entry options and admission preferences</p>
     </div>
+    <div class="admissions-quicklinks">
+      <NuxtLink to="/school/settings/document-templates" class="quicklink-card">
+        <span class="quicklink-icon">📋</span>
+        <div class="quicklink-text">
+          <h3>Document Templates</h3>
+          <p>Configure default documents required for each phase (Offering, Admission Documents, Pre-Departure)</p>
+        </div>
+        <span class="quicklink-arrow">→</span>
+      </NuxtLink>
+    </div>
 
     <div class="settings-grid">
       <!-- Entry Admission Settings -->
@@ -192,6 +202,14 @@ function saveSettings() {
 .subtitle { color: #64748b; font-size: 0.9rem; margin: 0.25rem 0 0; }
 
 .settings-grid { display: grid; grid-template-columns: 1fr; gap: 1.5rem; max-width: 700px; }
+.admissions-quicklinks { margin-bottom: 2rem; }
+.quicklink-card { display: flex; align-items: center; gap: 1rem; padding: 1.25rem 1.5rem; background: linear-gradient(135deg, #eff6ff 0%, #dbeafe 100%); border: 1px solid #bfdbfe; border-radius: 12px; text-decoration: none; color: #1e3a8a; transition: transform 0.2s, box-shadow 0.2s; }
+.quicklink-card:hover { transform: translateY(-2px); box-shadow: 0 4px 12px rgba(59, 130, 246, 0.2); }
+.quicklink-icon { font-size: 2rem; }
+.quicklink-text { flex: 1; }
+.quicklink-text h3 { margin: 0 0 0.25rem; font-size: 1.1rem; }
+.quicklink-text p { margin: 0; font-size: 0.85rem; color: #475569; }
+.quicklink-arrow { font-size: 1.5rem; color: #3b82f6; }
 @media (max-width: 1024px) { .settings-grid { grid-template-columns: 1fr; } }
 
 .settings-card { background: #fff; border: 1px solid #e2e8f0; border-radius: 12px; padding: 1.5rem; }

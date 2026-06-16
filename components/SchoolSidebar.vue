@@ -23,6 +23,9 @@
           <NuxtLink to="/school/admissions" :class="['nav-item', { active: active === 'admissions' }]" @click="close">
             <span class="nav-icon">🎓</span><span>Admission Settings</span>
           </NuxtLink>
+          <NuxtLink to="/school/settings/document-templates" :class="['nav-item', { active: active === 'document-templates' }]" @click="close">
+            <span class="nav-icon">📋</span><span>Document Templates</span>
+          </NuxtLink>
         </div>
       </nav>
     </aside>
