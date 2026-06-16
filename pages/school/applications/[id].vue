@@ -1800,6 +1800,7 @@ function restartApplication() {
   background: #f8fafc;
   border-radius: 8px;
   display: flex;
+  flex-wrap: wrap;        /* rev 2.3: allow button to wrap on narrow viewports */
   gap: 10px;
   padding: 8px 12px;
 }
@@ -1824,6 +1825,12 @@ function restartApplication() {
   .phase-title { font-size: 0.88rem; min-width: 120px; }
   .phase-body { padding: 12px 14px 16px; }
   .phase-date-inline { display: none; }
+  /* rev 2.3: stack Confirm Receipt block on mobile so button doesn't overflow viewport */
+  .p3-confirm-receipt-block .att-row { flex-direction: column; align-items: stretch; gap: 8px; }
+  .p3-confirm-receipt-block .att-row .att-info { width: 100%; }
+  .p3-confirm-receipt-block .att-row .btn-approve { width: 100%; }
+  .p3-confirm-receipt-block .p3-gate-hint,
+  .p3-confirm-receipt-block .p3-gate-ready { min-width: 0; }
 }
 .summary-row {
   display: flex;
@@ -2086,7 +2093,7 @@ function restartApplication() {
 .p3-section { background: #fff; border: 1px solid #e2e8f0; border-radius: 6px; padding: 1rem; margin-top: 0.75rem; }
 .p3-section-title { font-weight: 700; font-size: 0.95rem; margin-bottom: 0.75rem; color: #1e293b; }
 .p3-form-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 0.75rem; }
-.p3-proof-display { display: flex; justify-content: space-between; align-items: center; gap: 0.75rem; padding: 0.75rem; background: #f0fdf4; border: 1px solid #bbf7d0; border-radius: 6px; }
+.p3-proof-display { display: flex; justify-content: space-between; align-items: center; gap: 0.75rem; padding: 0.75rem; background: #f0fdf4; border: 1px solid #bbf7d0; border-radius: 6px; flex-wrap: wrap; }
 .p3-file-attached { display: inline-block; padding: 0.25rem 0.5rem; background: #dbeafe; color: #1e40af; border-radius: 4px; font-size: 0.8rem; margin-left: 0.5rem; }
 .p3-confirmed-banner { margin-top: 0.75rem; padding: 0.75rem 1rem; background: #d1fae5; border: 1px solid #6ee7b7; border-radius: 6px; color: #065f46; font-weight: 600; }
 .p3-locked-banner { margin-top: 0.75rem; padding: 0.75rem 1rem; background: #fef3c7; border: 1px solid #fcd34d; border-radius: 6px; color: #92400e; font-weight: 600; display: flex; align-items: center; gap: 0.5rem; }

@@ -835,7 +835,36 @@ School page (`pages/school/applications/[id].vue`):
 | (b) School picks 1 PDF, clicks "Send to Student" | Deposit record created, status `sent_to_student`, "Add to Student" button replaces "Send". Student can see the document in their P3 view. |
 | (c) Student opens P3, clicks "Deposit Form" | Alert shows the document list + message about checking the PDF. No dashes. |
 | (d) School sent 1 file (status `sent_to_student` or later) | Sent files list shows the file with download link, **no delete button**. Pending queue (if any) still has delete buttons. |
-| (e) After student uploads proof, school reviews | Same as (d) — sent files still have no delete button. The school can only "Add to Student" (append more files) or "Confirm Receipt". |
+| (e) | After student uploads proof, school reviews | Same as (d) — sent files still have no delete button. The school can only "Add to Student" (append more files) or "Confirm Receipt". |
+
+### 16.1.3 Confirm Receipt block — mobile responsive (2026-06-16, rev 2.3)
+
+**Rule (rev 2.3):** The `.p3-confirm-receipt-block` (Section B2 expanded body) becomes mobile-responsive. On viewports ≤ 768px, the proof display + "✅ Confirm Receipt" button + helper text reflow from a single horizontal row into a stacked column so that no element overflows the viewport and no horizontal scrollbar appears on the page.
+
+**Why:** KC reported on the demo (iPhone SE 375px) that the Confirm Receipt block was overflowing the viewport — the page acquired a horizontal scroll (~240px extra width), the button was pushed past the right edge, and the helper hint box (waiting / ready / advisory) was clipped. Root cause: `.att-row` and `.p3-proof-display` both use `display: flex` with `flex-wrap: nowrap`, which forces all children into one row no matter how narrow the parent gets. The `.att-info` block already had `min-width: 0` (good), but the button and hint box siblings had no such constraint and pushed past the parent edge.
+
+**What stays the same (rev 2.3 is pure CSS):**
+- All DOM structure from rev 2.2 (toggle body, proof row, button, three helper text variants).
+- All §16.1.1 button enablement logic (rev 2.1): `status === 'proof_uploaded' AND studentFiles.length >= 1`.
+- All audit/event sequencing.
+- Desktop layout (≥ 769px) is unchanged — `.att-row` stays horizontal so desktop scans cleanly.
+
+**What changes (rev 2.3):**
+- `.att-row` gains `flex-wrap: wrap` so the button can wrap to a new line when there isn't enough horizontal space (graceful degradation — works on tablet too).
+- `.p3-proof-display` gains `flex-wrap: wrap` for symmetry (defensive — its children include the att-row, and we want the whole block to be allowed to wrap, not just the att-row).
+- New `@media (max-width: 768px)` block: `.att-row` switches to `flex-direction: column; align-items: stretch`. The button becomes `width: 100%` so it's tappable across the full width on a phone.
+- The `.p3-gate-hint` / `.p3-gate-ready` boxes (block-level, after the att-row) are unaffected — they already wrap correctly. Only their `min-width: 0` is enforced explicitly so they can't push the parent wider than the viewport on iOS Safari's flexbox quirks (mirrors the ChatRoom fix from 2026-06-16).
+
+**Click-test scenarios (rev 2.3, post-deploy):**
+
+| # | Viewport | Scenario | Expected |
+|---|----------|----------|----------|
+| (x) | iPhone SE (375×667) | Open school P3 view, status = `proof_uploaded`, studentFiles = 0 | Toggle expand → proof row stacks icon / filename / meta on first line; Confirm Receipt button on its own line below, full-width; helper hint below that. `document.documentElement.scrollWidth === 375` (no horizontal scroll). |
+| (y) | iPhone SE (375×667) | Same as (x) but studentFiles = 1+ (button enabled) | Same stacking. Button green / enabled, helper text shows "Student has indicated they're done". `scrollWidth === 375`. |
+| (z) | iPhone 12 (390×844) | status = `proof_uploaded`, studentFiles = 0 | Same stacking as (x). `scrollWidth === 390`. |
+| (aa) | Desktop (1280×900) | status = `proof_uploaded`, studentFiles = 1+ | Unchanged from rev 2.2 — att-row stays horizontal, button on the right. No regression on desktop. |
+
+**State transitions:** Unchanged (rev 2.3 is CSS-only).
 
 ### §16.1.1 Dev affordance — temporary (KC 2026-06-15)
 
