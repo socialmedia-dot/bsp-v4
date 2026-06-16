@@ -161,8 +161,8 @@
                       <span class="info-value">{{ application.entryGrade }}</span>
                     </div>
                     <div class="info-item">
-                      <span class="info-label">Visa Required</span>
-                      <span class="info-value">{{ application.visaRequired ? 'Yes' : 'No' }}</span>
+                      <span class="info-label">Visa Requested</span>
+                      <span class="info-value">{{ application.visaRequested ? 'Yes' : 'No' }}</span>
                     </div>
                     <div class="info-item">
                       <span class="info-label">Consultant</span>
@@ -751,7 +751,12 @@ const enrolledMock = {
   yearOfEntry: 'September 2025',
   entryGrade: 'Year 13 (Upper Sixth)',
   consultantName: 'Sarah Chen',
-  visaRequired: true,
+  visaRequested: true,
+  phase3Templates: [],
+  phase4Templates: [],
+  phase5Templates: [],
+  phase5VisaGrantedDocument: null,
+  phase5VisaGrantedAt: null,
   currentPhase: 7,
   subStatus: 'Enrolled',
   status: 'completed',
@@ -779,16 +784,16 @@ const enrolledMock = {
     { id: 'a1', fileName: 'Passport_Copy.pdf', fileSize: '1.2 MB', fileType: 'application/pdf', phase: 1, phaseLabel: 'Application Submitted', uploadedBy: 'student', uploadedByRole: 'Student', createdAt: '2024-10-15T10:05:00Z' },
     { id: 'a2', fileName: 'Academic_Transcript.pdf', fileSize: '2.4 MB', fileType: 'application/pdf', phase: 1, phaseLabel: 'Application Submitted', uploadedBy: 'student', uploadedByRole: 'Student', createdAt: '2024-10-15T10:06:00Z' },
     { id: 'a3', fileName: 'Interview_Assessment.pdf', fileSize: '0.8 MB', fileType: 'application/pdf', phase: 2, phaseLabel: 'Interview & Assessment', uploadedBy: 'school', uploadedByRole: 'School', createdAt: '2024-11-02T09:00:00Z' },
-    { id: 'a4', fileName: 'Offer_Letter.pdf', fileSize: '1.1 MB', fileType: 'application/pdf', phase: 3, phaseLabel: 'Deposit Exchange', uploadedBy: 'school', uploadedByRole: 'School', createdAt: '2024-11-10T14:00:00Z' },
-    { id: 'a5', fileName: 'CAS_Letter.pdf', fileSize: '0.5 MB', fileType: 'application/pdf', phase: 5, phaseLabel: 'Visa & Travel', uploadedBy: 'school', uploadedByRole: 'School', createdAt: '2025-01-20T11:00:00Z' },
+    { id: 'a4', fileName: 'Offer_Letter.pdf', fileSize: '1.1 MB', fileType: 'application/pdf', phase: 3, phaseLabel: 'Offering', uploadedBy: 'school', uploadedByRole: 'School', createdAt: '2024-11-10T14:00:00Z' },
+    { id: 'a5', fileName: 'CAS_Letter.pdf', fileSize: '0.5 MB', fileType: 'application/pdf', phase: 5, phaseLabel: 'Pre-Departure', uploadedBy: 'school', uploadedByRole: 'School', createdAt: '2025-01-20T11:00:00Z' },
     { id: 'a6', fileName: 'Enrolment_Confirmation.pdf', fileSize: '0.6 MB', fileType: 'application/pdf', phase: 6, phaseLabel: 'Enrolled', uploadedBy: 'school', uploadedByRole: 'School', createdAt: '2025-09-01T09:00:00Z' },
   ],
   phaseHistory: [
     { phase: 1, label: 'Application Submitted', status: 'Completed', date: '2024-10-15', notes: 'Application received and documents uploaded.', attachments: ['Passport_Copy.pdf', 'Academic_Transcript.pdf'] },
     { phase: 2, label: 'Interview & Assessment', status: 'Completed', date: '2024-11-02', notes: 'Interview conducted. Assessment report uploaded.', attachments: ['Interview_Assessment.pdf'] },
-    { phase: 3, label: 'Deposit Exchange', status: 'Completed', date: '2024-11-10', notes: 'Offer sent. Deposit received and confirmed.', attachments: ['Offer_Letter.pdf'] },
+    { phase: 3, label: 'Offering', status: 'Completed', date: '2024-11-10', notes: 'Offer sent. Deposit received and confirmed.', attachments: ['Offer_Letter.pdf'] },
     { phase: 4, label: 'Admission Documents', status: 'Completed', date: '2024-12-01', notes: 'All admission documents prepared and verified.', attachments: [] },
-    { phase: 5, label: 'Visa & Travel', status: 'Completed', date: '2025-01-20', notes: 'CAS issued. Student visa granted. Travel arranged.', attachments: ['CAS_Letter.pdf'] },
+    { phase: 5, label: 'Pre-Departure', status: 'Completed', date: '2025-01-20', notes: 'CAS issued. Student visa granted. Travel arranged.', attachments: ['CAS_Letter.pdf'] },
     { phase: 6, label: 'Enrolled', status: 'Completed', date: '2025-09-01', notes: 'Student successfully enrolled. Welcome pack issued.', attachments: ['Enrolment_Confirmation.pdf'] },
   ]
 }
@@ -806,7 +811,12 @@ const defaultMock = {
   yearOfEntry: 'September 2027',
   entryGrade: 'Year 12 (Sixth Form)',
   consultantName: 'Sarah Chen',
-  visaRequired: true,
+  visaRequested: true,
+  phase3Templates: [],
+  phase4Templates: [],
+  phase5Templates: [],
+  phase5VisaGrantedDocument: null,
+  phase5VisaGrantedAt: null,
   currentPhase: 1,
   subStatus: 'Application Submitted',
   status: 'active',
@@ -820,9 +830,9 @@ const defaultMock = {
   phaseHistory: [
     { phase: 1, label: 'Application Submitted', status: 'In Progress', date: new Date().toISOString().slice(0,10), notes: 'New application received. Awaiting school review.', attachments: ['Passport_Copy.pdf', 'Academic_Transcript.pdf', 'Reference_Letter_MrWang.pdf'] },
     { phase: 2, label: 'Interview & Assessment', status: 'Pending', date: null, notes: '', attachments: [] },
-    { phase: 3, label: 'Deposit Exchange', status: 'Pending', date: null, notes: '', attachments: [] },
+    { phase: 3, label: 'Offering', status: 'Pending', date: null, notes: '', attachments: [] },
     { phase: 4, label: 'Admission Documents', status: 'Pending', date: null, notes: '', attachments: [] },
-    { phase: 5, label: 'Visa & Travel', status: 'Pending', date: null, notes: '', attachments: [] },
+    { phase: 5, label: 'Pre-Departure', status: 'Pending', date: null, notes: '', attachments: [] },
     { phase: 6, label: 'Enrolled', status: 'Pending', date: null, notes: '', attachments: [] },
   ]
 }
