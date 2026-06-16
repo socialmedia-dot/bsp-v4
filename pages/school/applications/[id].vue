@@ -256,11 +256,11 @@
                       </div>
                       <div class="form-row form-row-2col">
                         <div>
-                          <label class="form-label">Date</label>
+                          <label class="form-label">Date (UK)</label>
                           <input type="date" v-model="scheduleForm.date" class="form-input">
                         </div>
                         <div>
-                          <label class="form-label">Time</label>
+                          <label class="form-label">Time (UK)</label>
                           <input type="time" v-model="scheduleForm.time" class="form-input">
                         </div>
                       </div>
@@ -303,7 +303,7 @@
                         </div>
                         <div class="interview-details">
                           <div class="detail-row"><span class="detail-label">📅 Date</span><span class="detail-value">{{ latestInterview.date }}</span></div>
-                          <div class="detail-row"><span class="detail-label">🕐 Time</span><span class="detail-value">{{ latestInterview.time }}</span></div>
+                          <div class="detail-row"><span class="detail-label">🕐 Time (UK)</span><span class="detail-value">{{ latestInterview.time }}</span></div>
                           <div class="detail-row"><span class="detail-label">📍 Location</span><span class="detail-value">{{ latestInterview.location }}</span></div>
                           <div class="detail-row"><span class="detail-label">👤 Interviewer</span><span class="detail-value">{{ latestInterview.interviewer }} <span class="p2-role-tag" :class="'p2-role-' + latestInterview.interviewerRole">{{ latestInterview.interviewerRole === 'school' ? 'School' : 'Consultant' }}</span></span></div>
                           <div v-if="latestInterview.agenda" class="detail-row detail-row-block"><span class="detail-label">📋 Agenda</span><span class="detail-value">{{ latestInterview.agenda }}</span></div>
@@ -377,7 +377,7 @@
                         <div v-for="iv in pastInterviewsReversed" :key="iv.id" class="p2-past-item">
                           <div class="p2-past-header">
                             <span class="p2-round-badge">Round #{{ iv.roundNumber }}</span>
-                            <span class="detail-label-inline">📅 {{ iv.date }} · {{ iv.time }}</span>
+                            <span class="detail-label-inline">📅 {{ iv.date }} · {{ iv.time }} (UK)</span>
                           </div>
                           <div class="detail-row"><span class="detail-label">👤 Interviewer</span><span class="detail-value">{{ iv.interviewer }} <span class="p2-role-tag" :class="'p2-role-' + iv.interviewerRole">{{ iv.interviewerRole === 'school' ? 'School' : 'Consultant' }}</span></span></div>
                           <div v-if="iv.location" class="detail-row"><span class="detail-label">📍 Location</span><span class="detail-value">{{ iv.location }}</span></div>
@@ -1221,7 +1221,7 @@ function onScheduleInterview() {
       agenda: f.agenda || '',
       scheduledBy: currentUser.value.name,
     })
-    showP2Toast(`Round #${iv.roundNumber} scheduled for ${iv.date} ${iv.time}.`)
+    showP2Toast(`Round #${iv.roundNumber} scheduled for ${iv.date} ${iv.time} (UK time).`)
     scheduleForm.value = { date: '', time: '', location: '', interviewer: '', agenda: '' }
     scheduleExpanded.value = false  // collapse so user sees the new "current" round in Section B
     pastExpanded.value = false  // collapse history so user sees the new "current" round

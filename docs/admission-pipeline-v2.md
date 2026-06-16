@@ -103,6 +103,14 @@ When manager opens an application in P3:
 - Click "View all reports" → list of all rounds (time-ordered, new → old)
 - No aggregation / average — manager judges all reports
 
+### 2.7 Interview time — UK timezone (2026-06-16, rev 2.6)
+
+All P2 interview date / time fields and displays are marked as UK time (Europe/London). All parties follow the same time — no conversion. Markers:
+- Form labels: `Date (UK)` / `Time (UK)`
+- Section B row label: `Time (UK)`
+- Section C past interview: `📅 {date} · {time} (UK)`
+- Toast: `Round #{n} scheduled for {date} {time} (UK time).`
+
 ---
 
 ## 3. Reject & Reopen Rules
