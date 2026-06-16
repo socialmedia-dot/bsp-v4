@@ -471,6 +471,18 @@
 
                   <div v-if="p3Toast" class="p2-toast">✅ {{ p3Toast }}</div>
 
+                  <!-- §17 Document Checklist (P3 Offering) -->
+                  <div v-if="application.phase3Templates && application.phase3Templates.length" class="doc-templates-section">
+                    <h4 class="subsection-header">📄 Document Checklist — P3 Offering</h4>
+                    <ul class="doc-templates-list">
+                      <li v-for="tpl in application.phase3Templates" :key="tpl.id" class="doc-template-item">
+                        <span class="doc-template-icon">{{ tpl.required ? '⚠️' : '📄' }}</span>
+                        <span class="doc-template-name">{{ tpl.name }}</span>
+                        <span class="doc-template-category">{{ tpl.category }}</span>
+                      </li>
+                    </ul>
+                  </div>
+
                   <!-- Section A: Documents to send to student (primary action, multi-file) -->
                   <div class="p3-section">
                     <div class="p3-section-title">📎 Documents for Student</div>
@@ -615,6 +627,19 @@
                     <div v-if="!isRejected">
                       <div class="action-title">Admission Documents</div>
                       <div class="action-desc">Prepare and upload admission documents</div>
+
+                      <!-- §17 Document Checklist (P4 Admission Documents) -->
+                      <div v-if="application.phase4Templates && application.phase4Templates.length" class="doc-templates-section">
+                        <h4 class="subsection-header">📄 Document Checklist — P4 Admission Documents</h4>
+                        <ul class="doc-templates-list">
+                          <li v-for="tpl in application.phase4Templates" :key="tpl.id" class="doc-template-item">
+                            <span class="doc-template-icon">{{ tpl.required ? '⚠️' : '📄' }}</span>
+                            <span class="doc-template-name">{{ tpl.name }}</span>
+                            <span class="doc-template-category">{{ tpl.category }}</span>
+                          </li>
+                        </ul>
+                      </div>
+
                       <div class="action-buttons">
                         <button class="btn-primary" @click="uploadAdmissionDocs">📁 Upload Documents</button>
                         <button class="btn-secondary" @click="markReady">✅ Mark Documents Ready</button>
@@ -626,15 +651,106 @@
                   </div>
                 </div>
 
-                <!-- P5 Visa & Travel (was P6, gate-guarded by P3) -->
+                <!-- P5 Visa & Travel (was P6, gate-guarded by P3) — per §18 conditional sub-steps -->
                 <div v-if="ph.phase === 5">
                   <div v-if="p3gate.isP3Confirmed.value" class="action-section">
                     <div v-if="!isRejected">
                       <div class="action-title">Pre-Departure</div>
-                      <div class="action-desc">Track visa progress and travel arrangements</div>
-                      <div class="action-buttons">
-                        <button class="btn-primary" @click="updateVisaStatus">🛂 Update Visa Status</button>
-                        <button class="btn-secondary" @click="confirmTravel">✈️ Confirm Travel Arranged</button>
+                      <div class="action-desc">
+                        <span v-if="application.visaRequested">Visa application + travel arrangements</span>
+                        <span v-else>Travel arrangements</span>
+                      </div>
+
+                      <!-- §17 Document Checklist (P5 Pre-Departure) -->
+                      <div v-if="application.phase5Templates && application.phase5Templates.length" class="doc-templates-section">
+                        <h4 class="subsection-header">📄 Document Checklist — P5 Pre-Departure</h4>
+                        <ul class="doc-templates-list">
+                          <li v-for="tpl in application.phase5Templates" :key="tpl.id" class="doc-template-item">
+                            <span class="doc-template-icon">{{ tpl.required ? '⚠️' : '📄' }}</span>
+                            <span class="doc-template-name">{{ tpl.name }}</span>
+                            <span class="doc-template-category">{{ tpl.category }}</span>
+                          </li>
+                        </ul>
+                      </div>
+
+                      <!-- If visaRequested=true: 4 sub-steps (per §18.1) -->
+                      <div v-if="application.visaRequested" class="p5-substeps">
+                        <div class="p5-substep" :class="{ 'p5-substep-done': application.phase5VisaGrantedAt }">
+                          <span class="p5-substep-icon">🛂</span>
+                          <div class="p5-substep-content">
+                            <h4>Step 1: Apply for Visa</h4>
+                            <p>School issues CAS Letter → student applies for student visa externally</p>
+                          </div>
+                        </div>
+
+                        <div class="p5-substep" :class="{ 'p5-substep-done': application.phase5VisaGrantedAt, 'p5-substep-active': !application.phase5VisaGrantedAt }">
+                          <span class="p5-substep-icon">✅</span>
+                          <div class="p5-substep-content">
+                            <h4>Step 2: Confirm Visa Granted (Student)</h4>
+                            <p>Student uploads visa granted PDF, then school confirms here. Mandatory action per §18.2.</p>
+                            <p v-if="application.phase5VisaGrantedAt" class="p5-visa-confirmed">
+                              ✅ Visa Granted on {{ formatDateTime(application.phase5VisaGrantedAt) }}
+                            </p>
+                            <button
+                              v-else
+                              class="btn-primary"
+                              :disabled="!application.phase5VisaGrantedDocument"
+                              :title="!application.phase5VisaGrantedDocument ? 'Student has not uploaded visa granted PDF yet' : 'Mark visa as granted'"
+                              @click="updateVisaStatus"
+                            >✅ Confirm Visa Granted</button>
+                          </div>
+                        </div>
+
+                        <div class="p5-substep" :class="{ 'p5-substep-done': application.subStatus === P5_SUB_STATUS.P5_TRAVEL_ARRANGED, 'p5-substep-active': application.phase5VisaGrantedAt && application.subStatus !== P5_SUB_STATUS.P5_TRAVEL_ARRANGED }">
+                          <span class="p5-substep-icon">✈️</span>
+                          <div class="p5-substep-content">
+                            <h4>Step 3: Travel Arrangements</h4>
+                            <p>Student submits flight details, arrival time, taxi arrangement</p>
+                            <button
+                              class="btn-secondary"
+                              :disabled="!application.phase5VisaGrantedAt"
+                              @click="confirmTravel"
+                            >✈️ Mark Travel Arranged</button>
+                          </div>
+                        </div>
+
+                        <div class="p5-substep" :class="{ 'p5-substep-active': application.subStatus === P5_SUB_STATUS.P5_TRAVEL_ARRANGED }">
+                          <span class="p5-substep-icon">🏫</span>
+                          <div class="p5-substep-content">
+                            <h4>Step 4: School Confirms Arrival</h4>
+                            <p>School confirms the pupil has arrived and boarded</p>
+                            <button
+                              class="btn-primary"
+                              :disabled="application.subStatus !== P5_SUB_STATUS.P5_TRAVEL_ARRANGED"
+                              @click="confirmArrival"
+                            >🏫 Confirm Arrival & Enroll</button>
+                          </div>
+                        </div>
+                      </div>
+
+                      <!-- If visaRequested=false: 2 sub-steps (skip visa) -->
+                      <div v-else class="p5-substeps">
+                        <div class="p5-substep" :class="{ 'p5-substep-done': application.subStatus === P5_SUB_STATUS.P5_TRAVEL_ARRANGED, 'p5-substep-active': application.subStatus !== P5_SUB_STATUS.P5_TRAVEL_ARRANGED }">
+                          <span class="p5-substep-icon">✈️</span>
+                          <div class="p5-substep-content">
+                            <h4>Step 1: Travel Arrangements</h4>
+                            <p>Student submits flight details, arrival time, taxi arrangement</p>
+                            <button class="btn-secondary" @click="confirmTravel">✈️ Mark Travel Arranged</button>
+                          </div>
+                        </div>
+
+                        <div class="p5-substep" :class="{ 'p5-substep-active': application.subStatus === P5_SUB_STATUS.P5_TRAVEL_ARRANGED }">
+                          <span class="p5-substep-icon">🏫</span>
+                          <div class="p5-substep-content">
+                            <h4>Step 2: School Confirms Arrival</h4>
+                            <p>School confirms the pupil has arrived and boarded</p>
+                            <button
+                              class="btn-primary"
+                              :disabled="application.subStatus !== P5_SUB_STATUS.P5_TRAVEL_ARRANGED"
+                              @click="confirmArrival"
+                            >🏫 Confirm Arrival & Enroll</button>
+                          </div>
+                        </div>
                       </div>
                     </div>
                   </div>
@@ -1103,15 +1219,28 @@ function markReady() {
   }
 }
 
+// §18.1: visa granted is a sub-step within P5, NOT a phase advance
 function updateVisaStatus() {
-  if (application.value.currentPhase === 5) {
-    advancePhase(6, 'Visa issued, travel arrangements confirmed')
+  if (application.value.currentPhase === 5 && application.value.visaRequested) {
+    // Mark visa as granted. P5 → P6 happens only via confirmArrival().
+    application.value.phase5VisaGrantedAt = new Date().toISOString()
+    application.value.subStatus = P5_SUB_STATUS.P5_VISA_GRANTED
+    saveState()
   }
 }
 
+// §18.1: confirm travel arrangements (sub-step within P5, NOT phase advance)
 function confirmTravel() {
   if (application.value.currentPhase === 5) {
-    advancePhase(6, 'Travel arrangements confirmed')
+    application.value.subStatus = P5_SUB_STATUS.P5_TRAVEL_ARRANGED
+    saveState()
+  }
+}
+
+// §18.1: school confirms arrival → triggers P5 → P6
+function confirmArrival() {
+  if (application.value.currentPhase === 5) {
+    advancePhase(6, 'Pupil arrived and enrolled')
   }
 }
 
@@ -1172,6 +1301,7 @@ function reopenApplication() {
 // P2 (Interview + Decision) — useP2Store integration
 // Sections A (Schedule) / B (Current + Report) / C (Past) / D (Manager Decision)
 // =====================================================================
+const { P5_SUB_STATUS } = useP2Store()
 const p2 = useP2Store()
 
 // Current logged-in user (school portal). Demo: school-admin / school manager.
@@ -2743,4 +2873,91 @@ if (typeof window !== 'undefined') {
 }
 .btn-dev:hover { background: #d97706; }
 .btn-dev:active { background: #b45309; }
+
+/* §17 Document Templates Checklist (P3/P4/P5) */
+.doc-templates-section {
+  margin: 1rem 0;
+  padding: 0.75rem;
+  background: #f0f9ff;
+  border: 1px solid #bae6fd;
+  border-radius: 8px;
+}
+.doc-templates-section .subsection-header {
+  margin: 0 0 0.5rem 0;
+  font-size: 0.9rem;
+  color: #0369a1;
+}
+.doc-templates-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+}
+.doc-template-item {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.85rem;
+  color: #475569;
+}
+.doc-template-icon {
+  font-size: 1rem;
+}
+.doc-template-name {
+  font-weight: 500;
+  color: #1e293b;
+}
+.doc-template-category {
+  margin-left: auto;
+  font-size: 0.75rem;
+  color: #94a3b8;
+  text-transform: capitalize;
+}
+
+/* §18 P5 Conditional Sub-Steps */
+.p5-substeps {
+  margin: 1.25rem 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+.p5-substep {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.75rem;
+  padding: 0.75rem 1rem;
+  border-radius: 8px;
+  border: 1px solid #e2e8f0;
+  background: #fafafa;
+  transition: all 0.2s ease;
+}
+.p5-substep-active {
+  border-color: #3b82f6;
+  background: #eff6ff;
+}
+.p5-substep-done {
+  border-color: #22c55e;
+  background: #f0fdf4;
+}
+.p5-substep-icon {
+  font-size: 1.4rem;
+  line-height: 1;
+  padding-top: 0.1rem;
+}
+.p5-substep-content h4 {
+  margin: 0 0 0.25rem 0;
+  font-size: 0.95rem;
+  color: #1e293b;
+}
+.p5-substep-content p {
+  margin: 0 0 0.5rem 0;
+  font-size: 0.82rem;
+  color: #64748b;
+}
+.p5-visa-confirmed {
+  color: #15803d !important;
+  font-weight: 600;
+}
 </style>
