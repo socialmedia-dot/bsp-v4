@@ -134,15 +134,15 @@
           <p class="section-desc">This helps the school understand your specific needs.</p>
           <div class="form-grid">
             <div class="form-group full-width">
-              <label>Do you require a student visa to study in the UK? *</label>
+              <label>Visa Requested (does the student need a UK student visa?) *</label>
               <div class="radio-group">
-                <label class="radio-option" :class="{ active: form.schoolSpecific.visaRequired === true }">
-                  <input type="radio" v-model="form.schoolSpecific.visaRequired" :value="true" required />
+                <label class="radio-option" :class="{ active: form.schoolSpecific.visaRequested === true }">
+                  <input type="radio" v-model="form.schoolSpecific.visaRequested" :value="true" required />
                   <span class="radio-dot"></span>
                   <span class="radio-label">Yes, I need a student visa</span>
                 </label>
-                <label class="radio-option" :class="{ active: form.schoolSpecific.visaRequired === false }">
-                  <input type="radio" v-model="form.schoolSpecific.visaRequired" :value="false" required />
+                <label class="radio-option" :class="{ active: form.schoolSpecific.visaRequested === false }">
+                  <input type="radio" v-model="form.schoolSpecific.visaRequested" :value="false" required />
                   <span class="radio-dot"></span>
                   <span class="radio-label">No, I do not need a visa</span>
                 </label>
@@ -351,7 +351,7 @@ const form = ref({
     grade: ''
   },
   schoolSpecific: {
-    visaRequired: null,
+    visaRequested: null,
     boarding: '',
     additionalInfo: ''
   },
@@ -454,11 +454,38 @@ const formatFileSize = (bytes) => {
 }
 
 const handleSubmit = () => {
-  console.log('Application submitted:', form.value)
-  console.log('Profile:', profilePreview.value)
-  console.log('Documents:', documents.value)
   const totalFiles = documents.value.reduce((sum, d) => sum + d.files.length, 0)
-  alert(`Application submitted successfully!\n\nSchool: ${school.value.name}\nEntry: ${form.value.entry.entryOption || 'Not selected'}\nGrade: ${form.value.entry.grade || 'Not selected'}\nVisa required: ${form.value.schoolSpecific.visaRequired === true ? 'Yes' : form.value.schoolSpecific.visaRequired === false ? 'No' : 'Not selected'}\nBoarding: ${form.value.schoolSpecific.boarding || 'Not selected'}\nDocuments uploaded: ${totalFiles} file(s)\n\nThis is a demo — no actual submission occurred.`)
+
+  // Build the application record — mirrors P2Application schema (rev 3.0)
+  const application = {
+    id: Date.now().toString(36) + Math.random().toString(36).substr(2, 9),
+    studentId: 'current-student', // TODO: replace with actual auth user id
+    schoolId: school.value.id,
+    schoolName: school.value.name,
+    status: 'pending',
+    entry: { ...form.value.entry },
+    boarding: form.value.schoolSpecific.boarding,
+    additionalInfo: form.value.schoolSpecific.additionalInfo,
+    visaRequested: form.value.schoolSpecific.visaRequested,
+    phase3Templates: [],
+    phase4Documents: [],
+    phase5PreDeparture: {},
+    submittedAt: new Date().toISOString()
+  }
+
+  // Persist to localStorage so school side can read it
+  try {
+    const key = 'bsp-v4-applications'
+    const raw = localStorage.getItem(key)
+    const existing = raw ? JSON.parse(raw) : []
+    existing.push(application)
+    localStorage.setItem(key, JSON.stringify(existing))
+  } catch (e) {
+    console.error('Failed to persist application to localStorage:', e)
+  }
+
+  console.log('Application submitted:', application)
+  alert(`Application submitted successfully!\n\nSchool: ${school.value.name}\nEntry: ${form.value.entry.entryOption || 'Not selected'}\nGrade: ${form.value.entry.grade || 'Not selected'}\nVisa Requested: ${application.visaRequested === true ? 'Yes' : application.visaRequested === false ? 'No' : 'Not selected'}\nBoarding: ${form.value.schoolSpecific.boarding || 'Not selected'}\nDocuments uploaded: ${totalFiles} file(s)\n\nThis is a demo — no actual submission occurred.`)
 }
 
 // Entry options based on school settings + current date
