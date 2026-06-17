@@ -450,5 +450,7 @@ export function useP2Store() {
     resetToSeed,
     clearAllData,
     reopenApp,
+    // constants (rev 3.0)
+    P5_SUB_STATUS,
   }
 }
