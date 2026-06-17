@@ -1187,28 +1187,6 @@ function scheduleInterview() {
   }
 }
 
-function uploadAssessment() {
-  alert('After the student confirms the interview, you can mark it as complete (which uploads the assessment and advances to Phase 3 (Offering)).')
-}
-
-function makeOffer() {
-  if (application.value.currentPhase === 3) {
-    advancePhase(4, 'Offer made by admissions committee')
-  }
-}
-
-function uploadOfferLetter() {
-  if (application.value.currentPhase === 4) {
-    advancePhase(5, 'Offer letter sent to family')
-  }
-}
-
-function markDepositReceived() {
-  if (application.value.currentPhase === 4) {
-    advancePhase(5, 'Deposit received, place secured')
-  }
-}
-
 function uploadAdmissionDocs() {
   alert('Upload admission documents (demo: would attach files).\n\nTo advance, click Mark Documents Ready.')
 }
