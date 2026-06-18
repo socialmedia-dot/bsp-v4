@@ -901,6 +901,7 @@ const enrolledMock = {
     { id: 'a2', fileName: 'Academic_Transcript.pdf', fileSize: '2.4 MB', fileType: 'application/pdf', phase: 1, phaseLabel: 'Application Submitted', uploadedBy: 'student', uploadedByRole: 'Student', createdAt: '2024-10-15T10:06:00Z' },
     { id: 'a3', fileName: 'Interview_Assessment.pdf', fileSize: '0.8 MB', fileType: 'application/pdf', phase: 2, phaseLabel: 'Interview & Assessment', uploadedBy: 'school', uploadedByRole: 'School', createdAt: '2024-11-02T09:00:00Z' },
     { id: 'a4', fileName: 'Offer_Letter.pdf', fileSize: '1.1 MB', fileType: 'application/pdf', phase: 3, phaseLabel: 'Offering', uploadedBy: 'school', uploadedByRole: 'School', createdAt: '2024-11-10T14:00:00Z' },
+    { id: 'a4b', fileName: 'Admission_Agreement.pdf', fileSize: '0.4 MB', fileType: 'application/pdf', phase: 4, phaseLabel: 'Admission Documents', uploadedBy: 'school', uploadedByRole: 'School', createdAt: '2024-12-01T11:00:00Z' },
     { id: 'a5', fileName: 'CAS_Letter.pdf', fileSize: '0.5 MB', fileType: 'application/pdf', phase: 5, phaseLabel: 'Pre-Departure', uploadedBy: 'school', uploadedByRole: 'School', createdAt: '2025-01-20T11:00:00Z' },
     { id: 'a6', fileName: 'Enrolment_Confirmation.pdf', fileSize: '0.6 MB', fileType: 'application/pdf', phase: 6, phaseLabel: 'Enrolled', uploadedBy: 'school', uploadedByRole: 'School', createdAt: '2025-09-01T09:00:00Z' },
   ],
