@@ -1082,6 +1082,33 @@ interface DocumentTemplate {
 | (d) School P5 view | Shows "✅ Visa Granted" status + uploaded PDF link + date confirmed. |
 | (e) Student with `visaRequested = false` | "✅ Confirm Visa Granted" button **NOT rendered** (only Travel Arrangements flow). |
 
+### 18.4 Disabled sub-step button UX (NEW in rev 3.2, 2026-06-19)
+
+**Rule:** When a P5 sub-step button is disabled (waiting for a prior sub-step to complete), the button MUST communicate *why* it's disabled — not just *that* it's disabled. Users should never have to guess which step to click first.
+
+**Visual requirements (all disabled buttons):**
+- `opacity: 0.4` — clearly faded
+- `cursor: not-allowed` — browser-native disabled cursor
+- A non-empty `title` attribute explaining the next required step, e.g. `"Mark Travel Arranged first (Step 3)"`
+- The parent `.p5-substep` container MUST render a hint line: `🔒 Complete Step X first.`
+
+**Buttons in scope:** Every P5 sub-step button in `pages/school/applications/[id].vue`:
+- Line 695–701: `✅ Confirm Visa Granted` (disabled when `!phase5VisaGrantedDocument`)
+- Line 710–714: `✈️ Mark Travel Arranged` (disabled when `!phase5VisaGrantedAt`)
+- Line 723–727: `🏫 Confirm Arrival & Enroll` (disabled when `subStatus !== P5_TRAVEL_ARRANGED`)
+- Line 738–739 (no-visa branch): `✈️ Mark Travel Arranged`
+- Line 750–752 (no-visa branch): `🏫 Confirm Arrival & Enroll`
+
+**Click-test scenarios:**
+
+| # | Scenario | Expected |
+|---|----------|----------|
+| (a) Open P5 with subStatus=`'Visa Granted'` (Step 2 done, Step 3 pending) | "🏫 Confirm Arrival & Enroll" button: faded (opacity 0.4), cursor not-allowed, `title="Mark Travel Arranged first (Step 3)"`. Hint "🔒 Complete Step 3 first." visible above the button. |
+| (b) Hover the disabled button | Browser tooltip shows the title attribute text. |
+| (c) Open P5 with subStatus=`'Travel Arranged'` (Step 3 done, Step 4 ready) | "🏫 Confirm Arrival & Enroll" button fully enabled. No hint visible. |
+
+**Why:** KC reported (post-rev-3.0 deploy, on `2026-X7K9M2P4`) that after Step 2 (Confirm Visa Granted), they tried to click Step 4 (Confirm Arrival & Enroll) directly — but it was disabled and they didn't know why. The current `disabled` attribute alone gives no signal about what to do next. Adding visual + textual hints resolves the ambiguity without requiring the user to inspect the sub-step ordering by trial-and-error.
+
 ---
 
 ## 19. P1 visaRequested Selection (NEW in rev 3.0)
@@ -1238,3 +1265,44 @@ Note: `pages/student/applications/[id].vue` uses a single `<AttachmentPanel>` (l
 | (d) Same app, expand P1 (3 files attached) | `📎 Attachments` header + 3 file rows (no placeholder, unchanged from rev 3.0) |
 | (e) Open `2025-ENROLLED1` (dense mock) at `currentPhase = 6`, expand P4 | `📎 Attachments` header + `Admission_Agreement.pdf` row (P4 attachment added in `884c724` shows correctly) |
 | (f) Mobile 414px viewport | Placeholder text wraps cleanly; no horizontal overflow |
+
+---
+
+## 21. Dev Affordance — Testing Shortcuts (NEW in rev 3.2, 2026-06-19)
+
+**Rule:** A dev-only "🧪 Dev Tools" panel is available in development environments to provide shortcuts for testing multi-phase flows. The panel is **never rendered in production builds**.
+
+**Visibility gate:** The panel renders only when ONE of the following conditions holds:
+1. URL query string contains `?dev=1` (e.g. `https://bsp-v4.pages.dev/school/applications/2026-X7K9M2P4?dev=1`)
+2. `process.env.NODE_ENV !== 'production'` at build time
+3. `localStorage.getItem('bsp-dev-mode') === 'true'` (manual toggle for ad-hoc testing)
+
+Production builds (Cloudflare Pages production deploy with no `?dev=1` query) NEVER render the panel — the panel's parent div is wrapped in `v-if="isDevMode"`.
+
+**Available shortcuts (Phase-aware, render based on `application.currentPhase`):**
+
+| Current phase | Buttons available |
+|---------------|-------------------|
+| 1 (Application) | `⏩ Advance to P2` (skip interview scheduling) |
+| 2 (Interview) | `⏩ Approve + Advance to P3` |
+| 3 (Offering) | `⏩ Confirm Deposit + Advance to P4` |
+| 4 (Admission Documents) | `⏩ Mark Complete + Advance to P5` |
+| **5 (Pre-Departure)** | `⏩ Complete All P5 Sub-steps + Advance to P6` (sets `subStatus='Travel Arranged'`, `phase5VisaGrantedAt=now`, then `advancePhase(6)`) |
+| 6 (Enrolled) | `🔄 Restart to P1` |
+
+**Visual placement:** Fixed bottom-right corner of the application detail page, semi-transparent dark background, monospace font, collapsible. Does not interfere with normal page scrolling or rendering.
+
+**Why:** KC (manager/founder-as-first-tester) needs to rapidly verify downstream phase states (especially P5 sub-step rendering and P6 completion) without manually clicking through 5+ phases + 4 P5 sub-steps every test session. Without this shortcut, every P5/P6 verification cycle takes 10+ minutes of clicking. The shortcut reduces it to one click. Production users never see this panel.
+
+**Out of scope (deferred):**
+- Per-user preference for which shortcuts appear (always show all phase-aware buttons)
+- Keyboard shortcuts for the panel actions
+- Logging of dev-mode button clicks
+
+**Click-test scenarios:**
+
+| # | Scenario | Expected |
+|---|----------|----------|
+| (a) Open app detail at P5 with `?dev=1` query | Bottom-right panel visible, shows "⏩ Complete All P5 Sub-steps + Advance to P6" button |
+| (b) Click the P5→P6 shortcut button | `subStatus` set to `'Travel Arranged'`, `phase5VisaGrantedAt` set to current timestamp, `currentPhase` advanced to 6, `status` set to `'completed'` |
+| (c) Open app detail without `?dev=1` (production view) | Panel NOT visible. Page renders identically to current behavior. |
