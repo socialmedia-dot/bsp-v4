@@ -1182,3 +1182,59 @@ const expandedPhases = ref([])  // past phases only — current phase is always 
 
 **Out of scope (deferred):**
 - Per-user persistence of `expandedPhases` across reloads — currently resets each refresh. If KC later wants "remember which phases I had open", this rule will gain a `localStorage` addendum in a future revision.
+
+### 20.1 Fallback display for empty phase data (NEW in rev 3.1, 2026-06-19)
+
+**Rule:** When an expanded past-phase body has zero items in a category, the category section **still renders** with its header + an inline empty-state placeholder. The user must be able to see every category the phase contains — even if the category is empty — so they know the section was checked, not missing.
+
+**Applies to:** Both `/school/applications/[id]/` and `/student/applications/[id]/`.
+
+**Specifically — Attachments section (the category at risk):**
+
+- When `getPhaseAttachments(ph.phase).length === 0`, render:
+  ```
+  📎 Attachments
+  ─────────────────
+  No files for this phase.
+  ```
+  instead of hiding the entire `<div class="phase-subsection">`.
+- When `getPhaseAttachments(ph.phase).length > 0`, render the file list as before (rev 3.0 behavior unchanged).
+
+**Notes section is exempt from this rule:**
+
+- Notes keeps the current `v-if="ph.notes"` gate. An empty Notes section adds no value (every phase starts with empty notes by default) and a placeholder would be visual noise.
+- Notes only renders when `ph.notes` is non-empty.
+
+**Phase Details / Student Info / School Actions — keep current gates:**
+
+- These are not category-style sections; their `v-if` gates (e.g. `v-if="ph.phase === 1"`, `v-if="ph.phase === application.currentPhase"`) gate on structural conditions, not data emptiness. Out of scope for this rule.
+
+**Why:** KC reported (post-rev-3.0 deploy, on `2026-X7K9M2P4` sparse mock) that opening past phases P2/P3/P4 showed only the Notes section, with the entire Attachments section silently dropped — leaving the body looking half-rendered and the user unsure whether attachments existed and were empty, or whether the section was broken. This was the same root cause as the prior `enrolledMock` P4 fix (commit `884c724`): the data was empty for that phase. Rev 3.0's data-only patch (`884c724`) fixed `enrolledMock` but did not generalize — any future sparse mock OR real user data with empty attachments hits the same bug. Rev 3.1 fixes the underlying UX: the section header always shows; empty data shows the placeholder.
+
+**Implementation hint (for group AI):**
+
+```vue
+<!-- pages/school/applications/[id].vue — line 182 (replace the current v-if gate) -->
+<div class="phase-subsection">
+  <h4>📎 Attachments</h4>
+  <div v-if="getPhaseAttachments(ph.phase).length" class="phase-attachments">
+    <div v-for="att in getPhaseAttachments(ph.phase)" :key="att.id" class="att-row">
+      <!-- existing item rendering unchanged -->
+    </div>
+  </div>
+  <p v-else class="phase-empty-state">No files for this phase.</p>
+</div>
+```
+
+Note: `pages/student/applications/[id].vue` uses a single `<AttachmentPanel>` (line 148) for all attachments, not per-phase sections — no per-phase Attachments fallback needed there.
+
+**Click-test scenarios (post-deploy, rev 3.1):**
+
+| # | Scenario | Expected |
+|---|----------|----------|
+| (a) Open `2026-X7K9M2P4` (sparse mock) at `currentPhase = 4`, expand P2 | Body shows `📝 Notes` (existing) AND `📎 Attachments` header with `No files for this phase.` placeholder |
+| (b) Same app, expand P3 | Same as (a) — Notes + Attachments header + placeholder |
+| (c) Same app, expand P4 | Same as (a) + the existing Admission Documents section |
+| (d) Same app, expand P1 (3 files attached) | `📎 Attachments` header + 3 file rows (no placeholder, unchanged from rev 3.0) |
+| (e) Open `2025-ENROLLED1` (dense mock) at `currentPhase = 6`, expand P4 | `📎 Attachments` header + `Admission_Agreement.pdf` row (P4 attachment added in `884c724` shows correctly) |
+| (f) Mobile 414px viewport | Placeholder text wraps cleanly; no horizontal overflow |
