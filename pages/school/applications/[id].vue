@@ -684,7 +684,7 @@
                           </div>
                         </div>
 
-                        <div class="p5-substep" :class="{ 'p5-substep-done': application.phase5VisaGrantedAt, 'p5-substep-active': !application.phase5VisaGrantedAt }">
+                        <div class="p5-substep" :class="{ 'p5-substep-done': application.phase5VisaGrantedAt, 'p5-substep-active': !application.phase5VisaGrantedAt, 'p5-substep-locked': !application.phase5VisaGrantedDocument && !application.phase5VisaGrantedAt }">
                           <span class="p5-substep-icon">✅</span>
                           <div class="p5-substep-content">
                             <h4>Step 2: Confirm Visa Granted (Student)</h4>
@@ -692,37 +692,46 @@
                             <p v-if="application.phase5VisaGrantedAt" class="p5-visa-confirmed">
                               ✅ Visa Granted on {{ formatDateTime(application.phase5VisaGrantedAt) }}
                             </p>
-                            <button
-                              v-else
-                              class="btn-primary"
-                              :disabled="!application.phase5VisaGrantedDocument"
-                              :title="!application.phase5VisaGrantedDocument ? 'Student has not uploaded visa granted PDF yet' : 'Mark visa as granted'"
-                              @click="updateVisaStatus"
-                            >✅ Confirm Visa Granted</button>
+                            <template v-else>
+                              <p v-if="!application.phase5VisaGrantedDocument" class="p5-lock-hint">🔒 Complete Step 1 first (student must upload visa granted PDF).</p>
+                              <button
+                                class="btn-primary"
+                                :class="{ 'btn-disabled-locked': !application.phase5VisaGrantedDocument }"
+                                :disabled="!application.phase5VisaGrantedDocument"
+                                :title="!application.phase5VisaGrantedDocument ? 'Please upload your visa granted page first.' : 'Mark visa as granted'"
+                                @click="updateVisaStatus"
+                              >✅ Confirm Visa Granted</button>
+                            </template>
                           </div>
                         </div>
 
-                        <div class="p5-substep" :class="{ 'p5-substep-done': application.subStatus === P5_SUB_STATUS.P5_TRAVEL_ARRANGED, 'p5-substep-active': application.phase5VisaGrantedAt && application.subStatus !== P5_SUB_STATUS.P5_TRAVEL_ARRANGED }">
+                        <div class="p5-substep" :class="{ 'p5-substep-done': application.subStatus === P5_SUB_STATUS.P5_TRAVEL_ARRANGED, 'p5-substep-active': application.phase5VisaGrantedAt && application.subStatus !== P5_SUB_STATUS.P5_TRAVEL_ARRANGED, 'p5-substep-locked': !application.phase5VisaGrantedAt }">
                           <span class="p5-substep-icon">✈️</span>
                           <div class="p5-substep-content">
                             <h4>Step 3: Travel Arrangements</h4>
                             <p>Student submits flight details, arrival time, taxi arrangement</p>
+                            <p v-if="!application.phase5VisaGrantedAt" class="p5-lock-hint">🔒 Complete Step 2 first.</p>
                             <button
                               class="btn-secondary"
+                              :class="{ 'btn-disabled-locked': !application.phase5VisaGrantedAt }"
                               :disabled="!application.phase5VisaGrantedAt"
+                              :title="!application.phase5VisaGrantedAt ? 'Confirm Visa Granted first (Step 2).' : 'Mark travel as arranged'"
                               @click="confirmTravel"
                             >✈️ Mark Travel Arranged</button>
                           </div>
                         </div>
 
-                        <div class="p5-substep" :class="{ 'p5-substep-active': application.subStatus === P5_SUB_STATUS.P5_TRAVEL_ARRANGED }">
+                        <div class="p5-substep" :class="{ 'p5-substep-active': application.subStatus === P5_SUB_STATUS.P5_TRAVEL_ARRANGED, 'p5-substep-locked': application.subStatus !== P5_SUB_STATUS.P5_TRAVEL_ARRANGED }">
                           <span class="p5-substep-icon">🏫</span>
                           <div class="p5-substep-content">
                             <h4>Step 4: School Confirms Arrival</h4>
                             <p>School confirms the pupil has arrived and boarded</p>
+                            <p v-if="application.subStatus !== P5_SUB_STATUS.P5_TRAVEL_ARRANGED" class="p5-lock-hint">🔒 Complete Step 3 first.</p>
                             <button
                               class="btn-primary"
+                              :class="{ 'btn-disabled-locked': application.subStatus !== P5_SUB_STATUS.P5_TRAVEL_ARRANGED }"
                               :disabled="application.subStatus !== P5_SUB_STATUS.P5_TRAVEL_ARRANGED"
+                              :title="application.subStatus !== P5_SUB_STATUS.P5_TRAVEL_ARRANGED ? 'Mark Travel Arranged first (Step 3).' : 'Confirm pupil arrival and complete enrollment'"
                               @click="confirmArrival"
                             >🏫 Confirm Arrival & Enroll</button>
                           </div>
@@ -740,14 +749,17 @@
                           </div>
                         </div>
 
-                        <div class="p5-substep" :class="{ 'p5-substep-active': application.subStatus === P5_SUB_STATUS.P5_TRAVEL_ARRANGED }">
+                        <div class="p5-substep" :class="{ 'p5-substep-active': application.subStatus === P5_SUB_STATUS.P5_TRAVEL_ARRANGED, 'p5-substep-locked': application.subStatus !== P5_SUB_STATUS.P5_TRAVEL_ARRANGED }">
                           <span class="p5-substep-icon">🏫</span>
                           <div class="p5-substep-content">
                             <h4>Step 2: School Confirms Arrival</h4>
                             <p>School confirms the pupil has arrived and boarded</p>
+                            <p v-if="application.subStatus !== P5_SUB_STATUS.P5_TRAVEL_ARRANGED" class="p5-lock-hint">🔒 Complete Step 1 first.</p>
                             <button
                               class="btn-primary"
+                              :class="{ 'btn-disabled-locked': application.subStatus !== P5_SUB_STATUS.P5_TRAVEL_ARRANGED }"
                               :disabled="application.subStatus !== P5_SUB_STATUS.P5_TRAVEL_ARRANGED"
+                              :title="application.subStatus !== P5_SUB_STATUS.P5_TRAVEL_ARRANGED ? 'Mark Travel Arranged first (Step 1).' : 'Confirm pupil arrival and complete enrollment'"
                               @click="confirmArrival"
                             >🏫 Confirm Arrival & Enroll</button>
                           </div>
@@ -842,6 +854,19 @@
       </div>
     </div>
   </Teleport>
+
+  <!-- Dev-only testing shortcuts. Hidden in production (no ?dev=1 query, no localStorage flag). See docs §21. -->
+  <div v-if="isDevMode" class="dev-tools-panel">
+    <div class="dev-tools-header">🧪 Dev Tools (rev 3.2)</div>
+    <div class="dev-tools-actions">
+      <button v-if="application.currentPhase === 1" @click="devAdvanceToP2">⏩ Advance to P2</button>
+      <button v-if="application.currentPhase === 2" @click="devAdvanceToP3">⏩ Approve + Advance to P3</button>
+      <button v-if="application.currentPhase === 3" @click="devAdvanceToP4">⏩ Confirm Deposit + Advance to P4</button>
+      <button v-if="application.currentPhase === 4" @click="devAdvanceToP5">⏩ Mark Complete + Advance to P5</button>
+      <button v-if="application.currentPhase === 5" @click="devJumpToP6" class="dev-tools-primary">⏩ Complete All P5 + Advance to P6</button>
+      <button v-if="application.currentPhase === 6" @click="devRestart">🔄 Restart to P1</button>
+    </div>
+  </div>
 </template>
 
 <script setup>
@@ -981,6 +1006,18 @@ const statusLabel = computed(() => {
   if (s === 'rejected') return 'Rejected'
   if (s === 'completed') return 'Completed'
   return s
+})
+
+// §21 rev 3.2 — Dev affordance panel visibility.
+// Visible ONLY when URL has ?dev=1 OR localStorage 'bsp-dev-mode' is 'true'.
+// Production (no flag, no storage) NEVER renders the panel.
+const isDevMode = computed(() => {
+  if (typeof window === 'undefined') return false
+  try {
+    if (window.location.search.includes('dev=1')) return true
+    if (localStorage.getItem('bsp-dev-mode') === 'true') return true
+  } catch (e) { /* ignore */ }
+  return false
 })
 
 function formatDate(iso) {
@@ -1839,6 +1876,97 @@ if (typeof window !== 'undefined') {
 // is needed for the click-through demo (single-page flow per visit).
 
 // (expandedPhase/togglePhase removed — Phase History is gone)
+
+// ===== Dev-only testing shortcuts (spec §21, rev 3.2) =====
+// These helpers are only triggered via the .dev-tools-panel, which is hidden in production.
+
+function markPhaseComplete(phaseNum, notes) {
+  const ph = application.value.phaseHistory.find(p => p.phase === phaseNum)
+  if (ph) {
+    ph.status = 'Completed'
+    ph.date = ph.date || todayDate()
+    ph.notes = ph.notes || notes
+  }
+}
+
+function devAdvanceToP2() {
+  application.value.currentPhase = 2
+  application.value.subStatus = 'Interview & Assessment'
+  saveState()
+}
+
+function devAdvanceToP3() {
+  markPhaseComplete(2, 'Dev: auto-approved')
+  application.value.currentPhase = 3
+  application.value.subStatus = 'Offering'
+  saveState()
+}
+
+function devAdvanceToP4() {
+  // Mock P3 deposit record so P3 store / p3gate unlocks downstream
+  try {
+    const depositsKey = 'bsp-v4-deposits'
+    const deposits = JSON.parse(localStorage.getItem(depositsKey) || '[]')
+    deposits.push({
+      id: 'dep-dev-' + Date.now(),
+      applicationRef: id,
+      status: 'confirmed',
+      amount: 5000,
+      currency: 'GBP',
+      bankInfo: { accountName: 'Dev', sortCode: '00-00-00', accountNumber: '00000000', reference: 'DEV' },
+      schoolFiles: [],
+      studentFiles: [],
+      proofFile: { id: 'pf-dev', fileName: 'dev_proof.pdf', fileSize: '0.1 MB' },
+      createdAt: new Date().toISOString(),
+      confirmedAt: new Date().toISOString(),
+    })
+    localStorage.setItem(depositsKey, JSON.stringify(deposits))
+  } catch (e) {
+    console.warn('[dev tools] could not seed deposit:', e)
+  }
+  markPhaseComplete(3, 'Dev: deposit auto-confirmed')
+  application.value.currentPhase = 4
+  application.value.subStatus = 'Admission Documents'
+  saveState()
+}
+
+function devAdvanceToP5() {
+  markPhaseComplete(4, 'Dev: documents auto-ready')
+  application.value.currentPhase = 5
+  application.value.subStatus = 'Pre-Departure'
+  saveState()
+}
+
+function devJumpToP6() {
+  // Sets every P5 sub-step flag to "complete" then triggers the existing confirmArrival handler
+  if (application.value.visaRequested) {
+    application.value.phase5VisaGrantedAt = application.value.phase5VisaGrantedAt || new Date().toISOString()
+    application.value.phase5VisaGrantedDocument = application.value.phase5VisaGrantedDocument || {
+      id: 'vg-dev-' + Date.now(),
+      fileName: 'dev_visa_granted.pdf',
+      fileSize: '0.1 MB',
+      fileType: 'application/pdf',
+    }
+  }
+  application.value.subStatus = 'Travel Arranged' // P5_SUB_STATUS.P5_TRAVEL_ARRANGED
+  saveState()
+  // confirmArrival advances currentPhase 5 -> 6 (uses advancePhase internally)
+  confirmArrival()
+}
+
+function devRestart() {
+  if (typeof window !== 'undefined' && window.confirm('Reset this application to P1? (clears localStorage)')) {
+    try {
+      const deposits = JSON.parse(localStorage.getItem('bsp-v4-deposits') || '[]')
+      const filtered = deposits.filter(d => d.applicationRef !== id)
+      localStorage.setItem('bsp-v4-deposits', JSON.stringify(filtered))
+      localStorage.removeItem('bsp:school:app:' + id)
+    } catch (e) {
+      console.warn('[dev tools] restart cleanup failed:', e)
+    }
+    window.location.reload()
+  }
+}
 </script>
 
 <style scoped>
@@ -2946,5 +3074,74 @@ if (typeof window !== 'undefined') {
 .p5-visa-confirmed {
   color: #15803d !important;
   font-weight: 600;
+}
+
+/* §18.4 rev 3.2 — Disabled sub-step UX */
+.p5-substep-locked {
+  opacity: 0.7;
+}
+.p5-substep-locked .btn-primary:disabled,
+.p5-substep-locked .btn-secondary:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+.btn-disabled-locked {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+.btn-disabled-locked:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+.p5-lock-hint {
+  color: #888;
+  font-size: 13px;
+  font-style: italic;
+  margin: 4px 0 8px 0;
+}
+
+/* §21 rev 3.2 — Dev Affordance panel */
+.dev-tools-panel {
+  position: fixed;
+  bottom: 16px;
+  right: 16px;
+  background: rgba(20, 20, 20, 0.92);
+  color: #fff;
+  padding: 12px 14px;
+  border-radius: 8px;
+  font-family: 'SF Mono', 'Menlo', monospace;
+  font-size: 12px;
+  z-index: 9999;
+  max-width: 280px;
+  box-shadow: 0 4px 16px rgba(0,0,0,0.3);
+}
+.dev-tools-header {
+  font-weight: bold;
+  margin-bottom: 8px;
+  font-size: 11px;
+  opacity: 0.7;
+}
+.dev-tools-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.dev-tools-actions button {
+  background: #333;
+  color: #fff;
+  border: 1px solid #555;
+  padding: 6px 10px;
+  border-radius: 4px;
+  cursor: pointer;
+  font-family: inherit;
+  font-size: 11px;
+  text-align: left;
+}
+.dev-tools-actions button:hover {
+  background: #444;
+}
+.dev-tools-primary {
+  background: #2563eb !important;
+  border-color: #2563eb !important;
 }
 </style>
