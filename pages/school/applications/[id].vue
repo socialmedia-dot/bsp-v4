@@ -178,10 +178,10 @@
                 <p class="phase-notes-text">{{ ph.notes }}</p>
               </div>
 
-              <!-- Attachments for this phase -->
-              <div v-if="getPhaseAttachments(ph.phase).length" class="phase-subsection">
+              <!-- Attachments for this phase (rev 3.1: always render header + empty-state per §20.1) -->
+              <div class="phase-subsection">
                 <h4>📎 Attachments</h4>
-                <div class="phase-attachments">
+                <div v-if="getPhaseAttachments(ph.phase).length" class="phase-attachments">
                   <div v-for="att in getPhaseAttachments(ph.phase)" :key="att.id" class="att-row">
                     <span class="att-icon">📄</span>
                     <div class="att-info">
@@ -190,6 +190,7 @@
                     </div>
                   </div>
                 </div>
+                <p v-else class="phase-empty-state">No files for this phase.</p>
               </div>
 
               <!-- School Actions: only for current phase -->
@@ -1989,6 +1990,13 @@ if (typeof window !== 'undefined') {
   display: flex;
   flex-direction: column;
   gap: 8px;
+}
+.phase-empty-state {
+  color: #888;
+  font-size: 14px;
+  font-style: italic;
+  padding: 8px 0;
+  margin: 0;
 }
 .att-row {
   align-items: center;
