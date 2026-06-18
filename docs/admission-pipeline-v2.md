@@ -1120,3 +1120,65 @@ interface P2Application {
 | (b) Student selects "Yes" + submits | `application.visaRequested = true` saved. School info card shows "Visa Requested: Yes". P4 template includes CAS Letter. P5 shows §18 visa sub-steps. |
 | (c) Student selects "No" + submits | `application.visaRequested = false`. P4 template excludes CAS Letter. P5 skips §18 visa sub-steps. |
 | (d) Student changes mind after submit | Not allowed at P1 (already submitted). If application is reopened (§3), student can amend during re-submission — see reopen flow. |
+
+---
+
+## 20. Phase Stack Default Visibility (NEW in rev 3.0, 2026-06-18)
+
+**Rule:** In the application detail page (`/school/applications/[id]/` and `/student/applications/[id]/`), the phase history stack renders with these visibility rules:
+
+1. **Current phase (in-progress):** Body **always expanded**, pinned at the **top** of the stack (above all past phases). No expand/collapse chevron — the current phase is not collapsible. The user always sees the actionable surface without scrolling.
+2. **Past phases (completed):** Body **collapsed by default**. Header row shows `P#` badge + title + status pill + completion date + `▸` chevron. User clicks **anywhere on the header row** to expand → `▾` chevron + body visible. Click again to collapse.
+3. **Order:** Newest at top (current → previous → previous → … → P1). Implemented by reversing `phaseHistory.filter(p => p.phase <= currentPhase)` in the `visiblePhases` computed.
+
+**Why:**
+- Completed phase history is reference / audit material — most of the time the school admin only needs the current phase's actions visible. Collapsing past phases reduces scroll fatigue and lets the in-progress work breathe at the top.
+- The current phase being always-expanded + at-top eliminates the "where do I act?" hunt that a fully-collapsed stack would create. KC confirmed 2026-06-18: "做緊嗰個長期打開放喺最高 / 已經完成嘅全部收埋，撳先開".
+- This is the **phase-stack-level** default state rule. It complements the **component-level** rule in §16.1.4 (P3 internal "Student Submitted Files" toggle — expand when action is required, otherwise collapsed). The two rules live at different layers and must not be confused: §20 is about the outer phase cards, §16.1.4 is about an inner collapsible inside the P3 card body.
+
+**What stays the same:**
+- Click anywhere on the past phase header row (not just the chevron) expands it. Keyboard: Tab to focus + Enter/Space to toggle (per ARIA `role="button"`).
+- Smooth-scroll into view after expansion (`onPhaseRowClick` already implements `scrollIntoView({ behavior: 'smooth', block: 'start' })` after a non-collapse click).
+- `expandedPhases` is per-page-load (resets on refresh). No persistence — re-opens on each refresh based on the rule above.
+- `Restart` button (§14) clears `expandedPhases = []` on reset, which is correct (collapsed stack on a fresh P1 application).
+
+**Implementation:**
+
+```vue
+<!-- pages/school/applications/[id].vue — line 71 (current code, already conforms) -->
+<div
+  v-if="ph.phase === application.currentPhase || expandedPhases.includes(ph.phase)"
+  :id="'phase-body-' + ph.phase"
+  class="phase-body"
+>
+  …
+</div>
+```
+
+```js
+// pages/school/applications/[id].vue — line 1706 (current code, already conforms)
+const visiblePhases = computed(() => {
+  const cur = application.value.currentPhase
+  return [...application.value.phaseHistory]
+    .filter(p => p.phase <= cur)
+    .reverse()  // latest at top — current phase always first
+})
+
+const expandedPhases = ref([])  // past phases only — current phase is always shown
+```
+
+**Click-test scenarios (post-deploy):**
+
+| # | Scenario | Expected |
+|---|----------|----------|
+| (a) Open school application detail, `currentPhase = 3` | P3 card at top, body expanded, **no chevron**. P2 + P1 below, collapsed with `▸`. |
+| (b) Click P1 header row | P1 expands, body visible, chevron flips to `▾`. P3 stays at top and expanded. |
+| (c) Click P1 again | P1 collapses, chevron flips back to `▸`. |
+| (d) Refresh page | `expandedPhases` resets. P1 collapses again. Current phase still at top + expanded. |
+| (e) Advance P3 → P4 | P4 card moves to top + auto-expanded (current phase). P3 demotes to "completed" + auto-collapsed. |
+| (f) Reject from any phase | `RejectedBanner` (§9) renders at top. Phase stack below: current phase (`previousPhase` per §12) expanded + at top; rest collapsed. |
+| (g) Restart (back to P1) | All phases collapse. P1 is now current → expands + at top. |
+| (h) Mobile (414px viewport) | Same rule applies. No chevron on current phase row; past phase rows show `▸` / `▾`. No horizontal overflow. |
+
+**Out of scope (deferred):**
+- Per-user persistence of `expandedPhases` across reloads — currently resets each refresh. If KC later wants "remember which phases I had open", this rule will gain a `localStorage` addendum in a future revision.
