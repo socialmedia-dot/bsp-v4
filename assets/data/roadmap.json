@@ -1,9 +1,9 @@
 {
   "meta": {
     "version": "v4",
-    "updated": "2026-06-07",
+    "updated": "2026-06-22",
     "deployedUrl": "https://bsp-v4.pages.dev",
-    "totalVueFiles": 57,
+    "totalVueFiles": 62,
     "portals": [
       "Public",
       "Auth",
@@ -16,10 +16,50 @@
       "Legal",
       "Development"
     ],
-    "trialCount": 13,
-    "trialStatus": "BSP v4 needs 13 critical pages built before school pilot (Q3 2026). Auth / Intake / Review = transaction core (must build). Communicate = trust layer (can be skipped for trial)."
+    "trialCount": 11,
+    "trialStatus": "BSP v4 needs 11 critical pages built before school pilot (Q3 2026). Auth / Intake / Review = transaction core (must build). Communicate = trust layer (can be skipped for trial). 2 school application pages just shipped (rev 3.0+)."
   },
   "recentUpdates": [
+    {
+      "date": "2026-06-22",
+      "text": "P5 Step 3 / Step 4 are now independent — no Step 3 gate (rev 3.5). School can complete them in any order."
+    },
+    {
+      "date": "2026-06-22",
+      "text": "Fix dev shortcut: devAdvanceToP4 now uses p3store API so p3gate unlocks P4+P5 (P5 substep UI was hidden before)"
+    },
+    {
+      "date": "2026-06-22",
+      "text": "P5 Travel Arrangements refactored to two-section model — ✈️ Flight (visa applicants only) + 🚗 Transportation (mode + ETA required)"
+    },
+    {
+      "date": "2026-06-19",
+      "text": "Disabled sub-step UX (§18.4) + dev affordance panel (§21) — clearer hints for locked buttons"
+    },
+    {
+      "date": "2026-06-17",
+      "text": "Application Detail rev 3.0 — 6-phase pipeline + Document Templates + visaRequested field"
+    },
+    {
+      "date": "2026-06-15",
+      "text": "School applications list + detail page shipped — full P1-P5 phase UI, 4 seed apps, Stripe deposit flow"
+    },
+    {
+      "date": "2026-06-15",
+      "text": "Apply to School (student side) + Stripe Payment page shipped — 1 happy path complete"
+    },
+    {
+      "date": "2026-06-15",
+      "text": "Student Profile + My Applications (collaborative) shipped"
+    },
+    {
+      "date": "2026-06-14",
+      "text": "Settings + Users pages (BSP Admin portal) complete — 13 admin pages done"
+    },
+    {
+      "date": "2026-06-08",
+      "text": "Operations portal (6 pages) + Public pages (Homepage, Search, BSP Landing, Consultants, News) shipped"
+    },
     {
       "date": "2026-06-07",
       "text": "Trial readiness audit: marked 13 critical pages needed before school pilot"
@@ -84,52 +124,52 @@
   "modules": [
     {
       "key": "trial",
-      "label": "\ud83d\udea8 Trial Readiness \u2014 School Pilot Q3 2026",
-      "emoji": "\ud83c\udfaf",
+      "label": "🚨 Trial Readiness — School Pilot Q3 2026",
+      "emoji": "🎯",
       "items": [
         {
-          "status": "draft",
-          "label": "\ud83c\udfeb School: Application Management (list view)",
+          "status": "done",
+          "label": "🏫 School: Application Management (list view)",
           "path": "/school/applications",
-          "date": null,
-          "reviewed": false,
+          "date": "2026-06-15",
+          "reviewed": true,
           "trial": true,
           "criticality": "high",
-          "note": "Replace 4 hardcoded apps w/ API + add \"manual entry\" for trial"
+          "note": "List view with 4 seed apps + stats cards + click-through to detail"
         },
         {
-          "status": "draft",
-          "label": "\ud83c\udfeb School: Application Detail (review/approve/reject)",
+          "status": "done",
+          "label": "🏫 School: Application Detail (review/approve/reject)",
           "path": "/school/applications/:id",
-          "date": null,
-          "reviewed": false,
+          "date": "2026-06-15",
+          "reviewed": true,
           "trial": true,
           "criticality": "high",
-          "note": "13 action buttons currently alert(\"API pending\")"
+          "note": "Full P1-P5 phase UI — 11 commits since 2026-06-15. School can advance through phases, view timeline, manage interview/deposit/travel/visa. Most action buttons are real now (no more alert())."
         },
         {
           "status": "draft",
-          "label": "\ud83d\udcbc Consultant: Application Management (list)",
+          "label": "💼 Consultant: Application Management (list)",
           "path": "/consultant/applications",
           "date": null,
           "reviewed": false,
           "trial": true,
           "criticality": "high",
-          "note": "Page literally says \"Under Construction \ud83d\udea7\""
+          "note": "Page literally says \"Under Construction 🚧\""
         },
         {
           "status": "draft",
-          "label": "\ud83d\udcbc Consultant: Application Detail (status tracking)",
+          "label": "💼 Consultant: Application Detail (status tracking)",
           "path": "/consultant/applications/:id",
           "date": null,
           "reviewed": false,
           "trial": true,
           "criticality": "high",
-          "note": "Page literally says \"Under Construction \ud83d\udea7\""
+          "note": "Page literally says \"Under Construction 🚧\""
         },
         {
           "status": "draft",
-          "label": "\ud83c\udfeb School: Dashboard (landing after login)",
+          "label": "🏫 School: Dashboard (landing after login)",
           "path": "/school/dashboard",
           "date": null,
           "reviewed": false,
@@ -139,7 +179,7 @@
         },
         {
           "status": "draft",
-          "label": "\ud83d\udcbc Consultant: Dashboard",
+          "label": "💼 Consultant: Dashboard",
           "path": "/consultant/dashboard",
           "date": null,
           "reviewed": false,
@@ -149,7 +189,7 @@
         },
         {
           "status": "draft",
-          "label": "\ud83c\udfeb School: Profile (school admin self-edit)",
+          "label": "🏫 School: Profile (school admin self-edit)",
           "path": "/school/profile",
           "date": null,
           "reviewed": false,
@@ -159,7 +199,7 @@
         },
         {
           "status": "draft",
-          "label": "\ud83d\udcbc Consultant: Profile",
+          "label": "💼 Consultant: Profile",
           "path": "/consultant/profile",
           "date": null,
           "reviewed": false,
@@ -169,27 +209,27 @@
         },
         {
           "status": "draft",
-          "label": "\ud83c\udfeb School: Reports (analytics)",
+          "label": "🏫 School: Reports (analytics)",
           "path": "/school/reports",
           "date": null,
           "reviewed": false,
           "trial": true,
           "criticality": "low",
-          "note": "Skip for trial \u2014 schools can ask BSP team manually"
+          "note": "Skip for trial — schools can ask BSP team manually"
         },
         {
           "status": "draft",
-          "label": "\ud83c\udfeb School: Partnerships (B2B connections)",
+          "label": "🏫 School: Partnerships (B2B connections)",
           "path": "/school/partnerships",
           "date": null,
           "reviewed": false,
           "trial": true,
           "criticality": "low",
-          "note": "Skip \u2014 not in school trial flow"
+          "note": "Skip — not in school trial flow"
         },
         {
           "status": "draft",
-          "label": "\ud83d\udcbc Consultant: Reports",
+          "label": "💼 Consultant: Reports",
           "path": "/consultant/reports",
           "date": null,
           "reviewed": false,
@@ -199,7 +239,7 @@
         },
         {
           "status": "draft",
-          "label": "\ud83d\udcbc Consultant: Partnerships",
+          "label": "💼 Consultant: Partnerships",
           "path": "/consultant/partnerships",
           "date": null,
           "reviewed": false,
@@ -209,20 +249,20 @@
         },
         {
           "status": "draft",
-          "label": "\ud83c\udfe2 Business Portal (3 pages) \u2014 Dashboard / Profile / Partnerships",
+          "label": "🏢 Business Portal (3 pages) — Dashboard / Profile / Partnerships",
           "path": "/business-portal/*",
           "date": null,
           "reviewed": false,
           "trial": true,
           "criticality": "low",
-          "note": "Not in trial scope \u2014 defer to Q4"
+          "note": "Not in trial scope — defer to Q4"
         }
       ]
     },
     {
       "key": "public",
       "label": "Public",
-      "emoji": "\ud83c\udf10",
+      "emoji": "🌐",
       "items": [
         {
           "status": "done",
@@ -306,7 +346,7 @@
     {
       "key": "auth",
       "label": "Authentication",
-      "emoji": "\ud83d\udd10",
+      "emoji": "🔐",
       "items": [
         {
           "status": "done",
@@ -337,7 +377,7 @@
     {
       "key": "student",
       "label": "Student Portal",
-      "emoji": "\ud83c\udf93",
+      "emoji": "🎓",
       "items": [
         {
           "status": "done",
@@ -365,6 +405,13 @@
         },
         {
           "status": "done",
+          "label": "My Application Detail",
+          "path": "/student/applications/:id",
+          "date": "2026-06",
+          "reviewed": true
+        },
+        {
+          "status": "done",
           "label": "Student Profile",
           "path": "/student/profile",
           "date": "2026-06"
@@ -374,7 +421,7 @@
     {
       "key": "operations",
       "label": "Operations Portal",
-      "emoji": "\ud83d\udd27",
+      "emoji": "🔧",
       "items": [
         {
           "status": "done",
@@ -417,7 +464,7 @@
     {
       "key": "admin",
       "label": "BSP Admin Portal",
-      "emoji": "\u2699\ufe0f",
+      "emoji": "⚙️",
       "items": [
         {
           "status": "done",
@@ -496,7 +543,7 @@
     {
       "key": "school",
       "label": "School Portal",
-      "emoji": "\ud83c\udfeb",
+      "emoji": "🏫",
       "items": [
         {
           "status": "draft",
@@ -506,18 +553,18 @@
           "reviewed": false
         },
         {
-          "status": "draft",
+          "status": "done",
           "label": "Application Management",
           "path": "/school/applications",
-          "date": null,
-          "reviewed": false
+          "date": "2026-06",
+          "reviewed": true
         },
         {
-          "status": "draft",
+          "status": "done",
           "label": "Application Details",
           "path": "/school/applications/:id",
-          "date": null,
-          "reviewed": false
+          "date": "2026-06",
+          "reviewed": true
         },
         {
           "status": "draft",
@@ -539,13 +586,27 @@
           "path": "/school/partnerships",
           "date": null,
           "reviewed": false
+        },
+        {
+          "status": "done",
+          "label": "Admissions Landing",
+          "path": "/school/admissions",
+          "date": "2026-06",
+          "reviewed": true
+        },
+        {
+          "status": "done",
+          "label": "Document Templates",
+          "path": "/school/settings/document-templates",
+          "date": "2026-06",
+          "reviewed": true
         }
       ]
     },
     {
       "key": "consultant",
       "label": "Consultant Portal",
-      "emoji": "\ud83d\udcbc",
+      "emoji": "💼",
       "items": [
         {
           "status": "draft",
@@ -594,7 +655,7 @@
     {
       "key": "business",
       "label": "Business Portal",
-      "emoji": "\ud83c\udfe2",
+      "emoji": "🏢",
       "items": [
         {
           "status": "draft",
@@ -622,7 +683,7 @@
     {
       "key": "legal",
       "label": "Legal & Info",
-      "emoji": "\ud83d\udcdc",
+      "emoji": "📜",
       "items": [
         {
           "status": "draft",
@@ -650,7 +711,7 @@
     {
       "key": "development",
       "label": "BSP Development",
-      "emoji": "\ud83d\udd28",
+      "emoji": "🔨",
       "items": [
         {
           "status": "done",
@@ -668,6 +729,26 @@
     }
   ],
   "milestones": [
+    {
+      "date": "2026-06-22",
+      "label": "P5 Travel Arrangements Two-Section Refactor",
+      "desc": "P5 Step 3 split into ✈️ Flight (visa only) + 🚗 Transportation (mode + ETA). Step 3/4 made independent (rev 3.4 → rev 3.5)"
+    },
+    {
+      "date": "2026-06-17",
+      "label": "Application Detail rev 3.0",
+      "desc": "6-phase pipeline + Document Templates + visaRequested field. P1-P5 fully functional with real action buttons"
+    },
+    {
+      "date": "2026-06-15",
+      "label": "Critical Path Complete (Trial MVP)",
+      "desc": "Student → School → Apply → School Review → Stripe Deposit → Done. 5 critical school-side pages shipped, 21 pages still stubs (consultant + business + legal)"
+    },
+    {
+      "date": "2026-06-08",
+      "label": "Operations + Public Portals Live",
+      "desc": "All 6 operations pages + 8 public pages (homepage, search, consultants, news, business profile) shipped"
+    },
     {
       "date": "2026-06-07",
       "label": "Trial Readiness Audit Complete",
