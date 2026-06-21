@@ -1376,3 +1376,20 @@ application.phase4Docs: P4Attachment[]  // NEW in rev 3.3
 | (f) School clicks "✅ Mark Documents Ready" | `advancePhase(5, ...)` runs, page jumps to P5 view |
 | (g) Open P4 with `currentPhase=5` (already past P4) | File input still visible (per §16 always-open rule), upload + add buttons still work for late additions. "Mark Documents Ready" NOT shown (already advanced). |
 | (h) Mobile 414px viewport | File input + buttons stack vertically, queue rows remain readable, no horizontal overflow |
+
+---
+
+## 23. P5 Dev Stub (NEW in rev 3.3, 2026-06-22)
+
+**Rule:** P5 (Pre-Departure) Step 2 (Confirm Visa Granted) requires the **student** to upload the visa granted PDF on the student-side P5 page. Until that page is wired up (`pages/student/applications/[id].vue` P5 step), the school's P5 view provides a **temporary "🔬 Dev tools" affordance** (collapsed by default) that simulates the student's Step 2 actions in one click:
+
+1. **Student uploaded visa granted PDF** — sets `application.phase5VisaGrantedDocument` to a placeholder file ref (`dev_simulated_visa_grant.pdf`).
+2. **School confirmed visa granted** — sets `application.phase5VisaGrantedAt = now` and `application.subStatus = P5_SUB_STATUS.P5_VISA_GRANTED`.
+
+After the dev sim, the school can immediately use the real `✅ Confirm Visa Granted` button (which becomes "already granted" state) or proceed to **Step 3 (Mark Travel Arranged)** and **Step 4 (Confirm Arrival)** via the real school-side buttons.
+
+**Audit tagging:** All dev sim entries are stamped with `by: 'school-admin (dev sim)'` for trivial filter / cleanup.
+
+**Visibility:** Only when `application.visaRequested === true` (no dev sim needed for non-visa path).
+
+**Removal:** REMOVE THIS WHOLE PANEL + HANDLER when `pages/student/applications/[id].vue` P5 student-side is built and wires up the real student upload + confirm flow.

@@ -707,6 +707,46 @@
                         </ul>
                       </div>
 
+                      <!-- 🔬 §23 DEV stub (collapsed by default) — see docs §23 (dev note) -->
+                      <!-- Remove this panel + onP5DevSimulateStudentStep2 handler once -->
+                      <!-- pages/student/applications/[id].vue wires up the real student P5 upload + confirm. -->
+                      <div v-if="application.visaRequested" class="p5-dev-section">
+                        <button
+                          type="button"
+                          class="p5-dev-toggle"
+                          :class="{ 'p5-dev-toggle-open': showP5DevPanel }"
+                          @click="showP5DevPanel = !showP5DevPanel"
+                        >
+                          <span class="p5-dev-toggle-icon">{{ showP5DevPanel ? '🔽' : '▶️' }}</span>
+                          <span>🔬 Dev tools (temporary — remove when student P5 page exists)</span>
+                        </button>
+                        <div v-if="showP5DevPanel" class="p5-dev-panel">
+                          <div class="p5-dev-title">🧪 Simulate Student Step 2</div>
+                          <p class="p5-dev-note">
+                            The student-side P5 page is not built yet, so school admins
+                            cannot receive the student's visa granted PDF upload. This
+                            button fakes both missing student actions (upload visa PDF +
+                            click "I've been granted") in one click so you can exercise
+                            the school's Step 3 (Travel) → Step 4 (Arrival) flow.
+                          </p>
+                          <p class="p5-dev-note">
+                            All audit entries are tagged <code>school-admin (dev sim)</code>
+                            for easy cleanup. You can still use the real
+                            <code>✅ Confirm Visa Granted</code> button after the sim.
+                          </p>
+                          <button
+                            v-if="!application.phase5VisaGrantedAt"
+                            class="btn-dev"
+                            @click="onP5DevSimulateStudentStep2"
+                          >
+                            🧪 Run simulation (student uploaded + confirmed)
+                          </button>
+                          <p v-else class="p5-dev-note">
+                            ✅ Step 2 already done. Use "Restart" in the top bar to re-test from P1.
+                          </p>
+                        </div>
+                      </div>
+
                       <!-- If visaRequested=true: 4 sub-steps (per §18.1) -->
                       <div v-if="application.visaRequested" class="p5-substeps">
                         <div class="p5-substep" :class="{ 'p5-substep-done': application.phase5VisaGrantedAt }">
@@ -1687,6 +1727,7 @@ if (_initialStudentFilesOpen) showStudentFiles.value = true
 // 🔬 DEV affordance (remove when student P3 page is built) — collapsed by default
 // so the dev panel doesn't crowd the production "Confirm Receipt" button.
 const showDevPanel = ref(false)
+const showP5DevPanel = ref(false)   // §23 P5 dev stub (separate toggle from P3)
 
 function p3StatusLabel(status) {
   if (status === 'sent_to_student') return 'Sent to Student'
@@ -1809,6 +1850,44 @@ function onDevSimulateStudentResponse() {
 
   p3Toast.value = '🧪 Simulated: 1 proof + 1 student file + ready flag'
   setTimeout(() => { p3Toast.value = '' }, 4000)
+}
+
+// 🔬 §23 DEV affordance — see docs §23 (dev note)
+// Fakes the student-side P5 Step 2 actions (upload visa granted PDF +
+// click "I've been granted") in one click, so KC can exercise the school's
+// Step 3 (Travel) → Step 4 (Arrival) flow before the student P5 page is built.
+// All audit entries stamped with `by: 'school-admin (dev sim)'`. REMOVE THIS
+// WHOLE HANDLER + UI PANEL when pages/student/applications/[id].vue P5 wires
+// up the real student upload + confirm flow.
+function onP5DevSimulateStudentStep2() {
+  const devBy = 'school-admin (dev sim)'
+
+  // 1. Simulate student uploading the visa granted PDF.
+  //    Same placeholder PDF as the P3 dev sim — UI just shows the filename.
+  const proofDataUrl =
+    'data:application/pdf;base64,JVBERi0xLjQKJcOkw7zDtsOfCjIgMCBvYmoKPDwvTGVuZ3RoIDMgMCBSL0ZpbHRlci9GbGF0ZURlY29kZT4+CnN0cmVhbQp4nDPQM1Qo5ypUMABCBV1DPUM9c0NTPRMjAyMDQyMzAyOFEKuQrA0MjAyOFEKuQrAzMjAyOFEKuQrA0MjAyOFEKuQrA1MjAyOFEKuQrA2MjAyOFEKuQrA3MjAyOFEKuQrA4MjAyOFEKuQrA5MjAyOFEKuQrCGAZU1qgaXBsYWNlaG9sZGVyCnN0YXJ0eHJlZgozIDAgUgo1MCA1IFIKZW5kc3RyZWFtCmVuZG9iagoyIDAgb2JqCjw8L1R5cGUvUGFnZS9NZWRpYUJveFswIDAgMjEwIDU5NF0vUGFyZW50IDEgMCBSL1Jlc291cmNlczw8Pj4vQ29udGVudHMgNCAwIFI+PgplbmRvYmoKNCAwIG9iago8PC9MZW5ndGggNDcvRmlsdGVyL0ZsYXRlRGVjb2RlPj5zdHJlYW0KeJxjYGRgYGBiZDBiYDBgYAJCA0NTAwMTAGIANFBiAuQwYH0C8pmBhAaIBYPz/wXQHBuYGZgZmBgZWNlYGZhY2ZjZWNmZWNlY2VjZWNlY2VjZWNlY2VjZWNlY2VjZWNlY2VjZWNlY2VjZWNlY2VjZWNlAwB3UQz5CnVuZG9iagoxIDAgb2JqCjw8L1R5cGUvUGFnZS9Db3VudCAxL0tpZHNbMiAwIFJdPj4KZW5kb2JqCjUgMCBvYmoKPDwvVHlwZS9DYXRhbG9nL1BhZ2VzIDEgMCBSPj4KZW5kb2JqCnhyZWYKMCA2CjAwMDAwMDAwMCA2NTUzNSBmIAowMDAwMDAwMDE1IDAwMDAwIG4gCjAwMDAwMDAxMjUgMDAwMDAgbiAKMDAwMDAwMDAyMjEgMDAwMDAgbiAKMDAwMDAwMDAzMTggMDAwMDAgbiAKMDAwMDAwMDA0MDAgMDAwMDAgbiAKdHJhaWxlciA8PC9TaXplIDYvUm9vdCA1IDAgUj4+CnN0YXJ0eHJlZgoxMTMKJSVFT0YK'
+
+  application.value.phase5VisaGrantedDocument = {
+    name: 'dev_simulated_visa_grant.pdf',
+    dataUrl: proofDataUrl,
+    uploadedAt: new Date().toISOString(),
+    uploadedBy: devBy
+  }
+
+  // 2. Simulate school confirming visa granted (this is what the school's
+  //    "✅ Confirm Visa Granted" button does, per §18.2).
+  application.value.phase5VisaGrantedAt = new Date().toISOString()
+  application.value.subStatus = P5_SUB_STATUS.P5_VISA_GRANTED
+
+  // 3. Mark phase 5 history "in progress" → first sub-step done (audit).
+  const p5Hist = application.value.phaseHistory.find(p => p.phase === 5)
+  if (p5Hist && p5Hist.status === 'Pending') {
+    p5Hist.status = 'In Progress'
+  }
+
+  p3Toast.value = '🧪 Simulated: student uploaded visa PDF + school confirmed granted'
+  setTimeout(() => { p3Toast.value = '' }, 4000)
+  saveState()  // §23 — application.value mutated directly, persist to localStorage
 }
 
 function p3StatusClass(status) {
@@ -3082,6 +3161,59 @@ function devRestart() {
 }
 .btn-dev:hover { background: #d97706; }
 .btn-dev:active { background: #b45309; }
+
+/* §23 P5 Dev Stub (school side) — mirrors P3 dev panel styling */
+.p5-dev-section {
+  margin: 0.75rem 0;
+}
+.p5-dev-toggle {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  background: transparent;
+  border: 1px dashed #f59e0b;
+  border-radius: 6px;
+  padding: 0.4rem 0.7rem;
+  font-size: 0.82rem;
+  color: #92400e;
+  cursor: pointer;
+  font-family: inherit;
+  width: 100%;
+  text-align: left;
+}
+.p5-dev-toggle:hover { background: #fef3c7; }
+.p5-dev-toggle-open { background: #fef3c7; }
+.p5-dev-toggle-icon { font-size: 0.7rem; }
+.p5-dev-panel {
+  margin-top: 0.75rem;
+  padding: 0.9rem 1rem;
+  background: #fef3c7;
+  border: 2px dashed #f59e0b;
+  border-radius: 8px;
+}
+.p5-dev-title {
+  font-weight: 700;
+  font-size: 0.95rem;
+  color: #78350f;
+  margin-bottom: 0.4rem;
+  letter-spacing: 0.02em;
+}
+.p5-dev-note {
+  font-size: 0.82rem;
+  color: #78350f;
+  line-height: 1.45;
+  margin: 0 0 0.6rem 0;
+}
+.p5-dev-note:last-child {
+  margin-bottom: 0;
+}
+.p5-dev-note code {
+  background: rgba(120, 53, 15, 0.1);
+  padding: 1px 5px;
+  border-radius: 3px;
+  font-size: 0.78rem;
+  font-family: 'SF Mono', Monaco, Consolas, monospace;
+}
 
 /* §17 Document Templates Checklist (P3/P4/P5) */
 .doc-templates-section {
