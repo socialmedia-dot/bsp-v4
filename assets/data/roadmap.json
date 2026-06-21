@@ -16,10 +16,14 @@
       "Legal",
       "Development"
     ],
-    "trialCount": 11,
+    "trialCount": 10,
     "trialStatus": "BSP v4 needs 11 critical pages built before school pilot (Q3 2026). Auth / Intake / Review = transaction core (must build). Communicate = trust layer (can be skipped for trial). 2 school application pages just shipped (rev 3.0+)."
   },
   "recentUpdates": [
+    {
+      "date": "2026-06-22",
+      "text": "School Dashboard built — 6 stats + needs-action + phase distribution + recent apps + quick links (responsive 6→3→2 col)"
+    },
     {
       "date": "2026-06-22",
       "text": "P5 Step 3 / Step 4 are now independent — no Step 3 gate (rev 3.5). School can complete them in any order."
@@ -168,14 +172,14 @@
           "note": "Page literally says \"Under Construction 🚧\""
         },
         {
-          "status": "draft",
+          "status": "done",
           "label": "🏫 School: Dashboard (landing after login)",
           "path": "/school/dashboard",
-          "date": null,
-          "reviewed": false,
+          "date": "2026-06-22",
+          "reviewed": true,
           "trial": true,
           "criticality": "medium",
-          "note": "Schools need somewhere to land after login"
+          "note": "6-stat header + 🎯 Needs Your Action + 📈 Phase Distribution + recent apps + quick links"
         },
         {
           "status": "draft",
@@ -546,11 +550,11 @@
       "emoji": "🏫",
       "items": [
         {
-          "status": "draft",
+          "status": "done",
           "label": "School Dashboard",
           "path": "/school/dashboard",
-          "date": null,
-          "reviewed": false
+          "date": "2026-06-22",
+          "reviewed": true
         },
         {
           "status": "done",
