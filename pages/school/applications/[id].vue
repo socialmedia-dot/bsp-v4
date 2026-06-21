@@ -2196,26 +2196,26 @@ function devAdvanceToP3() {
 }
 
 function devAdvanceToP4() {
-  // Mock P3 deposit record so P3 store / p3gate unlocks downstream
+  // Mock a full P3 deposit lifecycle so p3gate.isP3Confirmed unlocks P4+P5 downstream.
+  // Use p3store API (not raw localStorage) so the in-memory ref is also updated — otherwise
+  // p3store.isConfirmed() reads stale data and the P5 substep UI stays hidden.
+  // Mirrors the real flow: send form → student uploads proof → student marks ready → school confirms.
+  const devBy = 'school-admin (dev sim)'
+  const proofDataUrl =
+    'data:application/pdf;base64,JVBERi0xLjQKJcOkw7zDtsOfCjIgMCBvYmoKPDwvTGVuZ3RoIDMgMCBSL0ZpbHRlci9GbGF0ZURlY29kZT4+CnN0cmVhbQp4nDPQM1Qo5ypUMABCBV1DPUM9c0NTPRMjAyMDQyMzAyOFEKuQrA0MjAyOFEKuQrAzMjAyOFEKuQrA0MjAyOFEKuQrA1MjAyOFEKuQrA2MjAyOFEKuQrA3MjAyOFEKuQrA4MjAyOFEKuQrA5MjAyOFEKuQrCGAZU1qgaXBsYWNlaG9sZGVyCnN0YXJ0eHJlZgozIDAgUgo1MCA1IFIKZW5kc3RyZWFtCmVuZG9iagoyIDAgb2JqCjw8L1R5cGUvUGFnZS9NZWRpYUJveFswIDAgMjEwIDU5NF0vUGFyZW50IDEgMCBSL1Jlc291cmNlczw8Pj4vQ29udGVudHMgNCAwIFI+PgplbmRvYmoKNCAwIG9iago8PC9MZW5ndGggNDcvRmlsdGVyL0ZsYXRlRGVjb2RlPj5zdHJlYW0KeJxjYGRgYGBiZDBiYDBgYAJCA0NTAwMTAGIANFBiAuQwYH0C8pmBhAaIBYPz/wXQHBuYGZgZmBgZWNlZWNlY2VjZWNlY2VjZWNlY2VjZWNlY2VjZWNlY2VjZWNlY2VjZWNlY2VjZWNlY2VjZWNlAwB3UQz5CnVuZG9iagoxIDAgb2JqCjw8L1R5cGUvUGFnZS9Db3VudCAxL0tpZHNbMiAwIFJdPj4KZW5kb2JqCjUgMCBvYmoKPDwvVHlwZS9DYXRhbG9nL1BhZ2VzIDEgMCBSPj4KZW5kb2JqCnhyZWYKMCA2CjAwMDAwMDAwMCA2NTUzNSBmIAowMDAwMDAwMDE1IDAwMDAwIG4gCjAwMDAwMDAxMjUgMDAwMDAgbiAKMDAwMDAwMDIyMSAwMDAwMCBuIAowMDAwMDAwMzE4IDAwMDAwIG4gCjAwMDAwMDA0MDAgMDAwMDAgbiAKdHJhaWxlciA8PC9TaXplIDYvUm9vdCA1IDAgUj4+CnN0YXJ0eHJlZgoxMTMKJSVFT0YK'
   try {
-    const depositsKey = 'bsp-v4-deposits'
-    const deposits = JSON.parse(localStorage.getItem(depositsKey) || '[]')
-    deposits.push({
-      id: 'dep-dev-' + Date.now(),
-      applicationRef: id,
-      status: 'confirmed',
-      amount: 5000,
-      currency: 'GBP',
-      bankInfo: { accountName: 'Dev', sortCode: '00-00-00', accountNumber: '00000000', reference: 'DEV' },
-      schoolFiles: [],
-      studentFiles: [],
-      proofFile: { id: 'pf-dev', fileName: 'dev_proof.pdf', fileSize: '0.1 MB' },
-      createdAt: new Date().toISOString(),
-      confirmedAt: new Date().toISOString(),
-    })
-    localStorage.setItem(depositsKey, JSON.stringify(deposits))
+    if (!p3Latest.value) {
+      p3store.sendDepositForm(id, {}, [], devBy)
+    }
+    p3store.uploadDepositProof(
+      id,
+      { name: 'dev_simulated_proof_receipt.pdf', dataUrl: proofDataUrl },
+      devBy
+    )
+    p3store.markStudentReady(id, devBy)
+    p3store.confirmDeposit(id, devBy)
   } catch (e) {
-    console.warn('[dev tools] could not seed deposit:', e)
+    console.warn('[dev tools] could not seed P3 deposit via store API:', e)
   }
   markPhaseComplete(3, 'Dev: deposit auto-confirmed')
   application.value.currentPhase = 4
