@@ -287,6 +287,18 @@
       />
     </div>
 
+    <!-- ✈️ §24 P5 Step 3 — Travel Arrangements (student side) -->
+    <div v-if="application.currentPhase === 5" class="info-card p5-travel-section">
+      <h3>✈️ Travel Arrangements</h3>
+      <p class="info-note">Tell the school how you'll get from the UK airport to the school. The school can also add pickup details if they're arranging transport.</p>
+      <TravelStep
+        :plan="travelPlan"
+        mode="student"
+        :application-ref="id"
+        @save-student="onStudentTravelSave"
+      />
+    </div>
+
   </div>
 </template>
 
@@ -625,6 +637,24 @@ function onVisaGrantedConfirm() {
   application.value.subStatus = P5_SUB_STATUS.P5_VISA_GRANTED
   saveVisaState()
 }
+
+// §24 P5 Travel Arrangements — student-side handler
+const travelstore = useTravelStore()
+const travelPlan = ref(travelstore.getPlan(id))
+
+function onStudentTravelSave(partial) {
+  travelstore.saveStudentPart(id, partial)
+  travelPlan.value = travelstore.getPlan(id)
+  // Mirror to in-app state for cross-portal consistency
+  if (!application.value.phase5TravelPlan) application.value.phase5TravelPlan = {}
+  application.value.phase5TravelPlan = { ...travelPlan.value }
+  alert('✅ Travel info saved. The school can now see your flight + transfer details.')
+}
+
+watch(() => id, () => {
+  travelstore.refresh(id)
+  travelPlan.value = travelstore.getPlan(id)
+}, { immediate: false })
 
 onMounted(() => {
   // Cross-portal sync: load interview set by school

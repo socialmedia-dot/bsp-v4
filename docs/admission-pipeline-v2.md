@@ -1393,3 +1393,64 @@ After the dev sim, the school can immediately use the real `✅ Confirm Visa Gra
 **Visibility:** Only when `application.visaRequested === true` (no dev sim needed for non-visa path).
 
 **Removal:** REMOVE THIS WHOLE PANEL + HANDLER when `pages/student/applications/[id].vue` P5 student-side is built and wires up the real student upload + confirm flow.
+
+---
+
+## 24. P5 Travel Arrangements (NEW in rev 3.3, 2026-06-22)
+
+**Rule:** P5 Step 3 (Travel Arrangements) requires a **two-part form** — one part filled by the **student** (their flight + how they get from the UK airport to the school) and one part filled by the **school** (if the school arranges the airport-to-school transfer). Both parts are visible to both sides; each side only edits its own part.
+
+### 24.1 Student Part (filled on student-side P5 page)
+
+- **✈️ Flight number** — e.g. `CX251`
+- **🛬 Arrival airport (UK)** — dropdown: `LHR`, `LGW`, `STN`, `MAN`, `BHX`, `EDI`, `Other`
+- **📅 Arrival date** — date input
+- **⏰ Arrival time (local UK time)** — time input
+- **🚕 Transfer mode** — radio: `Self-arranged taxi` | `School-arranged pickup` | `Family / guardian pickup` | `Public transport`
+- If `Self-arranged taxi`:
+  - **Taxi company** — text
+  - **Driver name** — text
+  - **Driver phone** — tel
+  - **Booking reference** — text (optional)
+- If `Family / guardian pickup`:
+  - **Contact name** — text
+  - **Contact phone** — tel
+- If `Public transport`:
+  - **Planned route (train/coach line + station)** — textarea (optional)
+- **📞 Emergency contact at destination** (name + phone) — optional
+- **💬 Notes** — textarea (optional)
+- **Status gate:** "Save student part" button — always available once any field filled.
+
+### 24.2 School Part (filled on school-side P5 page)
+
+- **🚌 Pickup driver name** — text
+- **🚐 Vehicle** (model + plate, e.g. `Mercedes Sprinter — AB12 CDE`) — text
+- **📞 Driver phone** — tel
+- **⏰ Scheduled pickup time** — datetime-local
+- **📍 Pickup point** (e.g. `LHR Terminal 5 — Arrivals Hall, Costa Coffee`) — text
+- **💬 Notes** — textarea (optional)
+- **Status gate:** "Save school part" button — always available once any field filled.
+
+### 24.3 Cross-portal sync
+
+- Storage key: `bsp:travel:${applicationId}` (separate from main `bsp:school:app:${id}`).
+- Each side writes its own part. The other side's part is **read-only display**.
+- A new `useTravelStore` composable centralises the load/save logic, mirroring `useP3Store` (§16) and `useInterviewStore` (§18).
+- Last-write-wins per part (no merge conflict expected — single writer per part).
+
+### 24.4 Mark Travel Arranged button (school side Step 3)
+
+- **Enabled when:** `application.phase5VisaGrantedAt` is set (Step 2 done per §18.1) **AND** at least one part (student or school) is filled with required fields (flight+date+time for student, driver+vehicle+phone for school).
+- **Action:** Sets `application.subStatus = P5_SUB_STATUS.P5_TRAVEL_ARRANGED` and stamps the travel plan `status = 'travel_arranged'`.
+- **Visibility:** Same as before — only after Step 2 done.
+
+### 24.5 Dev affordance (temporary, mirror §23)
+
+Until the real student-side Travel Arrangements form on `pages/student/applications/[id].vue` is wired up for end-to-end, the school side provides a **🔬 Dev tools** panel (collapsed by default) with a "🧪 Simulate student travel info" button that auto-fills the student part with sensible test data. Same `school-admin (dev sim)` audit tag.
+
+### 24.6 Removal
+
+When the real student-side P5 Travel Arrangements form is built and wired to `useTravelStore`:
+- Delete the dev affordance panel + `onP5DevSimulateStudentTravel` handler
+- Delete spec §24.5
+
