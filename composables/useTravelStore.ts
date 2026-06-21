@@ -1,6 +1,7 @@
-// useTravelStore — P5 Travel Arrangements cross-portal sync (per docs §24)
-// Storage key: bsp:travel:${appId}. Each side writes its own part; the other
-// side reads as display-only. Mirrors useP3Store pattern.
+// useTravelStore — P5 Travel Arrangements cross-portal sync (per docs §24, rev 3.4)
+// Storage key: bsp:travel:${appId}. Rev 3.4 restructure: two sections by topic
+// (flight + transportation), both jointly editable by school and student.
+// Rev 3.3 (studentPart + schoolPart) is migrated to the new shape on first load.
 
 import { ref, computed } from 'vue'
 
@@ -14,39 +15,95 @@ function key(appId) {
   return `${STORAGE_PREFIX}${appId}`
 }
 
+function emptyFlight() {
+  return {
+    flightNumber: '',
+    arrivalAirport: '',
+    arrivalDate: '',
+    arrivalTime: '',
+    notes: '',         // free-text, jointly editable
+    lastEditedBy: '',  // 'student' | 'school' | ''
+    lastEditedAt: null,
+  }
+}
+
+function emptyTransportation() {
+  return {
+    mode: '',         // '' | 'taxi' | 'train' | 'parents'
+    eta: '',          // datetime-local string
+    // taxi
+    taxiCompany: '',
+    driverName: '',
+    driverPhone: '',
+    vehicle: '',
+    bookingRef: '',
+    // train
+    trainRoute: '',
+    // parents
+    parentName: '',
+    parentPhone: '',
+    // shared
+    notes: '',        // free-text, jointly editable
+    lastEditedBy: '',
+    lastEditedAt: null,
+  }
+}
+
 function emptyPlan() {
   return {
-    studentPart: {
-      flightNumber: '',
-      arrivalAirport: '',
-      arrivalDate: '',
-      arrivalTime: '',
-      transferMode: '',
-      taxiCompany: '',
-      taxiDriverName: '',
-      taxiDriverPhone: '',
-      taxiBookingRef: '',
-      familyContactName: '',
-      familyContactPhone: '',
-      publicTransportRoute: '',
-      emergencyContactName: '',
-      emergencyContactPhone: '',
-      notes: '',
-      submittedAt: null,
-      submittedBy: 'student',
-    },
-    schoolPart: {
-      pickupDriverName: '',
-      pickupVehicle: '',
-      pickupDriverPhone: '',
-      pickupTime: '',
-      pickupPoint: '',
-      notes: '',
-      submittedAt: null,
-      submittedBy: 'school',
-    },
-    status: 'pending',  // 'pending' | 'student_submitted' | 'school_submitted' | 'both_submitted' | 'travel_arranged'
+    flight: emptyFlight(),
+    transportation: emptyTransportation(),
+    status: 'pending',  // 'pending' | 'in_progress' | 'travel_arranged'
   }
+}
+
+// Rev 3.3 → rev 3.4 migration. If the stored plan still uses the old
+// studentPart / schoolPart shape, copy values across and drop the legacy keys.
+function migrateLegacyPlan(parsed) {
+  if (parsed && parsed.studentPart && !parsed.flight) {
+    const sp = parsed.studentPart || {}
+    const sc = parsed.schoolPart || {}
+    const modeMap = {
+      'self-taxi': 'taxi',
+      'school-pickup': 'taxi',
+      'family': 'parents',
+      'public': 'train',
+    }
+    return {
+      flight: {
+        ...emptyFlight(),
+        flightNumber: sp.flightNumber || '',
+        arrivalAirport: sp.arrivalAirport || '',
+        arrivalDate: sp.arrivalDate || '',
+        arrivalTime: sp.arrivalTime || '',
+        notes: sp.notes || '',
+        lastEditedBy: sp.submittedBy || '',
+        lastEditedAt: sp.submittedAt || null,
+      },
+      transportation: {
+        ...emptyTransportation(),
+        mode: modeMap[sp.transferMode] || '',
+        eta: sc.pickupTime || '',
+        // taxi sub-fields from student-arranged side
+        taxiCompany: sp.taxiCompany || '',
+        driverName: sp.taxiDriverName || sc.pickupDriverName || '',
+        driverPhone: sp.taxiDriverPhone || sc.pickupDriverPhone || '',
+        vehicle: sc.pickupVehicle || '',
+        bookingRef: sp.taxiBookingRef || '',
+        // train
+        trainRoute: sp.publicTransportRoute || '',
+        // parents
+        parentName: sp.familyContactName || '',
+        parentPhone: sp.familyContactPhone || '',
+        // shared
+        notes: sc.notes || '',
+        lastEditedBy: sc.submittedBy || sp.submittedBy || '',
+        lastEditedAt: sc.submittedAt || sp.submittedAt || null,
+      },
+      status: parsed.status === 'travel_arranged' ? 'travel_arranged' : 'in_progress',
+    }
+  }
+  return parsed
 }
 
 function loadFromStorage(appId) {
@@ -55,12 +112,13 @@ function loadFromStorage(appId) {
     const raw = localStorage.getItem(key(appId))
     if (!raw) return emptyPlan()
     const parsed = JSON.parse(raw)
+    const migrated = migrateLegacyPlan(parsed)
     // Back-fill any missing fields (graceful schema evolution).
     return {
       ...emptyPlan(),
-      ...parsed,
-      studentPart: { ...emptyPlan().studentPart, ...(parsed.studentPart || {}) },
-      schoolPart: { ...emptyPlan().schoolPart, ...(parsed.schoolPart || {}) },
+      ...migrated,
+      flight: { ...emptyFlight(), ...(migrated.flight || {}) },
+      transportation: { ...emptyTransportation(), ...(migrated.transportation || {}) },
     }
   } catch (e) {
     console.error('[useTravelStore] load failed', e)
@@ -77,6 +135,11 @@ function saveToStorage(appId, plan) {
   }
 }
 
+function stamp(section, by) {
+  section.lastEditedBy = by
+  section.lastEditedAt = new Date().toISOString()
+}
+
 export function useTravelStore() {
   function getPlan(appId) {
     if (!cache.value[appId]) {
@@ -90,27 +153,22 @@ export function useTravelStore() {
     return cache.value[appId]
   }
 
-  function saveStudentPart(appId, partial) {
+  // Save the ✈️ Flight section. Caller passes partial flight fields.
+  // `by` is 'student' or 'school' — used only for the audit stamp.
+  function saveFlight(appId, partial, by = 'student') {
     const plan = getPlan(appId)
-    plan.studentPart = {
-      ...plan.studentPart,
-      ...partial,
-      submittedAt: new Date().toISOString(),
-      submittedBy: 'student',
-    }
+    plan.flight = { ...plan.flight, ...partial }
+    stamp(plan.flight, by)
     plan.status = computeStatus(plan)
     saveToStorage(appId, plan)
     return plan
   }
 
-  function saveSchoolPart(appId, partial) {
+  // Save the 🚗 Transportation section. Caller passes partial transportation fields.
+  function saveTransportation(appId, partial, by = 'student') {
     const plan = getPlan(appId)
-    plan.schoolPart = {
-      ...plan.schoolPart,
-      ...partial,
-      submittedAt: new Date().toISOString(),
-      submittedBy: 'school',
-    }
+    plan.transportation = { ...plan.transportation, ...partial }
+    stamp(plan.transportation, by)
     plan.status = computeStatus(plan)
     saveToStorage(appId, plan)
     return plan
@@ -123,31 +181,33 @@ export function useTravelStore() {
     return plan
   }
 
-  // True if at least the minimum required fields for either part are present.
+  // Per §24.4 — required for "Mark Travel Arranged":
+  //   transportation.mode filled AND transportation.eta filled.
+  // Flight fields are NOT required (even when shown).
   function hasMinimumViableData(plan) {
-    const sp = plan.studentPart
-    const sc = plan.schoolPart
-    const studentOk = !!(sp.flightNumber && sp.arrivalDate && sp.arrivalTime)
-    const schoolOk = !!(sc.pickupDriverName && sc.pickupVehicle && sc.pickupDriverPhone)
-    return studentOk || schoolOk
+    const t = plan.transportation
+    return !!(t.mode && t.eta)
+  }
+
+  // Per §24.1 — flight is optional. Returns true if at least one flight field is filled.
+  function hasFlightData(plan) {
+    const f = plan.flight
+    return !!(f.flightNumber || f.arrivalAirport || f.arrivalDate || f.arrivalTime || f.notes)
   }
 
   function computeStatus(plan) {
     if (plan.status === 'travel_arranged') return 'travel_arranged'
-    const studentDone = !!(plan.studentPart.submittedAt)
-    const schoolDone = !!(plan.schoolPart.submittedAt)
-    if (studentDone && schoolDone) return 'both_submitted'
-    if (studentDone) return 'student_submitted'
-    if (schoolDone) return 'school_submitted'
+    if (hasMinimumViableData(plan)) return 'in_progress'
     return 'pending'
   }
 
   return {
     getPlan,
     refresh,
-    saveStudentPart,
-    saveSchoolPart,
+    saveFlight,
+    saveTransportation,
     markTravelArranged,
     hasMinimumViableData,
+    hasFlightData,
   }
 }

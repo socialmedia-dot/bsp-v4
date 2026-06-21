@@ -290,12 +290,14 @@
     <!-- ✈️ §24 P5 Step 3 — Travel Arrangements (student side) -->
     <div v-if="application.currentPhase === 5" class="info-card p5-travel-section">
       <h3>✈️ Travel Arrangements</h3>
-      <p class="info-note">Tell the school how you'll get from the UK airport to the school. The school can also add pickup details if they're arranging transport.</p>
+      <p class="info-note">Two sections: <strong>✈️ Flight</strong> (only if you need a student visa) and <strong>🚗 Transportation</strong> (how you'll get from the UK airport to the school). You and the school can both fill in either section.</p>
       <TravelStep
         :plan="travelPlan"
         mode="student"
         :application-ref="id"
-        @save-student="onStudentTravelSave"
+        :visa-requested="!!application.visaRequested"
+        @save-flight="onStudentFlightSave"
+        @save-transportation="onStudentTransportationSave"
       />
     </div>
 
@@ -638,17 +640,27 @@ function onVisaGrantedConfirm() {
   saveVisaState()
 }
 
-// §24 P5 Travel Arrangements — student-side handler
+// §24 P5 Travel Arrangements (rev 3.4) — student-side handlers.
+// Both sections are jointly editable by student and school.
 const travelstore = useTravelStore()
 const travelPlan = ref(travelstore.getPlan(id))
 
-function onStudentTravelSave(partial) {
-  travelstore.saveStudentPart(id, partial)
+function onStudentFlightSave(partial, by) {
+  travelstore.saveFlight(id, partial, by || 'student')
   travelPlan.value = travelstore.getPlan(id)
-  // Mirror to in-app state for cross-portal consistency
   if (!application.value.phase5TravelPlan) application.value.phase5TravelPlan = {}
   application.value.phase5TravelPlan = { ...travelPlan.value }
-  alert('✅ Travel info saved. The school can now see your flight + transfer details.')
+  saveVisaState()
+  alert('✅ Flight info saved. The school can see it now.')
+}
+
+function onStudentTransportationSave(partial, by) {
+  travelstore.saveTransportation(id, partial, by || 'student')
+  travelPlan.value = travelstore.getPlan(id)
+  if (!application.value.phase5TravelPlan) application.value.phase5TravelPlan = {}
+  application.value.phase5TravelPlan = { ...travelPlan.value }
+  saveVisaState()
+  alert('✅ Transportation saved. The school can see it now.')
 }
 
 watch(() => id, () => {

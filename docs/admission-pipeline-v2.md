@@ -1396,61 +1396,127 @@ After the dev sim, the school can immediately use the real `✅ Confirm Visa Gra
 
 ---
 
-## 24. P5 Travel Arrangements (NEW in rev 3.3, 2026-06-22)
+## 24. P5 Travel Arrangements (rev 3.4, 2026-06-22 — section restructure)
 
-**Rule:** P5 Step 3 (Travel Arrangements) requires a **two-part form** — one part filled by the **student** (their flight + how they get from the UK airport to the school) and one part filled by the **school** (if the school arranges the airport-to-school transfer). Both parts are visible to both sides; each side only edits its own part.
+**Rule (rev 3.4):** P5 Step 3 (Travel Arrangements) is a **two-section form by topic**, NOT by role:
 
-### 24.1 Student Part (filled on student-side P5 page)
+- **§24.1 ✈️ Flight** — **only shown when `application.visaRequested === true`**. Fields are **optional** (not required even when section is shown). Either side (school or student) can fill.
+- **§24.2 🚗 To-school Transportation** — **always shown** for every P5 student. Either side can fill. **ETA is required** to enable "Mark Travel Arranged".
 
-- **✈️ Flight number** — e.g. `CX251`
-- **🛬 Arrival airport (UK)** — dropdown: `LHR`, `LGW`, `STN`, `MAN`, `BHX`, `EDI`, `Other`
-- **📅 Arrival date** — date input
-- **⏰ Arrival time (local UK time)** — time input
-- **🚕 Transfer mode** — radio: `Self-arranged taxi` | `School-arranged pickup` | `Family / guardian pickup` | `Public transport`
-- If `Self-arranged taxi`:
-  - **Taxi company** — text
-  - **Driver name** — text
-  - **Driver phone** — tel
-  - **Booking reference** — text (optional)
-- If `Family / guardian pickup`:
-  - **Contact name** — text
-  - **Contact phone** — tel
-- If `Public transport`:
-  - **Planned route (train/coach line + station)** — textarea (optional)
-- **📞 Emergency contact at destination** (name + phone) — optional
-- **💬 Notes** — textarea (optional)
-- **Status gate:** "Save student part" button — always available once any field filled.
+Each section is a **single shared editing surface**: both school and student can edit any field. The bottom of each section carries a **💬 free-text notes box** that either side can write into (last-write-wins, no merge conflict expected since the notes box is free-form prose).
 
-### 24.2 School Part (filled on school-side P5 page)
+**Why the restructure (rev 3.4):** The rev 3.3 "two-part by role" model (student part / school part) forced a single writer per part, which made the airport-transfer vs. taxi distinction ambiguous when the school arranged the taxi. The rev 3.4 model groups fields by **topic** (what is being recorded) rather than **who filled it**, so both parties can correct or supplement any field naturally.
 
-- **🚌 Pickup driver name** — text
-- **🚐 Vehicle** (model + plate, e.g. `Mercedes Sprinter — AB12 CDE`) — text
-- **📞 Driver phone** — tel
-- **⏰ Scheduled pickup time** — datetime-local
-- **📍 Pickup point** (e.g. `LHR Terminal 5 — Arrivals Hall, Costa Coffee`) — text
-- **💬 Notes** — textarea (optional)
-- **Status gate:** "Save school part" button — always available once any field filled.
+### 24.1 Flight section (conditional, optional)
+
+**Visibility:** Rendered only if `application.visaRequested === true`. If `visaRequested === false`, this whole section is hidden (no placeholder, no message — Flight only matters for visa applicants).
+
+**Editable by:** Either side (school or student). Last-write-wins per field.
+
+**Fields (each on its own row):**
+
+| Field | Type | Notes |
+|---|---|---|
+| ✈️ Flight number | text | e.g. `CX251` |
+| 🛬 Arrival airport (UK) | select | `LHR`, `LGW`, `STN`, `MAN`, `BHX`, `EDI`, `Other` |
+| 📅 Arrival date | date | — |
+| ⏰ Arrival time (local UK) | time | — |
+| 💬 Notes | textarea | **Free-text box at bottom** — both sides can write any important points (e.g. "Flight delayed 2h", "BA rebooked to CX257 same day") |
+
+**Required:** None. All fields optional.
+
+### 24.2 To-school Transportation section (always shown)
+
+**Visibility:** Always rendered on P5.
+
+**Editable by:** Either side. Last-write-wins per field.
+
+**Top-level fields (each on its own row):**
+
+| Field | Type | Required? |
+|---|---|---|
+| 🚕 Transfer mode | radio | (drives sub-fields below) |
+| ⏰ ETA (estimated arrival at school) | datetime-local | **Yes** — required for "Mark Travel Arranged" |
+
+**Transfer mode options:**
+
+| Mode | Sub-fields (each on own row) |
+|---|---|
+| 🚕 **Airport taxi** | Taxi company · Driver name · Driver phone · Vehicle (model + plate) · Booking reference (optional) |
+| 🚆 **Train** | Planned route (line + station + changeovers) |
+| 👨‍👩‍👧 **Drop off by parents** | Parent / guardian name · Contact phone |
+
+**Bottom of section:** 💬 Notes (textarea, free-text — both sides can write any important points, e.g. "Parents bringing younger sibling too", "Train strikes possible — fallback taxi booked").
 
 ### 24.3 Cross-portal sync
 
-- Storage key: `bsp:travel:${applicationId}` (separate from main `bsp:school:app:${id}`).
-- Each side writes its own part. The other side's part is **read-only display**.
-- A new `useTravelStore` composable centralises the load/save logic, mirroring `useP3Store` (§16) and `useInterviewStore` (§18).
-- Last-write-wins per part (no merge conflict expected — single writer per part).
+- Storage key: `bsp:travel:${applicationId}` (unchanged from rev 3.3).
+- Plan shape:
+  ```ts
+  interface TravelPlan {
+    flight: {
+      flightNumber: string
+      arrivalAirport: string
+      arrivalDate: string  // ISO date
+      arrivalTime: string  // HH:mm
+      notes: string        // free-text, jointly editable
+      lastEditedBy: 'student' | 'school' | ''
+      lastEditedAt: string | null  // ISO timestamp
+    }
+    transportation: {
+      mode: '' | 'taxi' | 'train' | 'parents'
+      eta: string  // datetime-local string
+      // taxi-specific
+      taxiCompany: string
+      driverName: string
+      driverPhone: string
+      vehicle: string
+      bookingRef: string
+      // train-specific
+      trainRoute: string
+      // parents-specific
+      parentName: string
+      parentPhone: string
+      // shared
+      notes: string        // free-text, jointly editable
+      lastEditedBy: 'student' | 'school' | ''
+      lastEditedAt: string | null
+    }
+    status: 'pending' | 'in_progress' | 'travel_arranged'
+  }
+  ```
+- **Legacy migration (rev 3.3 → rev 3.4):** On load, if the plan has the old `studentPart` / `schoolPart` shape (no `flight` / `transportation` keys), copy values across: `studentPart.{flightNumber, arrivalAirport, arrivalDate, arrivalTime, notes}` → `flight.*`; `studentPart.transferMode === 'self-taxi' | 'school-pickup'` → `transportation.mode = 'taxi'`; `'family'` → `'parents'`; `'public'` → `'train'`; taxi sub-fields from `studentPart` → `transportation.*`; school part fields → `transportation.{driverName, driverPhone, vehicle, eta}`. After migration, the legacy keys are dropped.
+- Each field last-write-wins. There is no merge conflict because the model is intentionally flat (no separate "mine vs yours" partition).
+- A `useTravelStore` composable centralises the load/save logic, mirroring `useP3Store` (§16) and `useInterviewStore` (§18).
 
 ### 24.4 Mark Travel Arranged button (school side Step 3)
 
-- **Enabled when:** `application.phase5VisaGrantedAt` is set (Step 2 done per §18.1) **AND** at least one part (student or school) is filled with required fields (flight+date+time for student, driver+vehicle+phone for school).
+- **Enabled when:**
+  1. If `visaRequested === true`: `application.phase5VisaGrantedAt` is set (Step 2 done per §18.1).
+  2. **AND** `transportation.mode` is filled (one of `'taxi' | 'train' | 'parents'`).
+  3. **AND** `transportation.eta` is filled.
+- Flight fields are **NOT** required for the gate, even when the Flight section is rendered.
 - **Action:** Sets `application.subStatus = P5_SUB_STATUS.P5_TRAVEL_ARRANGED` and stamps the travel plan `status = 'travel_arranged'`.
-- **Visibility:** Same as before — only after Step 2 done.
 
 ### 24.5 Dev affordance (temporary, mirror §23)
 
-Until the real student-side Travel Arrangements form on `pages/student/applications/[id].vue` is wired up for end-to-end, the school side provides a **🔬 Dev tools** panel (collapsed by default) with a "🧪 Simulate student travel info" button that auto-fills the student part with sensible test data. Same `school-admin (dev sim)` audit tag.
+Until the real student-side Travel Arrangements form on `pages/student/applications/[id].vue` is wired up for end-to-end, the school side provides a **🔬 Dev tools** panel (collapsed by default) with a "🧪 Simulate student travel info" button that auto-fills the **transportation** section with sensible test data (mode = taxi, ETA = 14 days from now, driver details). Same `school-admin (dev sim)` audit tag.
 
 ### 24.6 Removal
 
 When the real student-side P5 Travel Arrangements form is built and wired to `useTravelStore`:
 - Delete the dev affordance panel + `onP5DevSimulateStudentTravel` handler
 - Delete spec §24.5
+
+### 24.7 Click-test scenarios (rev 3.4)
+
+| # | Scenario | Expected |
+|---|----------|----------|
+| (a) Open P5 with `visaRequested = true`, no data | ✈️ Flight section visible (4 fields + notes). 🚗 Transportation section visible (mode + ETA + notes). Both editable. "Mark Travel Arranged" disabled. Hint: "Fill transfer mode + ETA to enable." |
+| (b) Open P5 with `visaRequested = false`, no data | ✈️ Flight section **NOT rendered** (no placeholder). 🚗 Transportation section visible. |
+| (c) Fill transportation mode = taxi + ETA only | "Mark Travel Arranged" **enabled**. Flight fields stay optional. |
+| (d) Save transportation from school side | Student-side P5 page shows the same transportation values within 1-2s (reactive cache). Edit button appears on student side. |
+| (e) Save flight from student side | School-side P5 page shows flight values (read-only here is fine — both can edit). |
+| (f) Write to transportation notes box from school | Student sees the school note text. Student adds their own note → student note appended below (or replaced, last-write-wins). |
+| (g) Legacy rev 3.3 plan exists in localStorage | Load migrates to rev 3.4 shape; no data loss; UI renders correctly. |
 

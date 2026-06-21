@@ -783,7 +783,7 @@
                           <span class="p5-substep-icon">✈️</span>
                           <div class="p5-substep-content">
                             <h4>Step 3: Travel Arrangements</h4>
-                            <p>Two-part form: student submits flight + transfer info; school adds airport-to-school transport (if arranged). Both sides can view both parts.</p>
+                            <p>Two sections: <strong>✈️ Flight</strong> (visa applicants only · optional) and <strong>🚗 Transportation</strong> (for all · ETA required). Both school and pupil can edit either section.</p>
                             <p v-if="!application.phase5VisaGrantedAt" class="p5-lock-hint">🔒 Complete Step 2 first.</p>
 
                             <TravelStep
@@ -791,7 +791,9 @@
                               :plan="travelPlan"
                               mode="school"
                               :application-ref="id"
-                              @save-school="onP5SaveSchoolTravelPart"
+                              :visa-requested="!!application.visaRequested"
+                              @save-flight="onP5SaveFlight"
+                              @save-transportation="onP5SaveTransportation"
                             />
 
                             <!-- 🔬 §24.5 DEV affordance (collapsed by default) — see docs §24.5 (dev note) -->
@@ -816,19 +818,19 @@
                                   All entries are tagged <code>school-admin (dev sim)</code> for easy cleanup.
                                 </p>
                                 <button
-                                  v-if="!travelPlan || !travelPlan.studentPart.submittedAt"
+                                  v-if="!travelPlan || !travelPlan.transportation.lastEditedAt"
                                   class="btn-dev"
                                   @click="onP5DevSimulateStudentTravel"
                                 >
-                                  🧪 Simulate student travel info (flight + taxi)
+                                  🧪 Simulate student travel info (transportation)
                                 </button>
                                 <p v-else class="p5-dev-note">
-                                  ✅ Student part already filled. Use "Restart" in the top bar to re-test from P1.
+                                  ✅ Transportation already filled. Use "Restart" in the top bar to re-test from P1.
                                 </p>
                               </div>
                             </div>
 
-                            <p v-if="application.phase5VisaGrantedAt && !canMarkTravelArranged" class="p5-lock-hint">💡 Fill at least one part (student flight details or school pickup details) to enable "Mark Travel Arranged".</p>
+                            <p v-if="application.phase5VisaGrantedAt && !canMarkTravelArranged" class="p5-lock-hint">💡 Fill transfer mode + ETA in Transportation to enable "Mark Travel Arranged".</p>
                             <button
                               class="btn-secondary"
                               :class="{ 'btn-disabled-locked': !canMarkTravelArranged }"
@@ -862,16 +864,18 @@
                           <span class="p5-substep-icon">✈️</span>
                           <div class="p5-substep-content">
                             <h4>Step 1: Travel Arrangements</h4>
-                            <p>Two-part form: student submits flight + transfer info; school adds airport-to-school transport (if arranged).</p>
+                            <p>Two sections: <strong>✈️ Flight</strong> (visa applicants only · optional) and <strong>🚗 Transportation</strong> (for all · ETA required). Both school and pupil can edit either section.</p>
                             <TravelStep
                               v-if="travelPlan"
                               :plan="travelPlan"
                               mode="school"
                               :application-ref="id"
-                              @save-school="onP5SaveSchoolTravelPart"
+                              :visa-requested="!!application.visaRequested"
+                              @save-flight="onP5SaveFlight"
+                              @save-transportation="onP5SaveTransportation"
                             />
-                            <p v-if="!canMarkTravelArranged" class="p5-lock-hint">💡 Fill at least one part (student flight details or school pickup details) to enable "Mark Travel Arranged".</p>
-                            <button class="btn-secondary" :class="{ 'btn-disabled-locked': !canMarkTravelArranged }" :disabled="!canMarkTravelArranged" :title="!canMarkTravelArranged ? 'Fill at least one part first.' : 'Mark travel as arranged'" @click="confirmTravel">✈️ Mark Travel Arranged</button>
+                            <p v-if="!canMarkTravelArranged" class="p5-lock-hint">💡 Fill transfer mode + ETA in Transportation to enable "Mark Travel Arranged".</p>
+                            <button class="btn-secondary" :class="{ 'btn-disabled-locked': !canMarkTravelArranged }" :disabled="!canMarkTravelArranged" :title="!canMarkTravelArranged ? 'Fill transfer mode + ETA first.' : 'Mark travel as arranged'" @click="confirmTravel">✈️ Mark Travel Arranged</button>
                           </div>
                         </div>
 
@@ -1028,7 +1032,7 @@ const enrolledMock = {
   phase5VisaGrantedAt: null,
   // §24 P5 Travel Arrangements — primary data lives in `bsp:travel:${id}`
   // localStorage (see useTravelStore). This is just the in-app mirror.
-  phase5TravelPlan: { studentPart: { submittedAt: null, submittedBy: 'student' }, schoolPart: { submittedAt: null, submittedBy: 'school' }, status: 'pending' },
+  phase5TravelPlan: { flight: { lastEditedAt: null, lastEditedBy: '' }, transportation: { lastEditedAt: null, lastEditedBy: '' }, status: 'pending' },
   currentPhase: 7,
   subStatus: 'Enrolled',
   status: 'completed',
@@ -1093,7 +1097,7 @@ const defaultMock = {
   phase5VisaGrantedAt: null,
   // §24 P5 Travel Arrangements — primary data lives in `bsp:travel:${id}`
   // localStorage (see useTravelStore). This is just the in-app mirror.
-  phase5TravelPlan: { studentPart: { submittedAt: null, submittedBy: 'student' }, schoolPart: { submittedAt: null, submittedBy: 'school' }, status: 'pending' },
+  phase5TravelPlan: { flight: { lastEditedAt: null, lastEditedBy: '' }, transportation: { lastEditedAt: null, lastEditedBy: '' }, status: 'pending' },
   currentPhase: 1,
   subStatus: 'Application Submitted',
   status: 'active',
@@ -1804,42 +1808,55 @@ const canMarkTravelArranged = computed(() => {
   return travelstore.hasMinimumViableData(travelPlan.value)
 })
 
-function onP5SaveSchoolTravelPart(partial) {
-  travelstore.saveSchoolPart(id, partial)
-  // refresh ref so UI re-renders with new submittedAt
+function onP5SaveFlight(partial, by) {
+  travelstore.saveFlight(id, partial, by || 'school')
   travelPlan.value = travelstore.getPlan(id)
-  // also mirror to application.value so the in-app data is consistent
   application.value.phase5TravelPlan = { ...travelPlan.value }
   saveState()
-  p3Toast.value = '✅ School pickup details saved.'
+  p3Toast.value = '✅ Flight info saved.'
+  setTimeout(() => { p3Toast.value = '' }, 3000)
+}
+
+function onP5SaveTransportation(partial, by) {
+  travelstore.saveTransportation(id, partial, by || 'school')
+  travelPlan.value = travelstore.getPlan(id)
+  application.value.phase5TravelPlan = { ...travelPlan.value }
+  saveState()
+  p3Toast.value = '✅ Transportation saved.'
   setTimeout(() => { p3Toast.value = '' }, 3000)
 }
 
 // §24.5 — dev affordance: simulate student filled their travel info
 function onP5DevSimulateStudentTravel() {
   const devBy = 'school-admin (dev sim)'
-  travelstore.saveStudentPart(id, {
-    flightNumber: 'CX251',
-    arrivalAirport: 'LHR (London Heathrow)',
-    arrivalDate: new Date(Date.now() + 14 * 24 * 60 * 60 * 1000).toISOString().slice(0, 10),
-    arrivalTime: '14:30',
-    transferMode: 'self-taxi',
+  const inTwoWeeks = new Date(Date.now() + 14 * 24 * 60 * 60 * 1000)
+  const dateStr = inTwoWeeks.toISOString().slice(0, 10)
+  const etaStr = inTwoWeeks.toISOString().slice(0, 16)
+  // Rev 3.4: flight (only meaningful when visaRequested) + transportation
+  if (application.value.visaRequested) {
+    travelstore.saveFlight(id, {
+      flightNumber: 'CX251',
+      arrivalAirport: 'LHR (London Heathrow)',
+      arrivalDate: dateStr,
+      arrivalTime: '14:30',
+      notes: '🧪 Simulated by school admin (dev affordance per §24.5).',
+    }, devBy)
+  }
+  travelstore.saveTransportation(id, {
+    mode: 'taxi',
+    eta: etaStr,
     taxiCompany: 'Addison Lee',
-    taxiDriverName: 'Auto-Assigned Driver',
-    taxiDriverPhone: '+44 7700 900000',
-    taxiBookingRef: 'ADD-DEV-SIM',
-    emergencyContactName: 'Parent / Guardian',
-    emergencyContactPhone: '+852 9123 4567',
+    driverName: 'Auto-Assigned Driver',
+    driverPhone: '+44 7700 900000',
+    vehicle: 'Mercedes Sprinter — AB12 CDE',
+    bookingRef: 'ADD-DEV-SIM',
     notes: '🧪 Simulated by school admin (dev affordance per §24.5).',
-  })
-  // Stamp dev audit tag
-  const plan = travelstore.getPlan(id)
-  plan.studentPart.submittedBy = devBy
+  }, devBy)
   travelstore.refresh(id)
   travelPlan.value = travelstore.getPlan(id)
   application.value.phase5TravelPlan = { ...travelPlan.value }
   saveState()
-  p3Toast.value = '🧪 Simulated: student travel info filled (flight + taxi)'
+  p3Toast.value = '🧪 Simulated: transportation info filled (taxi)'
   setTimeout(() => { p3Toast.value = '' }, 4000)
 }
 
