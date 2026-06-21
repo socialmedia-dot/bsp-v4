@@ -835,23 +835,20 @@
                               class="btn-secondary"
                               :class="{ 'btn-disabled-locked': !canMarkTravelArranged }"
                               :disabled="!canMarkTravelArranged"
-                              :title="!canMarkTravelArranged ? (!application.phase5VisaGrantedAt ? 'Confirm Visa Granted first (Step 2).' : 'Fill at least one part (student or school) first.') : 'Mark travel as arranged'"
+                              :title="!canMarkTravelArranged ? (!application.phase5VisaGrantedAt ? 'Confirm Visa Granted first (Step 2).' : 'Fill transfer mode + ETA first.') : 'Mark travel as arranged'"
                               @click="confirmTravel"
                             >✈️ Mark Travel Arranged</button>
                           </div>
                         </div>
 
-                        <div class="p5-substep" :class="{ 'p5-substep-active': application.subStatus === P5_SUB_STATUS.P5_TRAVEL_ARRANGED, 'p5-substep-locked': application.subStatus !== P5_SUB_STATUS.P5_TRAVEL_ARRANGED }">
+                        <div class="p5-substep p5-substep-active">
                           <span class="p5-substep-icon">🏫</span>
                           <div class="p5-substep-content">
                             <h4>Step 4: School Confirms Arrival</h4>
                             <p>School confirms the pupil has arrived and boarded</p>
-                            <p v-if="application.subStatus !== P5_SUB_STATUS.P5_TRAVEL_ARRANGED" class="p5-lock-hint">🔒 Complete Step 3 first.</p>
                             <button
                               class="btn-primary"
-                              :class="{ 'btn-disabled-locked': application.subStatus !== P5_SUB_STATUS.P5_TRAVEL_ARRANGED }"
-                              :disabled="application.subStatus !== P5_SUB_STATUS.P5_TRAVEL_ARRANGED"
-                              :title="application.subStatus !== P5_SUB_STATUS.P5_TRAVEL_ARRANGED ? 'Mark Travel Arranged first (Step 3).' : 'Confirm pupil arrival and complete enrollment'"
+                              title="Confirm pupil arrival and complete enrollment"
                               @click="confirmArrival"
                             >🏫 Confirm Arrival & Enroll</button>
                           </div>
@@ -879,17 +876,14 @@
                           </div>
                         </div>
 
-                        <div class="p5-substep" :class="{ 'p5-substep-active': application.subStatus === P5_SUB_STATUS.P5_TRAVEL_ARRANGED, 'p5-substep-locked': application.subStatus !== P5_SUB_STATUS.P5_TRAVEL_ARRANGED }">
+                        <div class="p5-substep p5-substep-active">
                           <span class="p5-substep-icon">🏫</span>
                           <div class="p5-substep-content">
                             <h4>Step 2: School Confirms Arrival</h4>
                             <p>School confirms the pupil has arrived and boarded</p>
-                            <p v-if="application.subStatus !== P5_SUB_STATUS.P5_TRAVEL_ARRANGED" class="p5-lock-hint">🔒 Complete Step 1 first.</p>
                             <button
                               class="btn-primary"
-                              :class="{ 'btn-disabled-locked': application.subStatus !== P5_SUB_STATUS.P5_TRAVEL_ARRANGED }"
-                              :disabled="application.subStatus !== P5_SUB_STATUS.P5_TRAVEL_ARRANGED"
-                              :title="application.subStatus !== P5_SUB_STATUS.P5_TRAVEL_ARRANGED ? 'Mark Travel Arranged first (Step 1).' : 'Confirm pupil arrival and complete enrollment'"
+                              title="Confirm pupil arrival and complete enrollment"
                               @click="confirmArrival"
                             >🏫 Confirm Arrival & Enroll</button>
                           </div>

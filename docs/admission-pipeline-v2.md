@@ -1059,6 +1059,11 @@ interface DocumentTemplate {
 1. ✈️ **Step 1: Travel Arrangements** (skip Step 1-2 from the `visaRequested === true` flow)
 2. 🏫 **Step 2: School Confirms Arrival** (triggers P5 → P6)
 
+**Step ordering — Step 3 / Step 4 are independent (rev 3.5, 2026-06-22):**
+- The school can complete Step 3 (Mark Travel Arranged) and Step 4 (Confirm Arrival & Enroll) **in any order**.
+- Rationale: the pupil may have already arrived on campus (Step 4) before the travel arrangement details are finalized in the form (Step 3), or the school may want to confirm arrival without the formal travel arrangement workflow.
+- This means Step 4's button is **never locked** behind Step 3. Once the application is in P5, both buttons are simultaneously available.
+
 ### 18.2 "Confirm Visa Granted" — mandatory action
 
 **Visibility rule:** The "✅ Confirm Visa Granted" button is **always visible** on the student P5 view when `application.visaRequested === true`. It is **never hidden** behind a gate, accordion, or conditional UI. The button is the canonical confirmation that the student visa has been issued.
@@ -1082,7 +1087,7 @@ interface DocumentTemplate {
 | (d) School P5 view | Shows "✅ Visa Granted" status + uploaded PDF link + date confirmed. |
 | (e) Student with `visaRequested = false` | "✅ Confirm Visa Granted" button **NOT rendered** (only Travel Arrangements flow). |
 
-### 18.4 Disabled sub-step button UX (NEW in rev 3.2, 2026-06-19)
+### 18.4 Disabled sub-step button UX (NEW in rev 3.2, 2026-06-19; rev 3.5 — Step 4 removed from scope, 2026-06-22)
 
 **Rule:** When a P5 sub-step button is disabled (waiting for a prior sub-step to complete), the button MUST communicate *why* it's disabled — not just *that* it's disabled. Users should never have to guess which step to click first.
 
@@ -1092,22 +1097,22 @@ interface DocumentTemplate {
 - A non-empty `title` attribute explaining the next required step, e.g. `"Mark Travel Arranged first (Step 3)"`
 - The parent `.p5-substep` container MUST render a hint line: `🔒 Complete Step X first.`
 
-**Buttons in scope:** Every P5 sub-step button in `pages/school/applications/[id].vue`:
+**Buttons in scope:** P5 sub-step buttons that ARE gated by a prior sub-step (Step 4 is **excluded** — see §18.1 rev 3.5 note):
 - Line 695–701: `✅ Confirm Visa Granted` (disabled when `!phase5VisaGrantedDocument`)
 - Line 710–714: `✈️ Mark Travel Arranged` (disabled when `!phase5VisaGrantedAt`)
-- Line 723–727: `🏫 Confirm Arrival & Enroll` (disabled when `subStatus !== P5_TRAVEL_ARRANGED`)
 - Line 738–739 (no-visa branch): `✈️ Mark Travel Arranged`
-- Line 750–752 (no-visa branch): `🏫 Confirm Arrival & Enroll`
+
+**Excluded from this rule (rev 3.5):**
+- `🏫 Confirm Arrival & Enroll` (Step 4 in visa-true branch, Step 2 in visa-false branch) — always enabled once the application is in P5, no gate, no hint. See §18.1 rev 3.5.
 
 **Click-test scenarios:**
 
 | # | Scenario | Expected |
 |---|----------|----------|
-| (a) Open P5 with subStatus=`'Visa Granted'` (Step 2 done, Step 3 pending) | "🏫 Confirm Arrival & Enroll" button: faded (opacity 0.4), cursor not-allowed, `title="Mark Travel Arranged first (Step 3)"`. Hint "🔒 Complete Step 3 first." visible above the button. |
-| (b) Hover the disabled button | Browser tooltip shows the title attribute text. |
-| (c) Open P5 with subStatus=`'Travel Arranged'` (Step 3 done, Step 4 ready) | "🏫 Confirm Arrival & Enroll" button fully enabled. No hint visible. |
-
-**Why:** KC reported (post-rev-3.0 deploy, on `2026-X7K9M2P4`) that after Step 2 (Confirm Visa Granted), they tried to click Step 4 (Confirm Arrival & Enroll) directly — but it was disabled and they didn't know why. The current `disabled` attribute alone gives no signal about what to do next. Adding visual + textual hints resolves the ambiguity without requiring the user to inspect the sub-step ordering by trial-and-error.
+| (a) Open P5 with subStatus=`'Visa Granted'` (Step 2 done, Step 3 pending) | `✈️ Mark Travel Arranged` button enabled (Step 3 ready to be done). `🏫 Confirm Arrival & Enroll` button **also enabled** simultaneously (rev 3.5). No "🔒 Complete Step 3 first." hint above Step 4. |
+| (b) Hover the disabled button (any gated button) | Browser tooltip shows the title attribute text. |
+| (c) Open P5 with subStatus=`'Travel Arranged'` (Step 3 done) | `✈️ Mark Travel Arranged` button shows done state. `🏫 Confirm Arrival & Enroll` button still enabled. No "🔒 Complete Step 3 first." hint. |
+| (d) Open P5 with subStatus=`'Enrolled'` (Step 4 done, currentPhase=6) | Both Step 3 and Step 4 buttons show done state. |
 
 ---
 
