@@ -641,9 +641,42 @@
                         </ul>
                       </div>
 
-                      <div class="action-buttons">
-                        <button class="btn-primary" @click="uploadAdmissionDocs">📁 Upload Documents</button>
-                        <button class="btn-secondary" @click="markReady">✅ Mark Documents Ready</button>
+                      <!-- §22 P4 File Upload (school side) — multi-file pending queue + Upload/Add buttons -->
+                      <div class="p4-section">
+                        <div class="p4-section-title">📎 Admission Documents</div>
+                        <div class="action-desc">Upload admission documents (CAS Letter, Medical Form, Refund Agreement, etc.). PDF/JPG/PNG, max 5MB each.</div>
+
+                        <!-- Sent (uploaded) docs list — read-only per §22 audit-trail rule (mirror of §16) -->
+                        <div v-if="application.phase4Docs && application.phase4Docs.length" class="p4-docs-list">
+                          <div v-for="(f, i) in application.phase4Docs" :key="i" class="p4-doc-row">
+                            <span class="p4-doc-icon">📄</span>
+                            <a class="p4-doc-name" :href="f.dataUrl" target="_blank" rel="noopener">{{ f.name }}</a>
+                            <span class="p4-doc-meta">{{ formatDateTime(f.uploadedAt) }}</span>
+                          </div>
+                        </div>
+                        <p v-else class="p4-empty">No documents uploaded yet. Add the first one below.</p>
+
+                        <!-- Pending files queue (not yet uploaded) — per §22 trial scope -->
+                        <div v-if="p4NewFiles.length" class="p4-docs-list">
+                          <div v-for="(f, i) in p4NewFiles" :key="`new-${i}`" class="p4-doc-row p4-doc-row-pending">
+                            <span class="p4-doc-icon">📎</span>
+                            <span class="p4-doc-name">{{ f.name }}</span>
+                            <span class="p4-doc-meta">pending</span>
+                            <button class="p4-doc-remove" @click="removeP4NewFile(i)" title="Remove">✕</button>
+                          </div>
+                        </div>
+
+                        <!-- File input + Upload/Add button (always available during P4) -->
+                        <div class="p4-add-file-row">
+                          <input id="p4-school-file-input" type="file" multiple accept="application/pdf,image/jpeg,image/png" @change="onP4NewFiles" />
+                          <button v-if="!application.phase4Docs?.length" class="btn-primary" :disabled="!p4NewFiles.length" @click="onP4Upload" title="Upload the queued documents to the system">📤 Upload Documents</button>
+                          <button v-else class="btn-secondary" :disabled="!p4NewFiles.length" @click="onP4AddFiles" title="Append the queued documents to the existing admission documents list">📎 Add Documents</button>
+                        </div>
+
+                        <!-- Mark Documents Ready — only after first upload (per §22) -->
+                        <div v-if="application.phase4Docs && application.phase4Docs.length" class="p4-mark-ready-row">
+                          <button class="btn-primary" @click="markReady">✅ Mark Documents Ready (Advance to P5)</button>
+                        </div>
                       </div>
                     </div>
                   </div>
@@ -896,6 +929,7 @@ const enrolledMock = {
   visaRequested: true,
   phase3Templates: [],
   phase4Templates: [],
+  phase4Docs: [],                  // §22 P4 file upload — back-filled in loadState() for old records
   phase5Templates: [],
   phase5VisaGrantedDocument: null,
   phase5VisaGrantedAt: null,
@@ -957,6 +991,7 @@ const defaultMock = {
   visaRequested: true,
   phase3Templates: [],
   phase4Templates: [],
+  phase4Docs: [],                  // §22 P4 file upload — back-filled in loadState() for old records
   phase5Templates: [],
   phase5VisaGrantedDocument: null,
   phase5VisaGrantedAt: null,
@@ -1066,6 +1101,10 @@ onMounted(() => {
   const stored = loadState()
   if (stored) {
     application.value = stored
+  }
+  // §22: back-fill phase4Docs for old localStorage records missing the field
+  if (!application.value.phase4Docs) {
+    application.value.phase4Docs = []
   }
   // Load shared interview state (school ↔ student cross-portal sync)
   const sharedInterview = loadInterviewState()
@@ -1226,12 +1265,50 @@ function scheduleInterview() {
   }
 }
 
-function uploadAdmissionDocs() {
-  alert('Upload admission documents (demo: would attach files).\n\nTo advance, click Mark Documents Ready.')
+// §22 P4 File Upload helpers (school side) — mirror of §16 P3 pattern
+const p4NewFiles = ref([])   // queued, not yet uploaded
+
+function onP4NewFiles(e) {
+  const files = Array.from(e.target.files || [])
+  if (!files.length) return
+  for (const file of files) {
+    if (file.size > 5 * 1024 * 1024) {
+      alert(`${file.name} is too large (max 5MB)`)
+      continue
+    }
+    const reader = new FileReader()
+    reader.onload = ((f) => () => {
+      p4NewFiles.value.push({ name: f.name, dataUrl: reader.result })
+    })(file)
+    reader.readAsDataURL(file)
+  }
+  e.target.value = ''
+}
+
+function removeP4NewFile(index) {
+  p4NewFiles.value.splice(index, 1)
+}
+
+function onP4Upload() {
+  if (!p4NewFiles.value.length) return
+  if (!application.value.phase4Docs) application.value.phase4Docs = []
+  const files = p4NewFiles.value.map(f => ({ name: f.name, dataUrl: f.dataUrl, uploadedAt: new Date().toISOString(), uploadedBy: 'school-admin' }))
+  application.value.phase4Docs.push(...files)
+  p4NewFiles.value = []
+  saveState()
+}
+
+function onP4AddFiles() {
+  // Same as onP4Upload — appends to existing list
+  onP4Upload()
 }
 
 function markReady() {
   if (application.value.currentPhase === 4) {
+    if (!application.value.phase4Docs?.length) {
+      alert('Please upload at least one admission document before marking ready.')
+      return
+    }
     advancePhase(5, 'Admission documents ready and verified')
   }
 }
@@ -2575,6 +2652,23 @@ function devRestart() {
 .p3-add-file-row { display: flex; gap: 0.5rem; align-items: center; margin-top: 0.5rem; flex-wrap: wrap; }
 .p3-add-file-row input[type="file"] { flex: 1; min-width: 200px; font-size: 0.85rem; }
 .p3-empty { color: #64748b; font-size: 0.85rem; font-style: italic; margin: 0.5rem 0; }
+
+/* §22 P4 File Upload (school side) — mirrors P3 styling */
+.p4-section { background: #fff; border: 1px solid #e2e8f0; border-radius: 6px; padding: 1rem; margin-top: 0.75rem; }
+.p4-section-title { font-weight: 700; font-size: 0.95rem; margin-bottom: 0.75rem; color: #1e293b; }
+.p4-docs-list { display: flex; flex-direction: column; gap: 0.5rem; margin: 0.75rem 0; }
+.p4-doc-row { display: grid; grid-template-columns: auto 1fr auto auto; gap: 0.75rem; align-items: center; padding: 0.5rem 0.75rem; background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 6px; }
+.p4-doc-row-pending { background: #fffbeb; border-color: #fcd34d; }
+.p4-doc-icon { font-size: 1rem; }
+.p4-doc-name { color: #2563eb; text-decoration: none; word-break: break-all; }
+.p4-doc-row-pending .p4-doc-name { color: #92400e; }
+.p4-doc-meta { font-size: 0.75rem; color: #64748b; }
+.p4-doc-remove { background: transparent; border: none; color: #ef4444; cursor: pointer; font-size: 1rem; padding: 0 0.25rem; line-height: 1; }
+.p4-doc-remove:hover { color: #b91c1c; }
+.p4-add-file-row { display: flex; gap: 0.5rem; align-items: center; margin-top: 0.5rem; flex-wrap: wrap; }
+.p4-add-file-row input[type="file"] { flex: 1; min-width: 200px; font-size: 0.85rem; }
+.p4-empty { color: #64748b; font-size: 0.85rem; font-style: italic; margin: 0.5rem 0; }
+.p4-mark-ready-row { margin-top: 1rem; padding-top: 0.75rem; border-top: 1px dashed #cbd5e1; }
 
 .p2-next-action {
   align-items: flex-start;

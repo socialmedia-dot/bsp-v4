@@ -1306,3 +1306,73 @@ Production builds (Cloudflare Pages production deploy with no `?dev=1` query) NE
 | (a) Open app detail at P5 with `?dev=1` query | Bottom-right panel visible, shows "⏩ Complete All P5 Sub-steps + Advance to P6" button |
 | (b) Click the P5→P6 shortcut button | `subStatus` set to `'Travel Arranged'`, `phase5VisaGrantedAt` set to current timestamp, `currentPhase` advanced to 6, `status` set to `'completed'` |
 | (c) Open app detail without `?dev=1` (production view) | Panel NOT visible. Page renders identically to current behavior. |
+
+---
+
+## 22. P4 File Upload (NEW in rev 3.3, 2026-06-22)
+
+**Rule:** P4 (Admission Documents) follows the same multi-file pattern as P3 (§16). The school stages files in a **pending queue** (`p4NewFiles`), then either **📤 Upload Documents** (first batch) or **📎 Add Documents** (subsequent batches) to persist them to `application.phase4Docs`. Once `phase4Docs.length > 0`, the existing **✅ Mark Documents Ready** button appears and advances to P5.
+
+**Why this exists:** Rev 3.2 left P4 as a `window.alert` placeholder — the school could not actually upload any documents during the trial. KC needs a real file input + queue (mirror of P3) so the trial users can stage and stage-verify admission documents before P5 advance. The full student-side "submit to school" mirror (per §16.1) is out of scope for rev 3.3 — this is school-side only.
+
+**Layout (school page):**
+
+```
+┌─────────────────────────────────────────────────┐
+│  💼 Phase 4 — Admission Documents               │
+│  Upload CAS Letter, Medical Form, etc.          │
+├─────────────────────────────────────────────────┤
+│  📄 Document Checklist — P4 Admission Documents │  (existing §17 list)
+│  ─────────────────────────────────────────────  │
+│  [📄 Sent (uploaded) docs list]                 │  ← read-only
+│  ─────────────────────────────────────────────  │
+│  [📎 Pending files queue — not yet uploaded]    │
+│  ─────────────────────────────────────────────  │
+│  [Choose file]  [📤 Upload Documents] or        │
+│                  [📎 Add Documents]              │
+│  ─────────────────────────────────────────────  │
+│  [✅ Mark Documents Ready (Advance to P5)]       │  ← only after first upload
+└─────────────────────────────────────────────────┘
+```
+
+**Sections:**
+- **Document Checklist (§17):** Existing per-doc ✕ Remove button, locked once `currentPhase > 4`. Unchanged.
+- **Sent (uploaded) docs list:** `application.phase4Docs[]` — read-only `<a>` download links + upload timestamps. Once any doc is in `phase4Docs`, no per-doc delete (per the §16 audit-trail rule, mirrored here).
+- **Pending files queue:** `p4NewFiles` — school can pick multiple files, see them in a queue with per-row ✕ Remove (rev 3.3 trial scope). This is local page state, becomes a persisted doc only when the school clicks "Upload" / "Add".
+- **File input + Upload/Add button:**
+  - File input is **always available** during P4 (consistent with §16 P3 always-open rule).
+  - `!phase4Docs?.length` → button: **"📤 Upload Documents"** (`btn-primary`, disabled when `p4NewFiles.length === 0`).
+  - `phase4Docs?.length > 0` → button: **"📎 Add Documents"** (`btn-secondary`, disabled when `p4NewFiles.length === 0`).
+- **Mark Documents Ready button:** Visible only when `phase4Docs?.length > 0`. Calls `markReady()` → `advancePhase(5, 'Admission documents ready and verified')`. Unchanged from rev 3.2.
+
+**Storage shape (new field on `application`):**
+
+```ts
+interface P4Attachment {
+  name: string             // original file name
+  dataUrl: string          // base64 data URL (mock storage; replace with API in prod)
+  uploadedAt: string       // ISO timestamp
+  uploadedBy: string       // 'school-admin'
+}
+application.phase4Docs: P4Attachment[]  // NEW in rev 3.3
+```
+
+**localStorage migration:** Existing applications persisted before rev 3.3 are missing `phase4Docs`. The `loadState()` path MUST back-fill `phase4Docs: []` on every read (same defensive pattern as `studentFiles` in §16.1). If `phase4Docs` is missing on the mock object, initialize to `[]` on `application` value initialization.
+
+**Out of scope (deferred):**
+- Student-side mirror of P4 file exchange (school sends docs → student receives). Per §16.1, would be a separate section; not needed for the P4 trial.
+- Per-template-doc upload slot (one file per §17 template item, e.g. "Upload CAS Letter here"). The current rev 3.3 design is generic — school uploads any number of files into a flat list, then optionally `Mark Documents Ready`. Template-name binding is a future enhancement.
+- Delete uploaded P4 docs (per §16 audit-trail rule, mirror: once in `phase4Docs`, no per-doc remove). To "correct", append a revised file via "Add Documents".
+
+**Click-test scenarios:**
+
+| # | Scenario | Expected |
+|---|----------|----------|
+| (a) Open P4 (currentPhase=4) with empty `phase4Docs` | Pending queue empty, "📤 Upload Documents" button disabled, "Mark Documents Ready" not visible |
+| (b) School picks 1 PDF, file appears in pending queue | "📤 Upload Documents" button enabled, file row shows name + ✕ Remove |
+| (c) School clicks ✕ on the pending file | File removed from queue, button disabled again |
+| (d) School picks 2 PDFs, clicks "📤 Upload Documents" | Pending queue clears, 2 files appear in sent list (read-only), "📎 Add Documents" replaces "📤 Upload Documents", "✅ Mark Documents Ready" now visible |
+| (e) School picks 1 more PDF + clicks "📎 Add Documents" | Pending queue clears, sent list grows to 3 files |
+| (f) School clicks "✅ Mark Documents Ready" | `advancePhase(5, ...)` runs, page jumps to P5 view |
+| (g) Open P4 with `currentPhase=5` (already past P4) | File input still visible (per §16 always-open rule), upload + add buttons still work for late additions. "Mark Documents Ready" NOT shown (already advanced). |
+| (h) Mobile 414px viewport | File input + buttons stack vertically, queue rows remain readable, no horizontal overflow |
