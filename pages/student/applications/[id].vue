@@ -17,6 +17,7 @@
               <option value="" disabled selected>🎮 Demo jump</option>
               <option value="P1">P1 — Application Submitted</option>
               <option value="P2-AWAIT">P2 — Awaiting Confirmation</option>
+              <option value="P2-PENDING">P2 — Pending (school scheduled)</option>
               <option value="P2-CONFIRMED">P2 — Confirmed</option>
               <option value="P3-AWAITING">P3 — Awaiting Deposit</option>
               <option value="P3-UPLOADED">P3 — Proof Uploaded</option>
@@ -893,13 +894,34 @@ function buildDemoSeedFields(seedKey) {
       return { ...base, currentPhase: 1, subStatus: 'Application Submitted', interview: null, phase4Docs: [], phase5VisaGrantedDocument: null, phase5VisaGrantedAt: null }
     case 'P2-AWAIT':
       return { ...base, currentPhase: 2, subStatus: 'Awaiting Confirmation', interview: null, phase4Docs: [], phase5VisaGrantedDocument: null, phase5VisaGrantedAt: null }
+    case 'P2-PENDING':
+      return {
+        ...base, currentPhase: 2, subStatus: 'Awaiting Confirmation',
+        interview: {
+          status: 'pending',
+          date: '2026-07-15',
+          startTime: '14:00',
+          durationMinutes: 45,
+          type: 'online',
+          onlineLink: 'https://meet.example.com/westminster-2026',
+          agenda: 'Meet the admissions team, tour the school, Q&A on curriculum and boarding.',
+          notes: 'Please confirm attendance by 8 July. The school team will send a calendar invite once you confirm.',
+          scheduledAt: now,
+          scheduledBy: 'school-admin'
+        },
+        phase4Docs: [], phase5VisaGrantedDocument: null, phase5VisaGrantedAt: null
+      }
     case 'P2-CONFIRMED':
       return {
         ...base, currentPhase: 2, subStatus: 'Confirmed',
         interview: {
           status: 'confirmed',
-          datetime: '2026-07-01T14:00:00Z',
-          mode: 'online',
+          date: '2026-07-15',
+          startTime: '14:00',
+          durationMinutes: 45,
+          type: 'online',
+          onlineLink: 'https://meet.example.com/westminster-2026',
+          agenda: 'Meet the admissions team, tour the school, Q&A on curriculum and boarding.',
           notes: 'Confirmed by student. Looking forward to the interview.',
           confirmedAt: now
         },
@@ -988,7 +1010,7 @@ function seedCrossPortalForDemo(seedKey) {
       travelstore.markTravelArranged(id)
       travelPlan.value = travelstore.getPlan(id)
     }
-    if (seedKey === 'P2-CONFIRMED') {
+    if (seedKey === 'P2-CONFIRMED' || seedKey === 'P2-PENDING') {
       // Persist interview to localStorage so subsequent load picks it up
       localStorage.setItem(INTERVIEW_KEY.value, JSON.stringify(application.value.interview))
     }

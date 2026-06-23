@@ -284,13 +284,14 @@ The school-end dev-tools panel (§21) provides phase-advance buttons for QA. The
 |---|---|---|---|
 | P1 — Application Submitted | 1 | `'Application Submitted'` | `defaultMock` + `appliedAt` set |
 | P2 — Awaiting Confirmation | 2 | `'Awaiting Confirmation'` | `interview = null` |
-| P2 — Confirmed | 2 | `'Confirmed'` | `interview = { status: 'confirmed', datetime, mode }` |
+| P2 — Pending (school scheduled) | 2 | `'Awaiting Confirmation'` | `interview = { status: 'pending', date, startTime, durationMinutes, type, onlineLink, agenda, notes, scheduledAt, scheduledBy }` |
+| P2 — Confirmed | 2 | `'Confirmed'` | `interview = { status: 'confirmed', date, startTime, durationMinutes, type, onlineLink, agenda, notes, confirmedAt }` |
 | P3 — Awaiting Deposit | 3 | `'sent_to_student'` | `p3Latest.status = 'sent_to_student'` (school sent form) |
 | P3 — Proof Uploaded | 3 | `'proof_uploaded'` | `p3Latest.status = 'proof_uploaded'` |
 | P4 — Admission Documents | 4 | `'in_progress'` | `phase4Docs = [2 mock docs]` |
 | P5 — Visa Granted | 5 | `'visa_granted'` | `visaGranted = true` + `phase5VisaGrantedDocument` set |
 | P5 — Travel Arranged | 5 | `'travel_arranged'` | `travelPlan` populated (flight + transportation) |
-| P6 — Enrolled | 6 | `'enrolled'` | `enrolledMock` shape |
+| P6 — Enrolled | 6 | `'enrolled'` | `enrolledMock` |
 
 This is a **demo affordance** — picking an option re-seeds the in-memory `application` ref and the in-memory mirrors of `p3Latest` / `interview` / `travelPlan` to match. It does NOT wipe cross-portal localStorage (`bsp:interview:<id>`, `bsp:visa:<id>`, `bsp:travel:<id>`, `useP3Store` deposits) so previously-set state survives the jump. To fully wipe, use **Restart** (§4.6).
 
