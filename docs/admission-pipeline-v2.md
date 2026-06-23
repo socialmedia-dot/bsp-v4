@@ -143,13 +143,74 @@ All P2 interview date / time fields and displays are marked as UK time (Europe/L
 
 ## 4. Cross-Portal Visibility
 
-| Portal | P2 View |
-|--------|---------|
-| School | Full (Sections A, B, C, D + decision) |
-| Consultant (assigned to P2) | Sections A, B, C (can schedule + submit report, no Section D) |
-| Consultant (not assigned) | Zero access |
-| Student | Read-only: Section B current + Section C history |
-| BSP Staff | Full read, write only when assigned |
+**Rule:** Each portal sees a **phase-aware** subset of the application detail page. The student's view is **NOT** read-only across all phases — it carries **student-specific actions** that are NOT present on the school side (e.g. confirming attendance, uploading deposit proof, confirming visa granted, joint-editing travel info).
+
+### 4.1 Visibility matrix (per portal × per phase)
+
+| Portal | P1 (Application) | P2 (Interview) | P3 (Offering) | P4 (Admission Docs) | P5 (Pre-Departure) | P6 (Enrolled) |
+|--------|------------------|----------------|---------------|---------------------|---------------------|---------------|
+| **School** | Full (info + edit student snapshot + reject) | Full (A schedule, B current, C past, D decision) | Full (upload deposit docs, confirm receipt) | Full (upload admission docs, mark ready) | Full (visa status, travel arrangement, confirm arrival) | Read-only + view student record |
+| **Consultant (assigned)** | Read-only (P2 + P1 editable per §11 lock rule) | Sections A, B, C only (no Section D) | Read-only | Read-only | Read-only | Read-only |
+| **Consultant (not assigned)** | Zero access | Zero access | Zero access | Zero access | Zero access | Zero access |
+| **Student** | Read application info (snapshot). Sees school corrections via §17.3 auto-populate. | **Confirm Attendance** / **Suggest Change** (own actions); read interview details | **Send Files to School** (§16.1), **Upload Deposit Proof** (§16); read school's deposit docs list | Read-only: school's `phase4Docs` list (mirror §22, **student-side file upload deferred**) | **Confirm Visa Granted** (§18.2 mandatory if visaRequested), joint-edit **Travel Arrangements** (§24) | Read-only status banner ("Welcome, you're enrolled") |
+| **BSP Staff** | Full read, write only when assigned | Full read, write only when assigned | Full read, write only when assigned | Full read, write only when assigned | Full read, write only when assigned | Full read |
+
+### 4.2 Student-specific actions — what the student CAN do (per phase)
+
+This list enumerates the student-facing affordances that do NOT appear on the school side. They are the "input affordances" mentioned in KC's 2026-06-23 directive ("根據返學生需要見到嘅內容同埋需要入資料嘅地方做返佢哋嘅方式").
+
+| Phase | Student action | Spec section | Status driver? |
+|-------|----------------|--------------|----------------|
+| P2 | ✅ **Confirm Attendance** (interview) | §15 P2 student view | No — informational only |
+| P2 | 🔄 **Suggest Change** (interview) | §15 P2 student view | Sets interview `status = 'change-requested'` |
+| P3 | 📤 **Send Files to School** (general multi-file, status-agnostic) | §16.1, §16.1.1 rev 2.1 | No — side channel |
+| P3 | ✅ **I've uploaded everything** (advisory) | §16.1.1 | Sets `studentReadyForReview` (advisory, not a gate) |
+| P3 | 💳 **Upload Deposit Proof** (single status-changing file) | §16 | **YES** — drives `sent_to_student → proof_uploaded` |
+| P5 | 🛂 **Upload Visa Granted PDF** | §18.2 | No — must be paired with Confirm |
+| P5 | ✅ **Confirm Visa Granted** (mandatory if visaRequested) | §18.2 | **YES** — sets `subStatus = visa_granted` |
+| P5 | ✈️ **Edit Flight** info (optional, joint-edit) | §24.1 | No |
+| P5 | 🚗 **Edit Transportation** info (joint-edit) | §24.2 | No — but required for school's "Mark Travel Arranged" |
+
+### 4.3 Student view — Phase-Stack layout (mirrors §20)
+
+**Rule (rev 3.0.1, 2026-06-23):** The student application detail page (`/student/applications/[id]/`) uses the **same Phase-Stack layout** as the school page (§20):
+
+1. **Current phase** is **always expanded + pinned at top**.
+2. **Past phases** are **collapsed by default**, with `▸` chevron on the header row.
+3. Click anywhere on a past-phase header row to expand → `▾` chevron + body visible.
+4. `expandedPhases` ref resets on each page load.
+5. Newest at top (current → previous → … → P1).
+
+**What changes for the student (vs. the school) inside each phase card:**
+
+- **P1** card body: read-only Application Details + Student Info (no school-side edit button; students cannot edit after submit per §19.4).
+- **P2** card body: Interview card (date/time/location/agenda) + the 2 student actions above (§15) — **replaces** the school's Schedule form (Section A).
+- **P3** card body: 4 sections in order:
+  1. Documents from School (read-only list of `schoolFiles`)
+  2. Send Files to School (§16.1) — multi-file input + pending queue + Send button
+  3. Upload Deposit Proof (§16) — single-file input + Upload button
+  4. ✅ I've uploaded everything + ↩️ Mark as not ready (advisory)
+- **P4** card body: read-only list of school's `phase4Docs` (download links + timestamps). No upload affordance on the student side per §22 ("Student-side mirror deferred").
+- **P5** card body: conditional sub-steps (§18):
+  - If `visaRequested === true`: Visa Granted Upload + Confirm (mandatory) + Travel sections (§24.1 + §24.2)
+  - If `visaRequested === false`: Travel sections only (§24.2)
+- **P6** card body: Enrolled status banner (read-only).
+
+### 4.4 What stays visible on the student page (NOT in phase cards)
+
+The following remain as **always-visible page elements** outside the phase stack (NOT moved into a card):
+
+- Page header (ref, school name, status badge) — same as school page
+- PhaseTimeline (compressed horizontal overview) — keeps at-a-glance progress visible
+- RejectedBanner — when `status === 'rejected'` (per §9)
+- ChatRoom (right side column) — cross-phase conversation thread
+- AttachmentPanel (collapsed per-phase file aggregation) — single global view, mirrors §20.1 fallback
+
+### 4.5 Out of scope (deferred)
+
+- **P4 student-side file exchange** (mirror §16.1) — per §22, deferred until trial scope expands
+- **Per-template-doc upload slot on student side** (§17 future enhancement)
+- **Multi-language phase labels** (current English-only)
 
 ---
 
