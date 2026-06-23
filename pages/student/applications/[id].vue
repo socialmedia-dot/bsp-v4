@@ -12,7 +12,19 @@
             <p>{{ application.schoolLocation }} · Applied {{ formatDate(application.appliedAt) }}</p>
           </div>
           <div class="header-actions">
-            <!-- rev 3.0.2: Restart button — see docs §4.6 (mirror school-end §14.1) -->
+            <!-- rev 3.0.2: Demo phase jump drop-down — see docs §4.8 (mirror school §21 dev-tools) -->
+            <select class="demo-jump-select" @change="onDemoJump" aria-label="Jump to demo phase">
+              <option value="" disabled selected>🎮 Demo jump</option>
+              <option value="P1">P1 — Application Submitted</option>
+              <option value="P2-AWAIT">P2 — Awaiting Confirmation</option>
+              <option value="P2-CONFIRMED">P2 — Confirmed</option>
+              <option value="P3-AWAITING">P3 — Awaiting Deposit</option>
+              <option value="P3-UPLOADED">P3 — Proof Uploaded</option>
+              <option value="P4">P4 — Admission Documents</option>
+              <option value="P5-VISA">P5 — Visa Granted</option>
+              <option value="P5-TRAVEL">P5 — Travel Arranged</option>
+              <option value="P6">P6 — Enrolled</option>
+            </select>
             <button v-if="application.status !== 'rejected'" class="btn-restart" @click="requestRestart" title="Reset this application to Phase 1">
               Restart
             </button>
@@ -855,6 +867,158 @@ watch(() => id, () => {
 const showRestartModal = ref(false)
 const restarting = ref(false)
 
+// DEMO PHASE JUMP: re-seed application to a representative demo state per phase.
+// See docs §4.8 — leaner affordance than school §21 dev-tools (single dropdown, 9 seeds).
+function buildDemoSeedFields(seedKey) {
+  const now = new Date().toISOString()
+  const base = {
+    status: 'active',
+    appliedAt: now,
+    visaRequested: true,
+    phase3Templates: [
+      { name: 'Deposit Agreement Form', signed: false },
+      { name: 'School Terms & Conditions', signed: true }
+    ],
+    phase4Templates: [
+      { name: 'Admission Offer Letter', signed: true },
+      { name: 'Medical Form', signed: false }
+    ],
+    phase5Templates: [
+      { name: 'CAS Letter', signed: true },
+      { name: 'Pre-Departure Checklist', signed: false }
+    ]
+  }
+  switch (seedKey) {
+    case 'P1':
+      return { ...base, currentPhase: 1, subStatus: 'Application Submitted', interview: null, phase4Docs: [], phase5VisaGrantedDocument: null, phase5VisaGrantedAt: null }
+    case 'P2-AWAIT':
+      return { ...base, currentPhase: 2, subStatus: 'Awaiting Confirmation', interview: null, phase4Docs: [], phase5VisaGrantedDocument: null, phase5VisaGrantedAt: null }
+    case 'P2-CONFIRMED':
+      return {
+        ...base, currentPhase: 2, subStatus: 'Confirmed',
+        interview: {
+          status: 'confirmed',
+          datetime: '2026-07-01T14:00:00Z',
+          mode: 'online',
+          notes: 'Confirmed by student. Looking forward to the interview.',
+          confirmedAt: now
+        },
+        phase4Docs: [], phase5VisaGrantedDocument: null, phase5VisaGrantedAt: null
+      }
+    case 'P3-AWAITING':
+      return { ...base, currentPhase: 3, subStatus: 'sent_to_student', interview: null, phase4Docs: [], phase5VisaGrantedDocument: null, phase5VisaGrantedAt: null }
+    case 'P3-UPLOADED':
+      return { ...base, currentPhase: 3, subStatus: 'proof_uploaded', interview: null, phase4Docs: [], phase5VisaGrantedDocument: null, phase5VisaGrantedAt: null }
+    case 'P4':
+      return {
+        ...base, currentPhase: 4, subStatus: 'in_progress', interview: null,
+        phase4Docs: [
+          { name: 'Birth_Certificate.pdf', size: '1.2 MB', uploadedAt: now, uploadedBy: 'school-admin' },
+          { name: 'Medical_Report.pdf', size: '0.8 MB', uploadedAt: now, uploadedBy: 'school-admin' }
+        ],
+        phase5VisaGrantedDocument: null, phase5VisaGrantedAt: null
+      }
+    case 'P5-VISA':
+      return {
+        ...base, currentPhase: 5, subStatus: 'visa_granted', interview: null, phase4Docs: [],
+        phase5VisaGrantedDocument: { name: 'Visa_Grant_Notice.pdf', size: '0.4 MB', uploadedAt: now },
+        phase5VisaGrantedAt: now
+      }
+    case 'P5-TRAVEL':
+      return {
+        ...base, currentPhase: 5, subStatus: 'travel_arranged', interview: null, phase4Docs: [],
+        phase5VisaGrantedDocument: { name: 'Visa_Grant_Notice.pdf', size: '0.4 MB', uploadedAt: now },
+        phase5VisaGrantedAt: now
+      }
+    case 'P6':
+      return {
+        ...base, currentPhase: 6, subStatus: 'enrolled', status: 'enrolled', interview: null, phase4Docs: [],
+        phase5VisaGrantedDocument: { name: 'Visa_Grant_Notice.pdf', size: '0.4 MB', uploadedAt: now },
+        phase5VisaGrantedAt: now
+      }
+    default:
+      return null
+  }
+}
+
+function seedCrossPortalForDemo(seedKey) {
+  if (typeof window === 'undefined') return
+  const now = new Date().toISOString()
+  try {
+    if (seedKey === 'P3-AWAITING') {
+      // Mock school sending the deposit form so student sees P3 affordance
+      p3store.sendDepositForm(id, {
+        accountName: 'Westminster School',
+        accountNumber: '12345678',
+        sortCode: '12-34-56',
+        amount: 5000,
+        currency: 'GBP',
+        deadline: '2026-08-01'
+      }, [
+        { name: 'Deposit_Form.pdf', dataUrl: 'data:application/pdf;base64,JVBERi0xLjQKJ', uploadedAt: now, uploadedBy: 'school-admin' }
+      ], 'school-admin')
+    } else if (seedKey === 'P3-UPLOADED') {
+      p3store.sendDepositForm(id, {
+        accountName: 'Westminster School',
+        accountNumber: '12345678',
+        sortCode: '12-34-56',
+        amount: 5000,
+        currency: 'GBP',
+        deadline: '2026-08-01'
+      }, [], 'school-admin')
+      p3store.uploadDepositProof(id, { name: 'Bank_Receipt.pdf', dataUrl: 'data:application/pdf;base64,JVBERi0xLjQKJ', size: '0.3 MB' })
+    } else if (seedKey === 'P5-VISA' || seedKey === 'P5-TRAVEL' || seedKey === 'P6') {
+      // Mock visa granted state
+      localStorage.setItem(VISA_STATE_KEY.value, JSON.stringify({
+        visaGranted: true,
+        grantedAt: now,
+        document: { name: 'Visa_Grant_Notice.pdf', size: '0.4 MB', uploadedAt: now }
+      }))
+      loadVisaState()
+    }
+    if (seedKey === 'P5-TRAVEL' || seedKey === 'P6') {
+      // Mock travel plan (flight + transportation + mark arranged)
+      travelstore.saveFlight(id, {
+        airline: 'Cathay Pacific', flightNumber: 'CX251',
+        departureDate: '2027-09-01', departureAirport: 'HKG', arrivalAirport: 'LHR'
+      }, 'student')
+      travelstore.saveTransportation(id, {
+        mode: 'school-pickup', eta: '2027-09-01T10:00'
+      }, 'student')
+      travelstore.markTravelArranged(id)
+      travelPlan.value = travelstore.getPlan(id)
+    }
+    if (seedKey === 'P2-CONFIRMED') {
+      // Persist interview to localStorage so subsequent load picks it up
+      localStorage.setItem(INTERVIEW_KEY.value, JSON.stringify(application.value.interview))
+    }
+  } catch (e) { /* ignore — best-effort demo seed */ }
+}
+
+function onDemoJump(e) {
+  const seed = e.target.value
+  if (!seed) return
+  const seedFields = buildDemoSeedFields(seed)
+  if (!seedFields) return
+  // Merge with existing application — preserve schoolName, schoolLocation, studentName, etc.
+  application.value = { ...application.value, ...seedFields }
+  // Mock cross-portal state (p3store / localStorage)
+  seedCrossPortalForDemo(seed)
+  // Collapse past phases
+  expandedPhases.value = []
+  // Reset transient UI state
+  p3StudentFile.value = null
+  p3StudentNewFiles.value = []
+  editingChange.value = false
+  changeMessage.value = ''
+  // Reset select back to default placeholder so user can re-jump
+  e.target.value = ''
+  // Scroll to top
+  if (typeof window !== 'undefined') {
+    window.scrollTo({ top: 0, behavior: 'smooth' })
+  }
+}
+
 function requestRestart() {
   // Re-entry guard: ignore second click if modal already open. See §14.1 (mm).
   if (showRestartModal.value) return
@@ -1049,8 +1213,11 @@ onUnmounted(() => {
 .form-actions { display: flex; gap: 0.5rem; padding-top: 0.25rem; }
 .confirmed-banner { background: #dcfce7; color: #15803d; padding: 0.75rem; border-radius: 8px; font-size: 0.9rem; text-align: center; }
 
-/* rev 3.0.2: Restart button + modal — mirror school-end §14.1 CSS */
-.header-actions { display: flex; align-items: center; gap: 0.75rem; }
+/* rev 3.0.2: Restart button + modal + demo jump — mirror school-end §14.1 CSS + §21 dev-tools */
+.header-actions { display: flex; align-items: center; gap: 0.5rem; flex-wrap: wrap; }
+.demo-jump-select { background: #fff; color: #475569; border: 1px solid #cbd5e1; padding: 0.4rem 0.7rem; border-radius: 6px; font-size: 0.8rem; font-weight: 500; cursor: pointer; max-width: 220px; }
+.demo-jump-select:hover { border-color: #94a3b8; }
+.demo-jump-select:focus { outline: none; border-color: #3b82f6; box-shadow: 0 0 0 3px rgba(59,130,246,0.15); }
 .btn-restart { background: #fff; color: #b91c1c; border: 1px solid #fecaca; padding: 0.45rem 0.85rem; border-radius: 6px; font-size: 0.8rem; font-weight: 600; cursor: pointer; transition: background 0.15s, border-color 0.15s; }
 .btn-restart:hover { background: #fef2f2; border-color: #f87171; }
 .restart-modal-overlay { position: fixed; inset: 0; background: rgba(15, 23, 42, 0.55); display: flex; align-items: center; justify-content: center; z-index: 9999; padding: 1rem; }

@@ -274,6 +274,38 @@ Student page's in-memory mock starts at **P2 active** (`currentPhase: 2`, `subSt
 
 Per-phase demo seeds (P1–P6 each with at least one typical subStatus variant) will be added to `pages/student/applications/index.vue` as a "Mock applications" section so the user can click through P1–P6 affordances — see roadmap §8.
 
+### 4.8 Demo phase jump (student-side affordance)
+
+The school-end dev-tools panel (§21) provides phase-advance buttons for QA. The student page exposes a leaner affordance: a **demo jump drop-down** in the page-header (next to the Restart button). Selecting an option re-seeds the application to a representative demo state for that phase / subStatus variant, so the user can click through every affordance without needing the school to advance state first.
+
+**Demo seed matrix (rev 3.0.2):**
+
+| Option | currentPhase | subStatus | State |
+|---|---|---|---|
+| P1 — Application Submitted | 1 | `'Application Submitted'` | `defaultMock` + `appliedAt` set |
+| P2 — Awaiting Confirmation | 2 | `'Awaiting Confirmation'` | `interview = null` |
+| P2 — Confirmed | 2 | `'Confirmed'` | `interview = { status: 'confirmed', datetime, mode }` |
+| P3 — Awaiting Deposit | 3 | `'sent_to_student'` | `p3Latest.status = 'sent_to_student'` (school sent form) |
+| P3 — Proof Uploaded | 3 | `'proof_uploaded'` | `p3Latest.status = 'proof_uploaded'` |
+| P4 — Admission Documents | 4 | `'in_progress'` | `phase4Docs = [2 mock docs]` |
+| P5 — Visa Granted | 5 | `'visa_granted'` | `visaGranted = true` + `phase5VisaGrantedDocument` set |
+| P5 — Travel Arranged | 5 | `'travel_arranged'` | `travelPlan` populated (flight + transportation) |
+| P6 — Enrolled | 6 | `'enrolled'` | `enrolledMock` shape |
+
+This is a **demo affordance** — picking an option re-seeds the in-memory `application` ref and the in-memory mirrors of `p3Latest` / `interview` / `travelPlan` to match. It does NOT wipe cross-portal localStorage (`bsp:interview:<id>`, `bsp:visa:<id>`, `bsp:travel:<id>`, `useP3Store` deposits) so previously-set state survives the jump. To fully wipe, use **Restart** (§4.6).
+
+**Why a drop-down (not buttons):** 9 options would crowd the header; a single `<select>` keeps the chrome compact and matches the existing school-end `PhaseTimeline` dropdown idiom.
+
+**Click-test scenarios (rev 3.0.2):**
+
+| # | Scenario | Expected |
+|---|----------|----------|
+| (tt) | Desktop, default page (P2 active), open demo drop-down | 9 options visible with phase + subStatus label. |
+| (uu) | Select "P1 — Application Submitted" | `application.currentPhase = 1`, page re-renders with P1 expanded on top, P2–P6 collapsed. |
+| (vv) | Select "P3 — Proof Uploaded" | `application.currentPhase = 3`, `p3Latest.status = 'proof_uploaded'`. P3 expanded showing proof-uploaded state. |
+| (ww) | Select "P6 — Enrolled" | `application.currentPhase = 6`, terminal enrolled banner renders. |
+| (xx) | After jumping, click Restart | Normal Restart flow — wipes everything and resets to P1 fresh per §4.6. |
+
 ---
 
 ## 5. Ref Format
