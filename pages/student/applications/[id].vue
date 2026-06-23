@@ -1030,15 +1030,16 @@ function seedCrossPortalForDemo(seedKey) {
   } catch (e) { /* ignore — best-effort demo seed */ }
 }
 
-function onDemoJump(e) {
-  const seed = e.target.value
-  if (!seed) return
-  const seedFields = buildDemoSeedFields(seed)
+// Pure function used by both onDemoJump (drop-down change) and onMounted
+// (URL deep-link ?demo=<key>). Centralizes the seed-apply logic.
+function applyDemoSeed(seedKey) {
+  if (!seedKey) return
+  const seedFields = buildDemoSeedFields(seedKey)
   if (!seedFields) return
   // Merge with existing application — preserve schoolName, schoolLocation, studentName, etc.
   application.value = { ...application.value, ...seedFields }
   // Mock cross-portal state (p3store / localStorage)
-  seedCrossPortalForDemo(seed)
+  seedCrossPortalForDemo(seedKey)
   // Collapse past phases
   expandedPhases.value = []
   // Reset transient UI state
@@ -1046,12 +1047,18 @@ function onDemoJump(e) {
   p3StudentNewFiles.value = []
   editingChange.value = false
   changeMessage.value = ''
-  // Reset select back to default placeholder so user can re-jump
-  e.target.value = ''
   // Scroll to top
   if (typeof window !== 'undefined') {
     window.scrollTo({ top: 0, behavior: 'smooth' })
   }
+}
+
+function onDemoJump(e) {
+  const seed = e.target.value
+  if (!seed) return
+  applyDemoSeed(seed)
+  // Reset select back to default placeholder so user can re-jump
+  e.target.value = ''
 }
 
 function requestRestart() {
@@ -1114,7 +1121,7 @@ onMounted(() => {
   if (typeof demoKey === 'string' && demoKey.length > 0) {
     const validKeys = seedDefs.map(s => s.key)
     if (validKeys.includes(demoKey)) {
-      applyMockSeed(demoKey)
+      applyDemoSeed(demoKey)
     } else {
       // graceful fallback: console.warn, then continue with normal load
       // eslint-disable-next-line no-console
