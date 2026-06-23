@@ -1262,6 +1262,12 @@ onMounted(() => {
   const sharedInterview = loadInterviewState()
   if (sharedInterview !== null) {
     application.value.interview = sharedInterview
+    // §15.6.1 (rev 3.0.3, 2026-06-24): bridge the cross-portal state into the p2 store
+    // so the school's `latestInterview` computed (which drives Section B's pill, date,
+    // location, and §15.6 inline block) reflects the student's `change-requested` /
+    // `confirmed` / `schoolAcknowledged` state. Without this, the school's UI is blind
+    // to anything the student does after the initial schedule.
+    bridgeCrossPortalInterview(sharedInterview)
   }
   // §15.6 (rev 3.0.3): auto-open the change-request reception modal on first view
   // of an unacknowledged student change request. Use a microtask so the DOM is settled.
@@ -1272,6 +1278,59 @@ onMounted(() => {
     }
   })
 })
+
+// §15.6.1 (rev 3.0.3): Mirror the cross-portal interview state (bsp:interview:<id>)
+// into the p2 store's latest interview object so Section B's `latestInterview` computed
+// reflects student-side changes. The two stores use different shapes — we map
+// `startTime` → `time` and append the cross-portal lifecycle fields (`status`,
+// `studentResponse`, `history`) onto the p2-store object in place.
+function bridgeCrossPortalInterview(shared) {
+  if (!shared) return
+  if (typeof window === 'undefined') return
+  try {
+    let latest = p2.getLatestInterview(id)
+    if (!latest) {
+      // No p2-store interview yet — create one so the bridge has a target. The school
+      // normally schedules via p2.scheduleInterview(), but if the student has been
+      // responding to an interview that was never persisted in p2 (e.g. seeded via
+      // dev tools or from a pre-p2-store localStorage record), we need to materialise it.
+      if (!shared.date) return  // nothing useful to bridge
+      try {
+        p2.scheduleInterview({
+          applicationRef: id,
+          date: shared.date,
+          time: shared.startTime || '00:00',
+          location: shared.location || shared.type || 'TBD',
+          interviewer: shared.scheduledBy || 'school-admin',
+          interviewerRole: 'school',
+          agenda: shared.agenda || '',
+          scheduledBy: shared.scheduledBy || 'school-admin',
+        })
+      } catch (e) {
+        console.warn('[bridge] could not materialise p2-store interview:', e)
+        return
+      }
+      latest = p2.getLatestInterview(id)
+    }
+    if (!latest) return
+    // Mirror cross-portal lifecycle fields. Preserve the p2-store identity fields
+    // (id, applicationRef, roundNumber) so reports/decisions still link correctly.
+    if (shared.status) latest.status = shared.status
+    if (shared.studentResponse !== undefined) latest.studentResponse = shared.studentResponse
+    if (shared.history) latest.history = shared.history
+    // Persist so other portal/tab picks up the same view.
+    try {
+      const all = JSON.parse(localStorage.getItem('bsp-v4-interviews') || '[]')
+      const idx = all.findIndex(i => i.id === latest.id)
+      if (idx >= 0) {
+        all[idx] = { ...all[idx], status: latest.status, studentResponse: latest.studentResponse, history: latest.history }
+        localStorage.setItem('bsp-v4-interviews', JSON.stringify(all))
+      }
+    } catch (e) { /* ignore */ }
+  } catch (e) {
+    console.warn('[bridge] failed:', e)
+  }
+}
 
 function todayDate() { return new Date().toISOString().slice(0, 10) }
 
@@ -2241,9 +2300,24 @@ function acknowledgeChangeRequest() {
     ...(iv.history || []),
     { event: 'school-change-acknowledged', by: 'school', message: 'School acknowledged the change request', timestamp: new Date().toISOString() }
   ]
+  // Mirror back to application.value.interview (cross-portal shape) so the student's
+  // next reload sees the acknowledged state.
+  if (application.value.interview) {
+    application.value.interview.studentResponse = { ...iv.studentResponse }
+    application.value.interview.history = [...(iv.history || [])]
+  }
   showChangeRequestModal.value = false
-  saveInterviewState()
-  saveState()
+  saveInterviewState()  // bsp:interview:<id>
+  saveState()          // bsp:school:app:<id>
+  // Persist back to p2 store (bsp-v4-interviews) so other reactive readers see the change.
+  try {
+    const all = JSON.parse(localStorage.getItem('bsp-v4-interviews') || '[]')
+    const idx = all.findIndex(i => i.id === iv.id)
+    if (idx >= 0) {
+      all[idx] = { ...all[idx], studentResponse: iv.studentResponse, history: iv.history }
+      localStorage.setItem('bsp-v4-interviews', JSON.stringify(all))
+    }
+  } catch (e) { /* ignore */ }
 }
 
 function rescheduleFromChangeRequest() {
@@ -2320,22 +2394,28 @@ function devSimulateStudentChangeRequest() {
     alert('Schedule an interview first (use Schedule form above).')
     return
   }
-  const iv = application.value.interview
   const sample = 'I have a school exam that day. Could we reschedule to the following week?'
   const now = new Date().toISOString()
-  iv.status = 'change-requested'
-  iv.studentResponse = {
+  // Mirror the student-side mutation shape (pages/student/applications/[id].vue submitChangeRequest):
+  // 1. application.value.interview (cross-portal / student-side)
+  // 2. bsp:interview:<id> localStorage (cross-portal)
+  // 3. bsp:school:app:<id> localStorage (page state)
+  // 4. bsp-v4-interviews localStorage (p2 store) — drives the Section B UI
+  application.value.interview.status = 'change-requested'
+  application.value.interview.studentResponse = {
     action: 'change',
     message: sample,
     respondedAt: now,
     schoolAcknowledged: false  // reset ack on re-simulate
   }
-  iv.history = [
-    ...(iv.history || []),
+  application.value.interview.history = [
+    ...(application.value.interview.history || []),
     { event: 'student-change-requested', by: 'student', message: sample, timestamp: now }
   ]
   saveInterviewState()
   saveState()
+  // Mirror into p2 store so Section B's `latestInterview` computed reflects this state.
+  bridgeCrossPortalInterview(application.value.interview)
   // Auto-open the reception modal so the dev can see the full flow immediately.
   openChangeRequestModal()
 }

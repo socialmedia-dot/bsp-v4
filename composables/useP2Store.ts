@@ -32,9 +32,19 @@ export interface P2Interview {
   interviewer: string  // person name (e.g. "Mr. Smith" or "Sarah Chen")
   interviewerRole: 'school' | 'consultant'
   agenda?: string
-  status: 'scheduled' | 'completed'
+  // rev 3.0.3: status now includes the cross-portal lifecycle values
+  // ('pending' = school scheduled, awaiting student action;
+  //  'confirmed' = student confirmed attendance;
+  //  'change-requested' = student asked to reschedule).
+  // 'scheduled' and 'completed' are the original p2-store values.
+  status: 'scheduled' | 'completed' | 'pending' | 'confirmed' | 'change-requested'
   scheduledAt: string  // ISO
   scheduledBy: string
+  // rev 3.0.3: cross-portal mirror fields (see docs §15.6).
+  // Populated by the school-side bridge in pages/school/applications/[id].vue
+  // when the student writes a change request to bsp:interview:<id>.
+  studentResponse?: { action: 'confirm' | 'change' | null; message: string; respondedAt: string | null; schoolAcknowledged?: boolean }
+  history?: Array<{ event: string; by: 'school' | 'student' | 'consultant'; message: string; timestamp: string }>
 }
 
 export interface P2Report {

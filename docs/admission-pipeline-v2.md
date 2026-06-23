@@ -911,7 +911,62 @@ The old message in Section B's empty state said "Use Section A above to schedule
   - Script: add `showChangeRequestModal` ref, `acknowledgeChangeRequest()`, `rescheduleFromChangeRequest()`, `closeChangeRequestModal()` functions
   - Script: in `onMounted`, after `loadInterviewState()`, check for unacknowledged change request → set `showChangeRequestModal = true`
   - Script: keyboard handler — Escape closes the change-request modal (= Acknowledge) without opening the Restart modal's Escape logic
+  - Script: **`bridgeCrossPortalInterview(shared)` function (§15.6.1)** — mirrors the cross-portal interview state into the p2 store so Section B's `latestInterview` computed reflects student-side changes
   - CSS: add `.change-request-modal-*` classes (mirroring `.restart-modal-*` pattern)
+
+- `composables/useP2Store.ts`:
+  - Extend `P2Interview` interface: add `'pending' | 'confirmed' | 'change-requested'` to `status` enum, add optional `studentResponse` and `history` fields (rev 3.0.3)
+
+#### §15.6.1 Cross-portal bridge (rev 3.0.3, 2026-06-24)
+
+**Why:** The school page has **two parallel data sources** for the current interview:
+1. **p2 store** (`bsp-v4-interviews` array) — drives the Section B UI via the `latestInterview` computed (date, time, location, interviewer, status pill, inline change-request block, modal).
+2. **Cross-portal** (`bsp:interview:<id>` object) — written by the student page when they confirm / change-request / acknowledge; read by `loadInterviewState()` on `onMounted`.
+
+The school page's UI is driven by **(1)**, but student actions land in **(2)**. Without a bridge, the school's `latestInterview` is frozen at whatever the school last scheduled, blind to every student-side change.
+
+**Bridge function (`bridgeCrossPortalInterview` in `pages/school/applications/[id].vue`):**
+
+```
+1. Read shared interview from bsp:interview:<id> (already loaded by loadInterviewState()).
+2. If p2 store has no interview for this ref → call p2.scheduleInterview() to materialise one
+   (preserves p2 store's identity fields: id, applicationRef, roundNumber).
+3. Mirror cross-portal lifecycle fields onto the p2 store's latest interview:
+   - status (e.g. 'change-requested', 'confirmed', 'pending')
+   - studentResponse (action, message, respondedAt, schoolAcknowledged)
+   - history (the full event log)
+4. Persist back to bsp-v4-interviews localStorage so other reactive readers see the change.
+```
+
+**When it runs:**
+- `onMounted` of school page → every page load picks up the latest cross-portal state
+- `devSimulateStudentChangeRequest()` → after writing the simulated change request to `application.value.interview`, the bridge is called so the dev tools → modal flow works
+- `acknowledgeChangeRequest()` → also persists the school's ack back to p2 store (so reopening the page doesn't re-show the modal)
+
+**Field mapping (cross-portal shape → p2 store shape):**
+
+| Cross-portal field | p2 store field | Notes |
+|---|---|---|
+| `date` | `date` | YYYY-MM-DD, identical |
+| `startTime` | `time` | HH:MM, identical |
+| `location` | `location` | Free text, identical |
+| `type` (`'in-person'\|'online'\|'hybrid'`) | (no direct field) | Info captured in `location` for online, separate `onlineLink` for cross-portal |
+| `onlineLink` | (no direct field) | Cross-portal only — not displayed in Section B |
+| `notes` | (no direct field) | Cross-portal only — not displayed in Section B |
+| `agenda` | `agenda` | Free text, identical |
+| `status` | `status` | Now unified: `'pending' \| 'confirmed' \| 'change-requested' \| 'scheduled' \| 'completed'` |
+| `studentResponse` | `studentResponse` | New field added in rev 3.0.3 |
+| `history` | `history` | New field added in rev 3.0.3 |
+| `scheduledBy` | `interviewer` (p2) + `scheduledBy` (p2) | p2 splits the person into `interviewer` (role) + `scheduledBy` (who did the action); cross-portal just has `scheduledBy` |
+
+**Why the bridge is `in-place mutation`, not a re-fetch:** The p2 store's `_interviews` ref holds a Vue reactive array. Replacing the entire object would break the link to any in-progress `P2Report` records (which reference interview by `id`). Mutating fields in place preserves the object identity and keeps report/decision linkages intact.
+
+**Click-test additions (rev 3.0.3):**
+
+| # | Scenario | Expected |
+|---|----------|----------|
+| (jjj) | School page loads after student sent a change request | `latestInterview.status === 'change-requested'` after `onMounted`. Section B shows "📤 Change Requested" pill. Inline block visible with the student's message. Reception modal auto-opens. |
+| (kkk) | School clicks Acknowledge, then student sends ANOTHER change request (student side real flow, not dev) | `latestInterview.history` has new `student-change-requested` event; `studentResponse.schoolAcknowledged` is reset to `false`; reception modal auto-opens on next school reload. |
 
 **Data model additions (backward-compatible):**
 
