@@ -1,22 +1,6 @@
 <template>
   <div class="application-detail-page">
-    <!-- Header -->
-    <header class="navbar">
-      <div class="container navbar-content">
-        <NuxtLink to="/" class="logo">
-          <img src="/img/logo-bsp.jpg" alt="British School Portal Logo" class="logo-img">
-        </NuxtLink>
-        <nav>
-          <ul class="nav-links">
-            <li><NuxtLink to="/">Home</NuxtLink></li>
-            <li><NuxtLink to="/schools">Schools</NuxtLink></li>
-            <li><NuxtLink to="/student/profile">Profile</NuxtLink></li>
-            <li><NuxtLink to="/student/applications">My Applications</NuxtLink></li>
-            <li><NuxtLink to="/student/login" class="btn btn-primary">Logout</NuxtLink></li>
-          </ul>
-        </nav>
-      </div>
-    </header>
+    <!-- Top navbar is provided by the default layout; do not duplicate it here. -->
 
     <!-- Page Header -->
     <div class="page-header">
