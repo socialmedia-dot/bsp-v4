@@ -870,6 +870,19 @@ const restarting = ref(false)
 
 // DEMO PHASE JUMP: re-seed application to a representative demo state per phase.
 // See docs §4.8 — leaner affordance than school §21 dev-tools (single dropdown, 9 seeds).
+const seedDefs = [
+  { key: 'P1' },
+  { key: 'P2-AWAIT' },
+  { key: 'P2-PENDING' },
+  { key: 'P2-CONFIRMED' },
+  { key: 'P3-AWAITING' },
+  { key: 'P3-UPLOADED' },
+  { key: 'P4' },
+  { key: 'P5-VISA' },
+  { key: 'P5-TRAVEL' },
+  { key: 'P6' }
+]
+
 function buildDemoSeedFields(seedKey) {
   const now = new Date().toISOString()
   const base = {
