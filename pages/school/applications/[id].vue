@@ -298,9 +298,9 @@
                     <template v-else>
                       <div class="interview-display">
                         <div class="interview-status-row">
-                          <span class="status-pill" :class="latestInterview.status === 'completed' ? 'status-pill-confirmed' : 'status-pill-pending'">
-                            {{ latestInterview.status === 'completed' ? '✅ Completed' : '⏳ Scheduled' }}
-                          </span>
+                          <span v-if="latestInterview.status === 'completed'" class="status-pill status-pill-confirmed">✅ Completed</span>
+                          <span v-else-if="latestInterview.status === 'change-requested'" class="status-pill status-pill-change">📤 Change Requested</span>
+                          <span v-else class="status-pill status-pill-pending">⏳ Scheduled</span>
                         </div>
                         <div class="interview-details">
                           <div class="detail-row"><span class="detail-label">📅 Date</span><span class="detail-value">{{ latestInterview.date }}</span></div>
@@ -308,6 +308,24 @@
                           <div class="detail-row"><span class="detail-label">📍 Location</span><span class="detail-value">{{ latestInterview.location }}</span></div>
                           <div class="detail-row"><span class="detail-label">👤 Interviewer</span><span class="detail-value">{{ latestInterview.interviewer }} <span class="p2-role-tag" :class="'p2-role-' + latestInterview.interviewerRole">{{ latestInterview.interviewerRole === 'school' ? 'School' : 'Consultant' }}</span></span></div>
                           <div v-if="latestInterview.agenda" class="detail-row detail-row-block"><span class="detail-label">📋 Agenda</span><span class="detail-value">{{ latestInterview.agenda }}</span></div>
+                        </div>
+                      </div>
+
+                      <!-- §15.6 — Student change request inline block -->
+                      <div v-if="latestInterview.status === 'change-requested' && latestInterview.studentResponse" class="change-request-block">
+                        <div class="change-request-header">
+                          <span class="change-request-title">📤 Student has requested a change</span>
+                          <span v-if="latestInterview.studentResponse.schoolAcknowledged" class="change-request-acked-badge">✓ Acknowledged</span>
+                        </div>
+                        <div class="change-request-message">
+                          "{{ latestInterview.studentResponse.message || '(no message provided)' }}"
+                        </div>
+                        <div class="change-request-meta">
+                          🕒 Sent {{ formatDateTime(latestInterview.studentResponse.respondedAt) }}
+                        </div>
+                        <div class="change-request-actions">
+                          <button class="btn-secondary" @click="rescheduleFromChangeRequest">📅 Reschedule Interview</button>
+                          <button v-if="!latestInterview.studentResponse.schoolAcknowledged" class="btn-primary" @click="acknowledgeChangeRequest">✓ Acknowledge</button>
                         </div>
                       </div>
 
@@ -979,11 +997,48 @@
     </div>
   </Teleport>
 
+  <!-- rev 3.0.3: Change request reception modal — see docs §15.6. -->
+  <!-- Auto-opens on first view of an unacknowledged student change request. -->
+  <Teleport to="body">
+    <div v-if="showChangeRequestModal && latestInterview && latestInterview.status === 'change-requested'" class="change-request-modal-overlay" @click.self="acknowledgeChangeRequest" role="dialog" aria-modal="true" aria-labelledby="change-request-modal-title">
+      <div class="change-request-modal" role="document">
+        <h3 id="change-request-modal-title">📤 Change Request from Student</h3>
+        <p class="change-request-modal-intro">The student has sent you a message about the interview time.</p>
+
+        <div class="change-request-modal-quote">
+          "{{ latestInterview.studentResponse?.message || '(no message provided)' }}"
+        </div>
+        <div class="change-request-modal-meta">
+          🕒 Sent {{ formatDateTime(latestInterview.studentResponse?.respondedAt) }}
+        </div>
+
+        <div class="change-request-modal-original">
+          <div class="change-request-modal-original-title">Original interview:</div>
+          <div class="detail-row"><span class="detail-label">📅 Date</span><span class="detail-value">{{ formatInterviewDate(latestInterview.date) }}</span></div>
+          <div class="detail-row"><span class="detail-label">🕐 Time (UK)</span><span class="detail-value">{{ latestInterview.startTime || latestInterview.time }} ({{ latestInterview.durationMinutes || 60 }} min)</span></div>
+          <div v-if="latestInterview.type !== 'online' && latestInterview.location" class="detail-row"><span class="detail-label">📍 Location</span><span class="detail-value">{{ latestInterview.location }}</span></div>
+        </div>
+
+        <div class="change-request-modal-actions">
+          <button type="button" class="btn-change-reschedule" @click="rescheduleFromChangeRequest">
+            📅 Reschedule Now
+          </button>
+          <button type="button" class="btn-change-acknowledge" @click="acknowledgeChangeRequest" autofocus>
+            ✓ Acknowledge
+          </button>
+        </div>
+        <p class="change-request-modal-hint">Press Escape or click outside to acknowledge.</p>
+      </div>
+    </div>
+  </Teleport>
+
   <!-- Dev-only testing shortcuts. Hidden in production (no ?dev=1 query, no localStorage flag). See docs §21. -->
   <div v-if="isDevMode" class="dev-tools-panel">
     <div class="dev-tools-header">🧪 Dev Tools (rev 3.2)</div>
     <div class="dev-tools-actions">
       <button v-if="application.currentPhase === 1" @click="devAdvanceToP2">⏩ Advance to P2</button>
+      <button v-if="application.currentPhase === 2 && latestInterview && latestInterview.status !== 'change-requested'" @click="devSimulateStudentChangeRequest">📤 Simulate student change request</button>
+      <button v-if="application.currentPhase === 2 && latestInterview && latestInterview.status === 'change-requested'" @click="devSimulateStudentChangeRequest">🔄 Resimulate change request (reset ack)</button>
       <button v-if="application.currentPhase === 2" @click="devAdvanceToP3">⏩ Approve + Advance to P3</button>
       <button v-if="application.currentPhase === 3" @click="devAdvanceToP4">⏩ Confirm Deposit + Advance to P4</button>
       <button v-if="application.currentPhase === 4" @click="devAdvanceToP5">⏩ Mark Complete + Advance to P5</button>
@@ -1208,6 +1263,14 @@ onMounted(() => {
   if (sharedInterview !== null) {
     application.value.interview = sharedInterview
   }
+  // §15.6 (rev 3.0.3): auto-open the change-request reception modal on first view
+  // of an unacknowledged student change request. Use a microtask so the DOM is settled.
+  nextTick(() => {
+    const iv = application.value.interview
+    if (isChangeRequestUnacknowledged(iv)) {
+      openChangeRequestModal()
+    }
+  })
 })
 
 function todayDate() { return new Date().toISOString().slice(0, 10) }
@@ -2157,6 +2220,74 @@ function onRestartKeydown(e) {
 if (typeof window !== 'undefined') {
   window.addEventListener('keydown', onRestartKeydown)
 }
+
+// ===== §15.6 Change Request reception modal (rev 3.0.3, 2026-06-24) =====
+const showChangeRequestModal = ref(false)
+
+function isChangeRequestUnacknowledged(iv) {
+  if (!iv) return false
+  if (iv.status !== 'change-requested') return false
+  return !iv.studentResponse?.schoolAcknowledged
+}
+
+function acknowledgeChangeRequest() {
+  if (!latestInterview.value) return
+  const iv = latestInterview.value
+  if (!iv.studentResponse) {
+    iv.studentResponse = { action: 'change', message: '', respondedAt: new Date().toISOString() }
+  }
+  iv.studentResponse.schoolAcknowledged = true
+  iv.history = [
+    ...(iv.history || []),
+    { event: 'school-change-acknowledged', by: 'school', message: 'School acknowledged the change request', timestamp: new Date().toISOString() }
+  ]
+  showChangeRequestModal.value = false
+  saveInterviewState()
+  saveState()
+}
+
+function rescheduleFromChangeRequest() {
+  // Close the modal first so the school sees the schedule form cleanly.
+  showChangeRequestModal.value = false
+  // If already acknowledged, no need to keep acknowledged=true — reschedule is the resolution path.
+  // New `saveInterview()` will overwrite status to 'pending' and reset studentResponse.
+  openEditInterview()
+  if (typeof window !== 'undefined') {
+    // Scroll the school page to the schedule section so the form is visible.
+    nextTick(() => {
+      try {
+        const el = document.querySelector('.p2-section, .schedule-form, [data-section="A"]')
+        if (el && el.scrollIntoView) el.scrollIntoView({ behavior: 'smooth', block: 'start' })
+      } catch (e) { /* ignore */ }
+    })
+  }
+}
+
+function openChangeRequestModal() {
+  // Re-entry guard — same pattern as requestRestart().
+  if (showChangeRequestModal.value) return
+  showChangeRequestModal.value = true
+}
+
+// Combined keyboard handler: Escape closes the change-request modal FIRST if it's open,
+// then falls through to the Restart modal logic. See docs §15.6 (ddd).
+function onAppKeydown(e) {
+  if (e.key !== 'Escape') return
+  if (showChangeRequestModal.value) {
+    e.preventDefault()
+    acknowledgeChangeRequest()
+    return
+  }
+  if (showRestartModal.value && !restarting.value) {
+    e.preventDefault()
+    cancelRestart()
+  }
+}
+if (typeof window !== 'undefined') {
+  // Replace the earlier onRestartKeydown with the combined handler.
+  window.removeEventListener('keydown', onRestartKeydown)
+  window.addEventListener('keydown', onAppKeydown)
+}
 // Note: this handler is registered once per page mount. Nuxt's [id].vue is mounted per route, so
 // in practice the same page re-mounts (with a fresh handler) when the user navigates to a different
 // application. The old handler becomes unreachable and gets GC'd with the page. No manual cleanup
@@ -2180,6 +2311,33 @@ function devAdvanceToP2() {
   application.value.currentPhase = 2
   application.value.subStatus = 'Interview & Assessment'
   saveState()
+}
+
+// §15.6 (rev 3.0.3): Simulate a student change request from the school-side dev tools.
+// Useful for QA: school-side modal can be tested without leaving the school page.
+function devSimulateStudentChangeRequest() {
+  if (!application.value.interview) {
+    alert('Schedule an interview first (use Schedule form above).')
+    return
+  }
+  const iv = application.value.interview
+  const sample = 'I have a school exam that day. Could we reschedule to the following week?'
+  const now = new Date().toISOString()
+  iv.status = 'change-requested'
+  iv.studentResponse = {
+    action: 'change',
+    message: sample,
+    respondedAt: now,
+    schoolAcknowledged: false  // reset ack on re-simulate
+  }
+  iv.history = [
+    ...(iv.history || []),
+    { event: 'student-change-requested', by: 'student', message: sample, timestamp: now }
+  ]
+  saveInterviewState()
+  saveState()
+  // Auto-open the reception modal so the dev can see the full flow immediately.
+  openChangeRequestModal()
 }
 
 function devAdvanceToP3() {
@@ -2621,6 +2779,205 @@ function devRestart() {
 @keyframes restart-pop-in {
   from { opacity: 0; transform: scale(0.96); }
   to { opacity: 1; transform: scale(1); }
+}
+
+/* rev 3.0.3: §15.6 Change request inline block (under Section B) — see docs §15.6. */
+.change-request-block {
+  margin-top: 14px;
+  padding: 14px 16px;
+  background: linear-gradient(135deg, #fef3c7 0%, #fee2e2 100%);
+  border: 1px solid #f59e0b;
+  border-left: 4px solid #dc2626;
+  border-radius: 10px;
+  box-shadow: 0 2px 8px rgba(220, 38, 38, 0.08);
+}
+.change-request-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  margin-bottom: 8px;
+}
+.change-request-title {
+  color: #7f1d1d;
+  font-size: 0.95rem;
+  font-weight: 700;
+}
+.change-request-acked-badge {
+  background: #d1fae5;
+  border-radius: 999px;
+  color: #065f46;
+  font-size: 0.72rem;
+  font-weight: 700;
+  padding: 3px 10px;
+}
+.change-request-message {
+  background: #fff;
+  border-left: 3px solid #dc2626;
+  border-radius: 6px;
+  color: #1e293b;
+  font-size: 0.92rem;
+  font-style: italic;
+  line-height: 1.5;
+  margin: 0 0 8px;
+  padding: 10px 12px;
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+.change-request-meta {
+  color: #78350f;
+  font-size: 0.78rem;
+  margin-bottom: 10px;
+}
+.change-request-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+.change-request-actions .btn-secondary,
+.change-request-actions .btn-primary {
+  border-radius: 8px;
+  cursor: pointer;
+  font-size: 0.85rem;
+  font-weight: 700;
+  min-height: 36px;
+  padding: 7px 14px;
+  transition: all 0.15s;
+}
+
+/* rev 3.0.3: §15.6 Change request reception modal — see docs §15.6. */
+.change-request-modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(15, 23, 42, 0.55);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 10000;  /* above the restart modal (z=9999) so it takes priority on first view */
+  padding: 16px;
+  animation: restart-fade-in 0.15s ease-out;
+}
+.change-request-modal {
+  background: #fff;
+  border-radius: 12px;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+  max-width: 520px;
+  width: 100%;
+  padding: 24px;
+  animation: restart-pop-in 0.18s ease-out;
+}
+.change-request-modal h3 {
+  font-size: 1.15rem;
+  font-weight: 700;
+  margin: 0 0 8px;
+  color: #0f172a;
+}
+.change-request-modal-intro {
+  color: #475569;
+  font-size: 0.9rem;
+  margin: 0 0 14px;
+}
+.change-request-modal-quote {
+  background: #fef3c7;
+  border-left: 4px solid #f59e0b;
+  border-radius: 8px;
+  color: #1e293b;
+  font-size: 0.95rem;
+  font-style: italic;
+  line-height: 1.5;
+  margin: 0 0 8px;
+  padding: 12px 14px;
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+.change-request-modal-meta {
+  color: #78350f;
+  font-size: 0.8rem;
+  margin-bottom: 16px;
+}
+.change-request-modal-original {
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+  margin-bottom: 18px;
+  padding: 12px 14px;
+}
+.change-request-modal-original-title {
+  color: #475569;
+  font-size: 0.78rem;
+  font-weight: 700;
+  margin-bottom: 6px;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+.change-request-modal-original .detail-row {
+  padding: 2px 0;
+}
+.change-request-modal-actions {
+  display: flex;
+  gap: 10px;
+  justify-content: flex-end;
+}
+.btn-change-reschedule,
+.btn-change-acknowledge {
+  border-radius: 8px;
+  cursor: pointer;
+  font-size: 0.9rem;
+  font-weight: 700;
+  min-height: 40px;
+  min-width: 120px;
+  padding: 8px 18px;
+  transition: all 0.15s;
+}
+.btn-change-reschedule {
+  background: #fff;
+  border: 2px solid #cbd5e1;
+  color: #475569;
+}
+.btn-change-reschedule:hover:not(:disabled) {
+  background: #f1f5f9;
+  border-color: #94a3b8;
+}
+.btn-change-acknowledge {
+  background: #2563eb;
+  border: 2px solid #2563eb;
+  color: #fff;
+}
+.btn-change-acknowledge:hover:not(:disabled) {
+  background: #1d4ed8;
+  border-color: #1d4ed8;
+  transform: translateY(-1px);
+}
+.change-request-modal-hint {
+  color: #94a3b8;
+  font-size: 0.75rem;
+  margin: 12px 0 0;
+  text-align: center;
+}
+@media (max-width: 480px) {
+  .change-request-modal {
+    padding: 18px;
+  }
+  .change-request-modal h3 {
+    font-size: 1.05rem;
+  }
+  .change-request-modal-actions {
+    flex-direction: column-reverse;  /* Acknowledge on top on mobile (primary action) */
+  }
+  .btn-change-reschedule,
+  .btn-change-acknowledge {
+    width: 100%;
+  }
+  .change-request-block {
+    padding: 12px;
+  }
+  .change-request-actions {
+    flex-direction: column;
+  }
+  .change-request-actions .btn-secondary,
+  .change-request-actions .btn-primary {
+    width: 100%;
+  }
 }
 .demo-banner {
   background: linear-gradient(90deg, #fef3c7 0%, #fed7aa 100%);

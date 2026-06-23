@@ -827,6 +827,115 @@ The old message in Section B's empty state said "Use Section A above to schedule
 
 **Verification:** `grep -c "p2-next-action\|NEXT ACTION\|Schedule the First Interview\|Submit Your Report\|Make a Decision\|Awaiting Report\|Decision Made"` against the deployed `_id_.*.js` bundle — all markers should return ≥ 1.
 
+### 15.6 School-side reception of student change request (2026-06-24, rev 3.0.3)
+
+**Rule:** When the student sends a "🔄 Suggest Change" message from P2, the school-side must surface the request as a **reception modal** (in-page, same pattern as §14.1 Restart modal — `<Teleport to="body">` + overlay + click-outside-to-dismiss + Escape-to-close) on first view, plus a **persistent inline block** under Section B so the message is always readable after the modal is dismissed.
+
+**Data flow (cross-portal, via `bsp:interview:<id>` localStorage):**
+
+1. Student clicks `🔄 Suggest Change` → writes textarea → clicks `📤 Send Change Request` (`pages/student/applications/[id].vue` `submitChangeRequest()`).
+2. Student page mutates `application.value.interview`:
+   - `status = 'change-requested'`
+   - `studentResponse = { action: 'change', message, respondedAt }`
+   - appends `{ event: 'student-change-requested', by: 'student', message, timestamp }` to `history`
+3. `saveSharedInterview()` writes to `bsp:interview:<id>` localStorage.
+4. School page `onMounted` calls `loadInterviewState()` (existing) → `application.value.interview` is now the student-mutated object.
+5. **New:** school page detects `latestInterview.status === 'change-requested' && !latestInterview.studentResponse.schoolAcknowledged` → opens reception modal (auto, on first view only — the `schoolAcknowledged` flag is the per-message guard).
+6. School clicks `✓ Acknowledge` → mutates `studentResponse.schoolAcknowledged = true` + appends history event `school-change-acknowledged` + saves. Modal won't auto-open again for this message.
+7. School clicks `📅 Reschedule` → closes modal → opens `openEditInterview()` (existing flow, mutates the interview object back to `status: 'pending'` with new date/time — student's change request is implicitly resolved).
+
+**Layout (school page, Section B):**
+
+```
+┌──────────────────────────────────────────────────────────────┐
+│ 🎤 Current Interview                          Round #1       │
+│                                                              │
+│  [📤 Change Requested]   ← new 3-way pill (was 2-way)        │
+│  📅 Date: ...                                               │
+│  🕐 Time (UK): ...                                          │
+│  📍 Location: ...                                           │
+│  👤 Interviewer: ...                                        │
+│  📋 Agenda: ...                                             │
+│                                                              │
+│  ┌────────────────────────────────────────────────────────┐ │
+│  │ 📤 Student has requested a change                     │ │  ← new inline block
+│  │   "I have a school exam that day. Could we           │ │     (always visible when
+│  │    reschedule to the following week?"                │ │      status === 'change-requested')
+│  │   🕒 Sent 24 June 2026 at 14:32                       │ │
+│  │   [📅 Reschedule Interview] [✓ Acknowledge]           │ │
+│  └────────────────────────────────────────────────────────┘ │
+└──────────────────────────────────────────────────────────────┘
+```
+
+**Reception modal (auto-open on first view):**
+
+```
+┌─────────────────────────────────────────────┐
+│  📤 Change Request from Student             │
+│  ──────────────────────────────────────────  │
+│  The student has sent you a message:        │
+│                                             │
+│  ┌─────────────────────────────────────┐    │
+│  │ "I have a school exam that day.    │    │
+│  │  Could we reschedule to the         │    │
+│  │  following week?"                   │    │
+│  └─────────────────────────────────────┘    │
+│  🕒 24 June 2026 at 14:32                   │
+│                                             │
+│  Original interview:                        │
+│  📅 30 June 2026 · 🕐 10:00 (UK)            │
+│  📍 Westminster School, London              │
+│                                             │
+│  [📅 Reschedule Now]      [✓ Acknowledge]   │
+│  ──────────────────────────────────────────  │
+│  Press Escape to close (= Acknowledge).     │
+└─────────────────────────────────────────────┘
+```
+
+**3-way status pill rule (school Section B):**
+
+| `latestInterview.status` | Pill text | Pill class |
+|--------------------------|-----------|------------|
+| `'completed'` | `✅ Completed` | `status-pill-confirmed` |
+| `'change-requested'` | `📤 Change Requested` | `status-pill-change` |
+| `'confirmed'` (student confirmed) | `✅ Confirmed` | `status-pill-confirmed` |
+| `'pending'` (or default) | `⏳ Scheduled` | `status-pill-pending` |
+
+(Note: `change-requested` and `confirmed` are mutually exclusive in the lifecycle — student picks one. School must `Reschedule` to clear `change-requested` → back to `pending`.)
+
+**File changes:**
+
+- `pages/school/applications/[id].vue`:
+  - Template: Section B — replace 2-way pill with 3-way, add inline change-request block under `interview-details`
+  - Template: add `<Teleport to="body">` modal block next to the existing Restart modal
+  - Script: add `showChangeRequestModal` ref, `acknowledgeChangeRequest()`, `rescheduleFromChangeRequest()`, `closeChangeRequestModal()` functions
+  - Script: in `onMounted`, after `loadInterviewState()`, check for unacknowledged change request → set `showChangeRequestModal = true`
+  - Script: keyboard handler — Escape closes the change-request modal (= Acknowledge) without opening the Restart modal's Escape logic
+  - CSS: add `.change-request-modal-*` classes (mirroring `.restart-modal-*` pattern)
+
+**Data model additions (backward-compatible):**
+
+- `interview.studentResponse` gains optional field `schoolAcknowledged: boolean` (default `false` when missing — treated as unacknowledged)
+- `interview.history` gains new event `school-change-acknowledged` (appended by `acknowledgeChangeRequest()`)
+
+**Why per-message flag, not per-application flag:** A student can send multiple change requests across the same interview (if school reschedules and student wants another change). Each new `student-change-requested` event in history resets the acknowledged state. Simpler invariant: `studentResponse.schoolAcknowledged` is reset to `false` whenever a new `student-change-requested` event is appended.
+
+**Click-test scenarios (rev 3.0.3):**
+
+| # | Scenario | Expected |
+|---|----------|----------|
+| (aaa) | School opens P2 page, `interview.status === 'change-requested' && !studentResponse.schoolAcknowledged` | Reception modal auto-opens. Page behind dimmed. Pill shows "📤 Change Requested". |
+| (bbb) | Modal open, click "✓ Acknowledge" | Modal closes. Inline block visible under Section B with the student's message + timestamp + "✓ Acknowledged at {time}" badge. Refresh page → modal does NOT auto-open. |
+| (ccc) | Modal open, click "📅 Reschedule Now" | Modal closes. Section A (Schedule form) expands with current values pre-filled. School edits + saves → status resets to `'pending'`. |
+| (ddd) | Modal open, press Escape | Modal closes (= Acknowledge). Same as (bbb). |
+| (eee) | Modal open, click outside (overlay) | Modal closes (= Acknowledge). Same as (bbb). |
+| (fff) | School opens P2, status = `'change-requested'` but `schoolAcknowledged === true` | Modal does NOT auto-open. Inline block visible. No re-prompt. |
+| (ggg) | School acknowledges, then student sends ANOTHER change request (via dev tools "📤 Simulate change request from student") | `studentResponse.schoolAcknowledged` reset to `false`; reception modal auto-opens again on next page load. |
+| (hhh) | School opens P2, status = `'pending'` (default) | No modal. Pill = "⏳ Scheduled". |
+| (iii) | Mobile (iPhone SE 375×667), modal open | Modal fills viewport width, padding shrinks, buttons stack vertically per existing `.restart-modal` @media (max-width: 480px) pattern. |
+
+**Why "schoolAcknowledged" is per-message, not per-school-user:** The mock data layer is single-user. In a real multi-user school, this flag would be a Set of `acknowledgedBy: { userId, at }` entries. For the mock, the boolean is sufficient and keeps the spec aligned with the current data model.
+
 ## 16. P3 — Deposit Exchange (2026-06-15)
 
 **Rule:** P3 is a 3-step deposit exchange: (1) School uploads deposit documents (PDF/JPG/PNG, max 5MB each) — bank details, amount, deadline, payment instructions must be ON the uploaded file, NOT in a separate form; (2) Student downloads documents, pays, and uploads payment proof; (3) School confirms receipt. P3 is "confirmed" → P4 unlocked.
