@@ -295,6 +295,18 @@ The school-end dev-tools panel (§21) provides phase-advance buttons for QA. The
 
 This is a **demo affordance** — picking an option re-seeds the in-memory `application` ref and the in-memory mirrors of `p3Latest` / `interview` / `travelPlan` to match. It does NOT wipe cross-portal localStorage (`bsp:interview:<id>`, `bsp:visa:<id>`, `bsp:travel:<id>`, `useP3Store` deposits) so previously-set state survives the jump. To fully wipe, use **Restart** (§4.6).
 
+#### §4.8.1 URL deep-link preset
+
+Demo jump 亦支援 URL query string deep-link — 等 share 一條 URL 出去直接見到目標 state，唔使 click 下拉掣：
+
+- Format: `?demo=<key>`，例如 `/student/applications/2026-X7K9M2P4/?demo=P2-PENDING`
+- 進入 page 時 `onMounted` 內 detect query string → auto `applyMockSeed(key)`
+- 對未知 key：console.warn + 跳過 (graceful fallback)
+- Query string 入 page 後唔 strip（保留 URL state，方便 share）
+
+Click-test scenario (yy):
+- Open `/student/applications/2026-X7K9M2P4/?demo=P2-PENDING` → 落地即見 P2 card 展開 + "⏳ Awaiting your confirmation" pill + Confirm Attendance / Suggest Change buttons（無 click 過下拉掣）
+
 **Why a drop-down (not buttons):** 9 options would crowd the header; a single `<select>` keeps the chrome compact and matches the existing school-end `PhaseTimeline` dropdown idiom.
 
 **Click-test scenarios (rev 3.0.2):**

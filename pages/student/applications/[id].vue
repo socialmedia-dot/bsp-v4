@@ -1096,6 +1096,18 @@ function onRestartKeydown(e) {
 }
 
 onMounted(() => {
+  // URL deep-link preset: ?demo=<key> auto-applies the seed on load (§4.8.1)
+  const demoKey = route?.query?.demo
+  if (typeof demoKey === 'string' && demoKey.length > 0) {
+    const validKeys = seedDefs.map(s => s.key)
+    if (validKeys.includes(demoKey)) {
+      applyMockSeed(demoKey)
+    } else {
+      // graceful fallback: console.warn, then continue with normal load
+      // eslint-disable-next-line no-console
+      console.warn(`[demo-jump] Unknown ?demo=${demoKey} — valid keys:`, validKeys)
+    }
+  }
   // Cross-portal sync: load interview set by school
   const shared = loadSharedInterview()
   if (shared !== null) {
