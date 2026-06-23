@@ -201,6 +201,15 @@ export function useTravelStore() {
     return 'pending'
   }
 
+  // rev 3.0.2 — added for student Restart flow (mirror useP3Store.clearForApp)
+  // See docs §4.6 — clears travel state for one application.
+  function clearForApp(appId: string) {
+    delete cache.value[appId]
+    if (typeof window !== 'undefined') {
+      try { localStorage.removeItem(key(appId)) } catch (e) { /* ignore */ }
+    }
+  }
+
   return {
     getPlan,
     refresh,
@@ -209,5 +218,6 @@ export function useTravelStore() {
     markTravelArranged,
     hasMinimumViableData,
     hasFlightData,
+    clearForApp,
   }
 }

@@ -212,6 +212,68 @@ The following remain as **always-visible page elements** outside the phase stack
 - **Per-template-doc upload slot on student side** (§17 future enhancement)
 - **Multi-language phase labels** (current English-only)
 
+### 4.6 Restart button (mirror §14.1)
+
+Student page has a **Restart** button at the top-right of the page-header (next to the status badge), matching the school-end pattern (§14.1). Click opens an in-page modal (no `window.confirm()` — unreliable on iOS Safari / embedded WebViews).
+
+The Restart flow on the student side clears (in order):
+
+1. `p3store.clearForApp(id)` — P3 deposit proof + file exchange
+2. `travelstore.clearForApp(id)` — P5 flight + transportation
+3. `localStorage.removeItem('bsp:interview:' + id)` — P2 interview state
+4. `localStorage.removeItem('bsp:visa:' + id)` — P5 visa state
+5. `application.value = clone(defaultMock)` — reset in-memory mock to P1 fresh
+6. `expandedPhases.value = []` — collapse all past-phase cards
+7. `p3StudentFile.value = null` / `p3StudentNewFiles.value = []` — clear staged uploads
+8. `editingChange.value = false` / `changeMessage.value = ''` — reset P2 change-request editor
+
+**Student `defaultMock` shape (P1 fresh, used by Restart):**
+
+```js
+const defaultMock = {
+  refNumber: '2026-X7K9M2P4',
+  currentPhase: 1,
+  subStatus: 'Application Submitted',
+  status: 'active',
+  appliedAt: new Date().toISOString(),
+  interview: null,
+  visaRequested: true,
+  phase3Templates: [],
+  phase4Templates: [],
+  phase4Docs: [],
+  phase5Templates: [],
+  phase5VisaGrantedDocument: null,
+  phase5VisaGrantedAt: null,
+  attachments: []
+}
+```
+
+Note: Student page has NO page-level `bsp:student:app:<id>` localStorage (unlike school-end `bsp:school:app:<id>`). State is held in memory only; Restart simply re-initialises the in-memory `application` ref. Student-side state is owned by cross-portal stores (`bsp:interview:`, `useP3Store`, `useTravelStore`, `bsp:visa:`), all of which Restart wipes.
+
+**5-bullet modal message (adapted for student):**
+
+1. Reset to Phase 1 (fresh application)
+2. Clear P2 interview confirmations
+3. Clear P3 deposit proof and file exchange
+4. Clear P5 visa state and travel arrangements
+5. Clear localStorage and collapse all expanded past phases
+
+**Click-test scenarios (rev 3.0.2):**
+
+| # | Scenario | Expected |
+|---|----------|----------|
+| (oo) | Desktop, click Restart on a P2 active app | Modal opens with 5-bullet message. Cancel + Yes, restart buttons visible. Page behind dimmed. |
+| (pp) | Click Cancel | Modal closes. Application stays at P2. No state change. |
+| (qq) | Click Yes, restart | Modal closes, application resets to P1 (`currentPhase=1`, `subStatus='Application Submitted'`, `status=active`). Page scrolls to top. All P2 interview / P3 deposit / P5 visa + travel state cleared from localStorage. |
+| (rr) | Press Escape | Modal closes (= Cancel). |
+| (ss) | Click Restart twice in quick succession | Second click is a no-op (modal already open). |
+
+### 4.7 Student mock seed matrix
+
+Student page's in-memory mock starts at **P2 active** (`currentPhase: 2`, `subStatus: 'Awaiting Confirmation'`) for visual demo of the most-common student affordance (P2 confirm interview). To verify affordances for other phases, the mock `defaultMock` template (used by Restart) starts at P1 fresh per §4.6.
+
+Per-phase demo seeds (P1–P6 each with at least one typical subStatus variant) will be added to `pages/student/applications/index.vue` as a "Mock applications" section so the user can click through P1–P6 affordances — see roadmap §8.
+
 ---
 
 ## 5. Ref Format

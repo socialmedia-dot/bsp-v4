@@ -11,8 +11,14 @@
             <h1>{{ application.schoolName }}</h1>
             <p>{{ application.schoolLocation }} · Applied {{ formatDate(application.appliedAt) }}</p>
           </div>
-          <div class="status-badge" :class="'status-' + application.status">
-            {{ statusLabel }}
+          <div class="header-actions">
+            <!-- rev 3.0.2: Restart button — see docs §4.6 (mirror school-end §14.1) -->
+            <button v-if="application.status !== 'rejected'" class="btn-restart" @click="requestRestart" title="Reset this application to Phase 1">
+              Restart
+            </button>
+            <div class="status-badge" :class="'status-' + application.status">
+              {{ statusLabel }}
+            </div>
           </div>
         </div>
       </div>
@@ -390,6 +396,35 @@
       </div>
     </footer>
   </div>
+
+  <!-- rev 3.0.2: Restart confirmation modal — see docs §4.6 (mirror school-end §14.1). -->
+  <!-- Replaces window.confirm() (unreliable on iOS Safari / WebView). -->
+  <Teleport to="body">
+    <div v-if="showRestartModal" class="restart-modal-overlay" @click.self="cancelRestart" role="dialog" aria-modal="true" aria-labelledby="restart-modal-title">
+      <div class="restart-modal" role="document">
+        <h3 id="restart-modal-title">Restart this application?</h3>
+        <p class="restart-modal-warning">
+          This is a destructive action and cannot be undone.
+        </p>
+        <p class="restart-modal-intro">This will:</p>
+        <ul class="restart-modal-list">
+          <li>Reset to Phase 1 (fresh application)</li>
+          <li>Clear P2 interview confirmations</li>
+          <li>Clear P3 deposit proof and file exchange</li>
+          <li>Clear P5 visa state and travel arrangements</li>
+          <li>Clear localStorage and collapse all expanded past phases</li>
+        </ul>
+        <div class="restart-modal-actions">
+          <button type="button" class="btn-restart-cancel" @click="cancelRestart" :disabled="restarting">
+            Cancel
+          </button>
+          <button type="button" class="btn-restart-confirm" @click="confirmRestart" :disabled="restarting" autofocus>
+            {{ restarting ? 'Restarting…' : 'Yes, restart' }}
+          </button>
+        </div>
+      </div>
+    </div>
+  </Teleport>
 </template>
 
 <script setup>
@@ -585,6 +620,25 @@ function onStudentMarkNotReady() {
 }
 
 // Mock data — will be replaced by API
+// rev 3.0.2: defaultMock added — used by Restart to reset to Phase 1 fresh.
+// See docs §4.6. Page-level default state is the P2-active mock below (visual demo).
+const defaultMock = {
+  refNumber: '2026-X7K9M2P4',
+  currentPhase: 1,
+  subStatus: 'Application Submitted',
+  status: 'active',
+  appliedAt: new Date().toISOString(),
+  interview: null,
+  visaRequested: true,
+  phase3Templates: [],
+  phase4Templates: [],
+  phase4Docs: [],
+  phase5Templates: [],
+  phase5VisaGrantedDocument: null,
+  phase5VisaGrantedAt: null,
+  attachments: []
+}
+
 const application = ref({
   id,
   refNumber: '2026-X7K9M2P4',
@@ -795,6 +849,66 @@ watch(() => id, () => {
   travelPlan.value = travelstore.getPlan(id)
 }, { immediate: false })
 
+// RESTART: full reset to Phase 1 (fresh application) + clear all cross-portal state.
+// Mirror school-end restart flow — see docs §4.6 / school-end §14 / §14.1.
+// rev 3.0.2: Uses in-page Vue modal (no window.confirm) — §14.1 mobile reliability.
+const showRestartModal = ref(false)
+const restarting = ref(false)
+
+function requestRestart() {
+  // Re-entry guard: ignore second click if modal already open. See §14.1 (mm).
+  if (showRestartModal.value) return
+  showRestartModal.value = true
+}
+
+function cancelRestart() {
+  // Disallow cancel while the action is running.
+  if (restarting.value) return
+  showRestartModal.value = false
+}
+
+function confirmRestart() {
+  restarting.value = true
+  try {
+    if (typeof window !== 'undefined') {
+      // 1. P3 deposit store — clear records for this application
+      try { p3store.clearForApp(id) } catch (e) { /* ignore */ }
+      // 2. P5 travel store — clear flight + transportation
+      try { travelstore.clearForApp(id) } catch (e) { /* ignore */ }
+      // 3. P2 interview shared state — bsp:interview:<id>
+      try { localStorage.removeItem(INTERVIEW_KEY.value) } catch (e) { /* ignore */ }
+      // 4. P5 visa state — bsp:visa:<id>
+      try { localStorage.removeItem(VISA_STATE_KEY.value) } catch (e) { /* ignore */ }
+    }
+    // 5. Reset in-memory application to P1 fresh
+    application.value = JSON.parse(JSON.stringify(defaultMock))
+    // 6. Collapse all expanded past-phase cards
+    expandedPhases.value = []
+    // 7. Clear staged P3 student-side uploads
+    p3StudentFile.value = null
+    p3StudentNewFiles.value = []
+    // 8. Reset P2 change-request editor
+    editingChange.value = false
+    changeMessage.value = ''
+    // Reset travel plan in-memory mirror
+    travelPlan.value = travelstore.getPlan(id)
+    // Close modal + scroll to top
+    showRestartModal.value = false
+    if (typeof window !== 'undefined') {
+      window.scrollTo({ top: 0, behavior: 'smooth' })
+    }
+  } finally {
+    restarting.value = false
+  }
+}
+
+function onRestartKeydown(e) {
+  // Escape closes the modal (= cancel), unless already restarting. See §14.1.
+  if (e.key === 'Escape' && showRestartModal.value && !restarting.value) {
+    cancelRestart()
+  }
+}
+
 onMounted(() => {
   // Cross-portal sync: load interview set by school
   const shared = loadSharedInterview()
@@ -805,6 +919,17 @@ onMounted(() => {
   loadVisaState()
   // P3 deposit exchange sync: load any deposit form set by school
   if (p3store?.deposits) p3store.deposits.value = p3store.deposits.value
+  // Restart modal: Escape-to-close listener (§14.1)
+  if (typeof window !== 'undefined') {
+    window.addEventListener('keydown', onRestartKeydown)
+  }
+})
+
+onUnmounted(() => {
+  // Clean up keydown listener to prevent leaks across SPA navigations.
+  if (typeof window !== 'undefined') {
+    window.removeEventListener('keydown', onRestartKeydown)
+  }
 })
 </script>
 
@@ -923,6 +1048,25 @@ onMounted(() => {
 .form-input:focus { outline: none; border-color: #3b82f6; box-shadow: 0 0 0 3px rgba(59,130,246,0.15); }
 .form-actions { display: flex; gap: 0.5rem; padding-top: 0.25rem; }
 .confirmed-banner { background: #dcfce7; color: #15803d; padding: 0.75rem; border-radius: 8px; font-size: 0.9rem; text-align: center; }
+
+/* rev 3.0.2: Restart button + modal — mirror school-end §14.1 CSS */
+.header-actions { display: flex; align-items: center; gap: 0.75rem; }
+.btn-restart { background: #fff; color: #b91c1c; border: 1px solid #fecaca; padding: 0.45rem 0.85rem; border-radius: 6px; font-size: 0.8rem; font-weight: 600; cursor: pointer; transition: background 0.15s, border-color 0.15s; }
+.btn-restart:hover { background: #fef2f2; border-color: #f87171; }
+.restart-modal-overlay { position: fixed; inset: 0; background: rgba(15, 23, 42, 0.55); display: flex; align-items: center; justify-content: center; z-index: 9999; padding: 1rem; }
+.restart-modal { background: #fff; border-radius: 12px; max-width: 460px; width: 100%; padding: 1.5rem 1.5rem 1.25rem; box-shadow: 0 20px 60px rgba(15, 23, 42, 0.35); }
+.restart-modal h3 { margin: 0 0 0.5rem; font-size: 1.15rem; color: #1e293b; }
+.restart-modal-warning { color: #b91c1c; font-weight: 600; font-size: 0.9rem; margin: 0 0 0.85rem; }
+.restart-modal-intro { font-size: 0.9rem; color: #334155; margin: 0 0 0.4rem; font-weight: 600; }
+.restart-modal-list { margin: 0 0 1.25rem; padding-left: 1.25rem; color: #334155; font-size: 0.88rem; line-height: 1.55; }
+.restart-modal-list li { margin-bottom: 0.2rem; }
+.restart-modal-actions { display: flex; justify-content: flex-end; gap: 0.5rem; }
+.btn-restart-cancel { background: #fff; color: #475569; border: 1px solid #cbd5e1; padding: 0.55rem 1.1rem; border-radius: 6px; font-size: 0.85rem; font-weight: 600; cursor: pointer; }
+.btn-restart-cancel:hover:not(:disabled) { background: #f1f5f9; }
+.btn-restart-cancel:disabled { opacity: 0.5; cursor: not-allowed; }
+.btn-restart-confirm { background: #b91c1c; color: #fff; border: 1px solid #b91c1c; padding: 0.55rem 1.1rem; border-radius: 6px; font-size: 0.85rem; font-weight: 600; cursor: pointer; }
+.btn-restart-confirm:hover:not(:disabled) { background: #991b1b; border-color: #991b1b; }
+.btn-restart-confirm:disabled { opacity: 0.6; cursor: not-allowed; }
 .change-banner { background: #fff7ed; color: #7c2d12; padding: 0.75rem; border-radius: 8px; font-size: 0.9rem; text-align: center; }
 
 /* P3 file exchange (student) — mirrors school page styles for consistency (docs §16.1) */
