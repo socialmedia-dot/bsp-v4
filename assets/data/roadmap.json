@@ -21,6 +21,10 @@
   },
   "recentUpdates": [
     {
+      "date": "2026-06-24",
+      "text": "P2 cross-portal change request reception — school sees 3-way status pill + inline message block + auto-opens modal on first view (rev 3.0.3, §15.6 + §15.6.1 bridge)"
+    },
+    {
       "date": "2026-06-22",
       "text": "School Dashboard built — 6 stats + needs-action + phase distribution + recent apps + quick links (responsive 6→3→2 col)"
     },
