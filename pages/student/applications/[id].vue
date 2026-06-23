@@ -455,10 +455,14 @@ const phaseHistory = computed(() => {
     let status = 'Pending'
     if (phase < application.value.currentPhase) status = 'Completed'
     else if (phase === application.value.currentPhase) {
-      // Mirror subStatus in a friendly form for the badge
-      const sub = (application.value.subStatus || '').toLowerCase()
-      if (sub.includes('reject')) status = 'Rejected'
-      else if (sub.includes('confirm')) status = 'Confirmed'
+      // Map subStatus to a friendly status badge text. Order matters:
+      // 'awaiting' must be checked before 'confirm' (Awaiting Confirmation
+      // contains "confirm" but is not "Confirmed").
+      const subLower = (application.value.subStatus || '').toLowerCase()
+      if (subLower.includes('reject')) status = 'Rejected'
+      else if (subLower.startsWith('await') || subLower.includes('pending')) {
+        status = application.value.subStatus || 'Awaiting'
+      } else if (subLower.includes('confirm')) status = 'Confirmed'
       else status = application.value.subStatus || 'In Progress'
     }
     return { phase, label, status, date: null, notes: '' }
