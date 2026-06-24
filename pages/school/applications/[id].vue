@@ -502,10 +502,10 @@
                     </ul>
                   </div>
 
-                  <!-- Section A: Documents to send to student (primary action, multi-file) -->
-                  <div class="p3-section">
-                    <div class="p3-section-title">📎 Documents for Student</div>
-                    <div class="action-desc">Upload deposit form, payment instructions, or any document the student needs. PDF, JPG, or PNG, max 5MB each.</div>
+                  <!-- §16.0.2 Section 1 (rev 3.10): Files to Student — primary action, multi-file upload. Mirror of student §2 (active affordance, green pill + border). -->
+                  <div class="phase-subsection p3-action-section">
+                    <h4>📎 Files to Student <span class="p3-section-pill p3-section-pill-action">Send files</span></h4>
+                    <p class="p3-section-purpose">Upload deposit form, payment instructions, or documents the student needs. PDF, JPG, or PNG, max 5MB each.</p>
 
                     <!-- §16.2 P3 entry message — visible only on school's first P3 entry (before any documents sent) (docs §16.2, rev 3.5, 2026-06-24) -->
                     <div v-if="!p3Latest" class="p3-entry-hint">
@@ -541,10 +541,10 @@
                     </div>
                   </div>
 
-                  <!-- 📥 Files from Student (collapsible — see docs §16.1) -->
-                  <!-- As of rev 2.2 (2026-06-16): this toggle body also hosts the Confirm Deposit Receipt block, -->
-                  <!-- so the school can review student files + confirm receipt in one place. -->
-                  <div v-if="p3Latest" class="p3-section">
+                  <!-- §16.0.2 Section 2 (rev 3.10): Files from Student — read-only display, collapsible. Mirror of student §1 (read-only affordance, gray pill + border). Confirm Deposit Receipt (Section 3) is pulled OUT as its own card in rev 3.10. -->
+                  <div v-if="p3Latest" class="phase-subsection p3-readonly-section">
+                    <h4>📥 Files from Student <span class="p3-section-pill p3-section-pill-viewonly">View only</span></h4>
+                    <p class="p3-section-purpose">Documents the student has sent back. Download only — part of the P3 audit trail.</p>
                     <button
                       type="button"
                       class="p3-toggle-btn"
@@ -557,7 +557,6 @@
                       <span class="p3-toggle-count">({{ p3Latest.studentFiles?.length || 0 }})</span>
                     </button>
                     <div v-if="showStudentFiles" class="p3-toggle-body">
-                      <div class="action-desc">Documents the student has sent back. Download only — these are part of the P3 audit trail.</div>
                       <div v-if="p3Latest.studentFiles && p3Latest.studentFiles.length" class="p3-files-list">
                         <div v-for="(f, i) in p3Latest.studentFiles" :key="i" class="p3-file-row">
                           <span class="p3-file-icon">📄</span>
@@ -566,40 +565,40 @@
                         </div>
                       </div>
                       <p v-else class="p3-empty">No files submitted yet — waiting for student.</p>
+                    </div>
+                  </div>
 
-                      <!-- 📥 Confirm Deposit Receipt — moved into this toggle body in rev 2.2 (was standalone Section C). -->
-                      <!-- Enablement + helper text variants per docs §16.1.1 rev 2.1. -->
-                      <div v-if="p3Latest.status !== 'sent_to_student'" class="p3-confirm-receipt-block">
-                        <div class="p3-section-title">📥 Confirm Deposit Receipt</div>
-                        <div v-if="p3Latest.proofFileName" class="p3-proof-display">
-                          <div class="att-row">
-                            <span class="att-icon">📄</span>
-                            <div class="att-info">
-                              <div class="att-name">{{ p3Latest.proofFileName }}</div>
-                              <div class="att-meta">Uploaded {{ formatDateTime(p3Latest.proofUploadedAt) }} by {{ p3Latest.proofUploadedBy || 'student' }}</div>
-                            </div>
-                            <button
-                              v-if="p3Latest.status === 'proof_uploaded'"
-                              class="btn-approve"
-                              :disabled="!p3Latest.studentFiles || p3Latest.studentFiles.length === 0"
-                              :title="(!p3Latest.studentFiles || p3Latest.studentFiles.length === 0) ? 'Student has not sent any files through the file exchange yet' : 'Click to confirm deposit receipt and advance to P4 (school is the final authority)'"
-                              @click="onP3Confirm"
-                            >✅ Confirm Receipt</button>
-                            <span v-else class="status-pill status-pill-confirmed">✅ Confirmed</span>
-                          </div>
-                          <div v-if="p3Latest.status === 'proof_uploaded' && (!p3Latest.studentFiles || p3Latest.studentFiles.length === 0)" class="p3-gate-hint">
-                            ⏳ Waiting for student to send at least 1 file through "📤 Send Files to School". Proof alone is not enough — the school needs at least one supplementary document (signed form, refund agreement, etc.).
-                          </div>
-                          <div v-else-if="p3Latest.status === 'proof_uploaded' && p3Latest.studentReadyForReview" class="p3-gate-ready">
-                            ✅ Student has indicated they're done — you can confirm anytime.
-                          </div>
-                          <div v-else-if="p3Latest.status === 'proof_uploaded'" class="p3-gate-hint">
-                            ℹ️ Student hasn't clicked "✅ I've uploaded everything" — but you can confirm anytime if you have what you need.
-                          </div>
+                  <!-- §16.0.2 Section 3 (rev 3.10): Confirm Deposit Receipt — pulled out of Section 2's toggle body in rev 3.10. Stand-alone blue card. Enablement + helper text variants per docs §16.1.1 rev 2.1. -->
+                  <div v-if="p3Latest && p3Latest.status !== 'sent_to_student'" class="phase-subsection p3-action-section p3-payment-section">
+                    <h4>✅ Confirm Deposit Receipt <span class="p3-section-pill p3-section-pill-action p3-section-pill-payment">Confirm receipt</span></h4>
+                    <p class="p3-section-purpose">Confirm the student's payment receipt and submitted documents. Advances P3 to P4.</p>
+                    <div v-if="p3Latest.proofFileName" class="p3-proof-display">
+                      <div class="att-row">
+                        <span class="att-icon">📄</span>
+                        <div class="att-info">
+                          <div class="att-name">{{ p3Latest.proofFileName }}</div>
+                          <div class="att-meta">Uploaded {{ formatDateTime(p3Latest.proofUploadedAt) }} by {{ p3Latest.proofUploadedBy || 'student' }}</div>
                         </div>
-                        <p v-else class="p3-empty">Waiting for student to upload deposit proof…</p>
+                        <button
+                          v-if="p3Latest.status === 'proof_uploaded'"
+                          class="btn-approve"
+                          :disabled="!p3Latest.studentFiles || p3Latest.studentFiles.length === 0"
+                          :title="(!p3Latest.studentFiles || p3Latest.studentFiles.length === 0) ? 'Student has not sent any files through the file exchange yet' : 'Click to confirm deposit receipt and advance to P4 (school is the final authority)'"
+                          @click="onP3Confirm"
+                        >✅ Confirm Receipt</button>
+                        <span v-else class="status-pill status-pill-confirmed">✅ Confirmed</span>
+                      </div>
+                      <div v-if="p3Latest.status === 'proof_uploaded' && (!p3Latest.studentFiles || p3Latest.studentFiles.length === 0)" class="p3-gate-hint">
+                        ⏳ Waiting for student to send at least 1 file through "📤 Send Files to School". Proof alone is not enough — the school needs at least one supplementary document (signed form, refund agreement, etc.).
+                      </div>
+                      <div v-else-if="p3Latest.status === 'proof_uploaded' && p3Latest.studentReadyForReview" class="p3-gate-ready">
+                        ✅ Student has indicated they're done — you can confirm anytime.
+                      </div>
+                      <div v-else-if="p3Latest.status === 'proof_uploaded'" class="p3-gate-hint">
+                        ℹ️ Student hasn't clicked "✅ I've uploaded everything" — but you can confirm anytime if you have what you need.
                       </div>
                     </div>
+                    <p v-else class="p3-empty">Waiting for student to upload deposit proof…</p>
                   </div>
 
                   <div v-if="p3Latest && p3Latest.status === 'confirmed'" class="p3-confirmed-banner">
@@ -2635,6 +2634,17 @@ function devRestart() {
   font-size: 0.9rem;
   margin: 0 0 12px;
 }
+
+/* §16.0.2 rev 3.10 — P3 visual hierarchy for school page (mirror of student rev 3.8/3.9) */
+.phase-subsection.p3-readonly-section { background: #f8fafc; border: 1px solid #e2e8f0; border-left: 4px solid #94a3b8; border-radius: 6px; padding: 12px 14px; margin-top: 14px; }
+.phase-subsection.p3-readonly-section .p3-file-row { background: #ffffff; }
+.phase-subsection.p3-action-section { background: #ffffff; border: 1px solid #d1fae5; border-left: 4px solid #10b981; border-radius: 6px; padding: 12px 14px; }
+.phase-subsection.p3-action-section.p3-payment-section { border-color: #dbeafe; border-left-color: #3b82f6; }
+.p3-section-pill { display: inline-block; font-size: 0.62rem; font-weight: 700; padding: 2px 8px; border-radius: 10px; margin-left: 8px; vertical-align: middle; letter-spacing: 0.05em; text-transform: uppercase; }
+.p3-section-pill-viewonly { background: #e2e8f0; color: #475569; }
+.p3-section-pill-action { background: #d1fae5; color: #065f46; }
+.p3-section-pill-payment { background: #dbeafe; color: #1e3a8a; }
+.p3-section-purpose { font-size: 0.82rem; color: #475569; margin: -4px 0 12px; font-style: italic; }
 .phase-notes-text {
   background: #f8fafc;
   border-left: 3px solid #cbd5e1;
@@ -3278,6 +3288,9 @@ function devRestart() {
 @media (max-width: 480px) {
   .p3-entry-hint { padding: 0.6rem 0.75rem; font-size: 0.85rem; }
   .p3-entry-hint-icon { font-size: 1.05rem; }
+  .p3-section-pill { font-size: 0.55rem; padding: 1.5px 6px; margin-left: 4px; }
+  .p3-section-purpose { font-size: 0.78rem; }
+  .phase-subsection.p3-readonly-section, .phase-subsection.p3-action-section { padding: 10px 12px; }
 }
 .p3-form-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 0.75rem; }
 .p3-proof-display { display: flex; justify-content: space-between; align-items: center; gap: 0.75rem; padding: 0.75rem; background: #f0fdf4; border: 1px solid #bbf7d0; border-radius: 6px; flex-wrap: wrap; }

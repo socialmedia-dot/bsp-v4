@@ -1125,6 +1125,59 @@ Sections 2 and 3 purpose text are unchanged — KC confirmed the current wording
 | (aa) | Open P3 student page (active, 1 school file) | Section 1 shows the new purpose text "These are documents the school has sent you. Please read them now." — replacing the rev 3.8 "Read-only — no action needed..." wording. Gray pill, gray border, italic style all unchanged. The line reads as a friendly nudge ("please read") rather than a passive disclaimer. |
 | (ab) | Section 1 vs Section 2 vs Section 3 purpose text comparison | Section 1: "These are documents the school has sent you. Please read them now." (action: read). Section 2: "Send signed forms, additional documents, or replies back to the school. PDF, JPG, or PNG, max 5MB each." (action: upload + send). Section 3: "Your bank transfer receipt — school will review and confirm." (action: upload receipt). Each section's first verb ("read" / "send" / "Your") makes the action unambiguous. |
 
+**School P3 visual hierarchy mirror (2026-06-25, rev 3.10):**
+
+**Rule (rev 3.10):** KC observed (2026-06-25) that the school's P3 view (`pages/school/applications/[id].vue`) was still rendering as plain `.p3-section` blocks without the rev 3.8 visual treatment applied to the student view. The school page had three functional sub-sections — upload to student, files from student, confirm deposit — but they were visually indistinguishable: same flat gray border, no pill label, no purpose text. KC: 「整到學校同學生兩邊嘅版本都一樣先。跟學生嗰邊，要有三個清晰嘅位置」. rev 3.10 mirrors the student's rev 3.8 visual framework to the school page so both sides now have three distinct, color-coded cards with pill labels and 1-line purpose text.
+
+**Affordance mapping (school ↔ student):**
+
+| # | School section | Affordance | CSS class | Pill | Border | Student mirror (same affordance, different position) |
+|---|----------------|-----------|-----------|------|--------|---|
+| 1 | 📎 **Files to Student** | Active (upload + send + read-only sent list after send) | `p3-action-section` | green "Send files" | green | Student §2 "Files to School" (active upload, same affordance) |
+| 2 | 📥 **Files from Student** | Read-only display (collapsible, download only) | `p3-readonly-section` | gray "View only" | gray | Student §1 "Files from School" (read-only display, same affordance) |
+| 3 | ✅ **Confirm Deposit Receipt** | Action (gated confirm, advances P3 → P4) | `p3-action-section p3-payment-section` | blue "Confirm receipt" | blue | Student §3 "Deposit Receipt" (gated action, same affordance) |
+
+**Why school order differs from student order:** Both sides have the same three affordances (read-only display, active upload, gated final action), but the **natural user flow** differs:
+- **Student:** read incoming first → then upload outgoing → then pay. Order: read → send → pay.
+- **School:** upload outgoing first → then receive incoming → then confirm. Order: send → receive → confirm.
+
+So the position of the read-only card shifts (school §2 ↔ student §1) and the position of the active upload card shifts (school §1 ↔ student §2), but the **affordance-to-color mapping is preserved**:
+- Read-only display = gray pill + gray border (school §2 = student §1)
+- Active upload = green pill + green border (school §1 = student §2)
+- Gated action = blue pill + blue border (school §3 = student §3)
+
+This is intentional — making the affordance colors symmetric across sides means a user familiar with one side instantly reads the other. The pill label + purpose text (with school-voice wording) carries the role-specific meaning; the color carries the affordance semantics.
+
+**School section wording (rev 3.10, parallel to student rev 3.9):**
+
+| # | Section | Pill | Purpose text |
+|---|---------|------|--------------|
+| 1 | Files to Student | "Send files" (green) | "Upload deposit form, payment instructions, or documents the student needs. PDF, JPG, or PNG, max 5MB each." |
+| 2 | Files from Student | "View only" (gray) | "Documents the student has sent back. Download only — part of the P3 audit trail." |
+| 3 | Confirm Deposit Receipt | "Confirm receipt" (blue) | "Confirm the student's payment receipt and submitted documents. Advances P3 to P4." |
+
+**Restructure note:** The Confirm Deposit Receipt block was historically nested inside the Files from Student collapsible body (since rev 2.2, 2026-06-16) so the school could review student files and confirm receipt in one place. rev 3.10 pulls Confirm Deposit Receipt OUT of that toggle body and makes it its own third section. The school's collapsible toggle for Files from Student is preserved (default collapsed, green left-border accent when N>0) — but the Confirm block no longer depends on the toggle being expanded. The proof display + Confirm Receipt button + gate hints render as a stand-alone section 3 card.
+
+**Implementation file:** `pages/school/applications/[id].vue`:
+- The three P3 sub-section blocks (currently `.p3-section` divs at lines ~506, ~547, ~572) get the same three `.phase-subsection` modifier classes as the student page: `p3-readonly-section`, `p3-action-section`, `p3-action-section p3-payment-section`.
+- Each gets an h4 with the new title + a `<span class="p3-section-pill ...">` appended. The pill color/class mirrors the modifier class.
+- Each gets a `<p class="p3-section-purpose">` paragraph immediately after the h4.
+- Section 3 (Confirm Deposit Receipt) is moved out of the Files from Student toggle body — it now sits as its own third card.
+- Existing class `.p3-section` is replaced by `.phase-subsection` + the modifier; the legacy `.p3-section-title` div is replaced by an h4 (so it inherits the standard `.phase-subsection h4` styling).
+- The existing `.p3-toggle-btn` (Files from Student collapsible button) is preserved INSIDE section 2, not removed — the section 2 card hosts both the pill+purpose heading AND the collapsible button below.
+- CSS for the new classes is copied from `pages/student/applications/[id].vue` (or pulled into a shared `assets/css/p3-sections.css` later if needed). Same color values, same mobile media query.
+
+**Click-test scenarios (post-deploy, rev 3.10):**
+
+| # | Scenario | Expected |
+|---|----------|----------|
+| (ac) | Open P3 school page (active, 1 school file sent, student has uploaded proof but no studentFiles) | Section 1 (Files to Student) green border + green "Send files" pill + purpose text. Section 2 (Files from Student) gray border + gray "View only" pill + purpose text, collapsible toggle showing `(0)`. Section 3 (Confirm Deposit Receipt) blue border + blue "Confirm receipt" pill + purpose text, Confirm button DISABLED with the existing gate hint. Three cards visually distinct: green, gray, blue. |
+| (ad) | Open P3 school page (student has uploaded 2 files via "Files to School" + proof) | Section 2 toggle shows `(2)` with green left-border accent (existing behavior). Confirm button ENABLED. Pill colors and borders unchanged. |
+| (ae) | School clicks Section 2 toggle to expand student files list | The file list expands inside Section 2 (existing behavior). Section 3 (Confirm) stays visible as its own card — no longer hidden behind the toggle. |
+| (af) | School clicks "Send to Student" with 1 file queued | Section 1's sent-files list grows. Section 1 pill stays "Send files" green. Section 2 + 3 unchanged. |
+| (ag) | P3 status `confirmed` | Section 3 still shows "Confirm receipt" blue pill (now read-only, no button). The confirmed banner still appears below. All three sections retain their pill + purpose text — they're now persistent affordance labels, not action-dependent. |
+| (ah) | Mobile (≤ 480px) | All three pills shrink to ~0.55rem font. Padding tightens. Border-left accent + pill color still distinguishable. Order unchanged. |
+
 **Sent files are read-only (2026-06-15 update):** Once a file is in `p3Latest.schoolFiles` (i.e. has been sent to the student via "Send to Student" or "Add to Student"), the school CANNOT delete it. The file row shows only the download link (`<a>` tag with the file name as anchor text), upload timestamp, and **NO remove button** — not before, not after student proof upload, not after confirmation.
 - This applies to ALL statuses: `sent_to_student`, `proof_uploaded`, and `confirmed`.
 - Rationale: the student may have already seen / paid / acted on the file. Removing it would break the audit trail. If a wrong file was sent, the school should send a corrected file via "Add to Student" (the old one remains visible for both parties).
