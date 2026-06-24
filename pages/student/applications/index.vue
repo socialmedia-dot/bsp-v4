@@ -8,6 +8,7 @@
         </NuxtLink>
         <nav>
           <ul class="nav-links">
+            <li><NuxtLink to="/student/dashboard">Dashboard</NuxtLink></li>
             <li><NuxtLink to="/">Home</NuxtLink></li>
             <li><NuxtLink to="/schools">Schools</NuxtLink></li>
             <li><NuxtLink to="/student/profile">Profile</NuxtLink></li>

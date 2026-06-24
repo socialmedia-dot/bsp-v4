@@ -110,7 +110,8 @@ const form = ref({
 
 const handleLogin = () => {
   console.log('Student Login:', form.value)
-  alert('Student login would connect to the BSP API.\n\nThis is a demo.')
+  // §15.7: redirect to student dashboard after login (rev 3.0.4)
+  navigateTo('/student/dashboard')
 }
 </script>
 
