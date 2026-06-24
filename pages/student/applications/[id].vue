@@ -185,6 +185,19 @@
 
                 <!-- ========== P3: Offering — Send Files + Deposit Proof + School docs + Doc Checklist ========== -->
                 <template v-else-if="ph.phase === 3">
+                  <!-- §16.2 P3 entry state — celebration banner + waiting state (see docs §16.2, rev 3.5, 2026-06-24) -->
+                  <div v-if="!p3Latest" class="p3-entry-state">
+                    <div class="p3-celebration-banner">
+                      <span class="p3-celebration-icon">🎉</span>
+                      <span class="p3-celebration-text">Congratulations on passing your interview!</span>
+                    </div>
+                    <div class="p3-waiting-state">
+                      <span class="p3-waiting-icon">⏳</span>
+                      <span class="p3-waiting-text">School is preparing your admission documents. We'll let you know when they're ready.</span>
+                    </div>
+                  </div>
+
+                  <template v-else>
                   <!-- §16.1 Send Files to School — student-side mirror of schoolFiles (see docs §16.1) -->
                   <div class="phase-subsection">
                     <h4>📤 Send Files to School</h4>
@@ -285,6 +298,7 @@
                       </div>
                     </div>
                   </div>
+                  </template>
                 </template>
 
                 <!-- ========== P4: Admission Documents — phase4Docs read-only (per §22 deferred) ========== -->
@@ -1314,6 +1328,23 @@ onUnmounted(() => {
 .p3-ready-banner-spacer { flex: 1; }
 .p3-ready-banner-secondary { background: transparent; color: #1e40af; border: 1px solid #93c5fd; padding: 0.25rem 0.65rem; border-radius: 6px; font-size: 0.85rem; cursor: pointer; font-weight: 500; }
 .p3-ready-banner-secondary:hover { background: #dbeafe; }
+
+/* §16.2 P3 entry state — celebration banner + waiting state (docs §16.2, rev 3.5, 2026-06-24) */
+.p3-entry-state { display: flex; flex-direction: column; gap: 0.85rem; margin: 0.5rem 0 1.5rem; }
+.p3-celebration-banner { display: flex; align-items: center; gap: 0.75rem; padding: 1rem 1.1rem; background: linear-gradient(135deg, #fef3c7 0%, #fde68a 100%); border: 1px solid #f59e0b; border-radius: 10px; box-shadow: 0 1px 3px rgba(245, 158, 11, 0.12); }
+.p3-celebration-icon { font-size: 1.85rem; line-height: 1; flex-shrink: 0; }
+.p3-celebration-text { color: #78350f; font-size: 1.05rem; font-weight: 700; line-height: 1.4; }
+.p3-waiting-state { display: flex; align-items: center; gap: 0.75rem; padding: 0.85rem 1.1rem; background: #f1f5f9; border: 1px dashed #94a3b8; border-radius: 8px; }
+.p3-waiting-icon { font-size: 1.35rem; line-height: 1; flex-shrink: 0; }
+.p3-waiting-text { color: #475569; font-size: 0.95rem; font-weight: 500; line-height: 1.45; }
+@media (max-width: 480px) {
+  .p3-celebration-banner { padding: 0.85rem 0.9rem; }
+  .p3-celebration-icon { font-size: 1.5rem; }
+  .p3-celebration-text { font-size: 0.95rem; }
+  .p3-waiting-state { padding: 0.7rem 0.9rem; }
+  .p3-waiting-icon { font-size: 1.15rem; }
+  .p3-waiting-text { font-size: 0.88rem; }
+}
 
 /* P4 admission documents (student read-only) */
 .p4-docs-list { display: flex; flex-direction: column; gap: 0.5rem; margin: 0.5rem 0; }

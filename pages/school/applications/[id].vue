@@ -507,6 +507,12 @@
                     <div class="p3-section-title">📎 Documents for Student</div>
                     <div class="action-desc">Upload deposit form, payment instructions, or any document the student needs. PDF, JPG, or PNG, max 5MB each.</div>
 
+                    <!-- §16.2 P3 entry message — visible only on school's first P3 entry (before any documents sent) (docs §16.2, rev 3.5, 2026-06-24) -->
+                    <div v-if="!p3Latest" class="p3-entry-hint">
+                      <span class="p3-entry-hint-icon">🚀</span>
+                      <span class="p3-entry-hint-text">Phase 3 starts here. Upload your deposit form / payment instructions and click <strong>Send to Student</strong> to begin the offering flow.</span>
+                    </div>
+
                     <!-- Sent files list (read-only — no delete button per docs §16) -->
                     <div v-if="p3Latest && p3Latest.schoolFiles && p3Latest.schoolFiles.length" class="p3-files-list">
                       <div v-for="(f, i) in p3Latest.schoolFiles" :key="i" class="p3-file-row">
@@ -3264,6 +3270,15 @@ function devRestart() {
 .p3-container { background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px; padding: 1rem; }
 .p3-section { background: #fff; border: 1px solid #e2e8f0; border-radius: 6px; padding: 1rem; margin-top: 0.75rem; }
 .p3-section-title { font-weight: 700; font-size: 0.95rem; margin-bottom: 0.75rem; color: #1e293b; }
+
+/* §16.2 P3 entry hint — school's first P3 entry (docs §16.2, rev 3.5, 2026-06-24) */
+.p3-entry-hint { display: flex; align-items: center; gap: 0.65rem; padding: 0.7rem 0.95rem; margin-bottom: 0.85rem; background: #eff6ff; border: 1px solid #93c5fd; border-radius: 6px; color: #1e40af; font-size: 0.9rem; line-height: 1.45; }
+.p3-entry-hint-icon { font-size: 1.2rem; line-height: 1; flex-shrink: 0; }
+.p3-entry-hint-text strong { color: #1e3a8a; font-weight: 700; }
+@media (max-width: 480px) {
+  .p3-entry-hint { padding: 0.6rem 0.75rem; font-size: 0.85rem; }
+  .p3-entry-hint-icon { font-size: 1.05rem; }
+}
 .p3-form-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 0.75rem; }
 .p3-proof-display { display: flex; justify-content: space-between; align-items: center; gap: 0.75rem; padding: 0.75rem; background: #f0fdf4; border: 1px solid #bbf7d0; border-radius: 6px; flex-wrap: wrap; }
 .p3-file-attached { display: inline-block; padding: 0.25rem 0.5rem; background: #dbeafe; color: #1e40af; border-radius: 4px; font-size: 0.8rem; margin-left: 0.5rem; }

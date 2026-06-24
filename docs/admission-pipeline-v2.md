@@ -1293,6 +1293,62 @@ School page (`pages/school/applications/[id].vue`):
 | (ee) | Open school P3, status = `confirmed` | Toggle shows ▶️ collapsed (action already complete — confirmed banner carries the message). |
 | (ff) | After manually collapsing then refreshing | Local state resets; the rule applies again based on `p3Latest`. If state still says actionable, toggle reopens. |
 
+### 16.2 Student P3 entry — celebration banner + waiting state (NEW in rev 3.5, 2026-06-24)
+
+**Rule (entry state):** When a student first enters Phase 3 and the school has NOT yet sent any documents (`p3store.getLatest(id).value` is `null`), the student P3 card body renders a **celebration + waiting state** INSTEAD of the file exchange / proof upload / document checklist sections. The student sees:
+
+1. A celebratory banner acknowledging that they passed the interview and have reached the offer stage.
+2. A clear "waiting on school" message indicating the school is preparing their admission documents.
+3. No upload affordances, no proof upload, no document checklist — there is nothing for the student to do until the school has sent the deposit form / payment instructions.
+
+**Rule (active state):** Once the school sends documents (`p3Latest` is non-null), the celebration + waiting state is REPLACED by the full P3 affordance set per §16.1: school files list, student file upload, deposit proof upload, document checklist. The celebration banner does NOT re-appear on subsequent visits while still in P3.
+
+**Rule (terminal state):** When `p3Latest.status === 'confirmed'`, the regular P3 affordance set remains visible (per §16.1.1 — file channel stays open for late submissions), and a "✅ Confirmed" success indicator is shown in place of the upload prompt.
+
+**Why this exists (KC 2026-06-24):** Previously, the student P3 card body showed the "📤 Send Files to School" section + a fallback "School hasn't sent the deposit form yet" line as soon as the student entered P3. This was confusing: the student had just passed the interview and was dropped into a "send files" interface before any files existed to send, with no clear "you've passed, the school is preparing things" acknowledgement. The new entry state:
+
+- Reinforces the win (passing the interview is a milestone worth celebrating).
+- Sets the right expectation (student is waiting on school, not the other way around).
+- Removes premature affordances (there's no point uploading a file the school has nothing to attach to).
+
+**Layout (student page, P3 entry state — `!p3Latest`):**
+
+```
+┌─────────────────────────────────────────────────┐
+│  💰 Phase 3 — Offering                          │
+│  ─────────────────────────────────────────────  │
+│  🎉 Congratulations on passing your interview!  │  ← celebration banner
+│  ─────────────────────────────────────────────  │
+│  ⏳ School is preparing your admission          │  ← waiting state
+│     documents. We'll let you know when          │
+│     they're ready.                              │
+└─────────────────────────────────────────────────┘
+```
+
+**Layout (student page, P3 active state — `p3Latest` exists):**
+
+Existing §16.1 affordance set renders in order: 📤 Send Files to School → 💳 Upload Deposit Proof → 📎 Deposit Form & Payment Instructions → 📄 Document Checklist.
+
+**File changes (rev 3.5, 2026-06-24):**
+
+| File | Change |
+|------|--------|
+| `pages/student/applications/[id].vue` | Wrap existing P3 section body in `<template v-if="p3Latest">` so the file exchange / proof upload / checklist sections only render once the school has sent. Add a new sibling `<template v-else>` block with the celebration banner + waiting state message. |
+| `pages/school/applications/[id].vue` | Add a small "Phase 3 entry message" above the existing "📎 Documents for Student" section when `!p3Latest` (school just entered P3, hasn't sent anything yet) — clarifies "Phase 3 starts here. Upload your deposit form / payment instructions and click Send to Student to begin." |
+| `assets/data/roadmap.json` | Add 2026-06-24 entry to `recentUpdates` for §16.2 (P3 entry celebration + waiting state). |
+
+**Click-test scenarios (post-deploy):**
+
+| # | Scenario | Expected |
+|---|----------|----------|
+| (gg) | Student opens P3 (`!p3Latest`) | Celebration banner "🎉 Congratulations on passing your interview!" + waiting state "⏳ School is preparing your admission documents. We'll let you know when they're ready." No upload sections, no document checklist visible. |
+| (hh) | School clicks "📤 Send to Student" with 1 file queued | Student refreshes P3 page → celebration banner GONE, replaced by full §16.1 affordance set with the school file visible in "📎 Deposit Form & Payment Instructions". |
+| (ii) | Student refreshes P3 again later (still `sent_to_student`, no proof uploaded) | Celebration banner does NOT re-appear. Affordance set stays. Upload Deposit Proof prompt still shows "Upload your deposit payment receipt to confirm your place." |
+| (jj) | School opens P3 first time (`!p3Latest`) | New entry message visible above the "📎 Documents for Student" section: "Phase 3 starts here. Upload your deposit form / payment instructions and click Send to Student to begin." |
+| (kk) | School sends document, refreshes P3 (`p3Latest` now exists) | Entry message gone; existing affordance set is unchanged from before. |
+
+---
+
 ### §16.1.1 Dev affordance — temporary (KC 2026-06-15)
 
 **Status:** TEMPORARY — remove when the student-side P3 page (`pages/student/applications/[id].vue`) is built.
