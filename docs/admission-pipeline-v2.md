@@ -286,7 +286,7 @@ The school-end dev-tools panel (§21) provides phase-advance buttons for QA. The
 | P2 — Awaiting Confirmation | 2 | `'Awaiting Confirmation'` | `interview = null` |
 | P2 — Pending (school scheduled) | 2 | `'Awaiting Confirmation'` | `interview = { status: 'pending', date, startTime, durationMinutes, type, onlineLink, agenda, notes, scheduledAt, scheduledBy }` |
 | P2 — Confirmed | 2 | `'Confirmed'` | `interview = { status: 'confirmed', date, startTime, durationMinutes, type, onlineLink, agenda, notes, confirmedAt }` |
-| P3 — Awaiting Deposit | 3 | `'sent_to_student'` | `p3Latest.status = 'sent_to_student'` (school sent form) |
+| P3 — Waiting for School | 3 | `'Awaiting School'` | No p3 record (school hasn't sent yet — see docs §16.2) |
 | P3 — Proof Uploaded | 3 | `'proof_uploaded'` | `p3Latest.status = 'proof_uploaded'` |
 | P4 — Admission Documents | 4 | `'in_progress'` | `phase4Docs = [2 mock docs]` |
 | P5 — Visa Granted | 5 | `'visa_granted'` | `visaGranted = true` + `phase5VisaGrantedDocument` set |
@@ -307,13 +307,13 @@ Demo jump 亦支援 URL query string deep-link — 等 share 一條 URL 出去�
 Click-test scenario (yy):
 - Open `/student/applications/2026-X7K9M2P4/?demo=P2-PENDING` → 落地即見 P2 card 展開 + "⏳ Awaiting your confirmation" pill + Confirm Attendance / Suggest Change buttons（無 click 過下拉掣）
 
-**Why a drop-down (not buttons):** 9 options would crowd the header; a single `<select>` keeps the chrome compact and matches the existing school-end `PhaseTimeline` dropdown idiom.
+**Why a drop-down (not buttons):** 10 options would crowd the header; a single `<select>` keeps the chrome compact and matches the existing school-end `PhaseTimeline` dropdown idiom.
 
 **Click-test scenarios (rev 3.0.2):**
 
 | # | Scenario | Expected |
 |---|----------|----------|
-| (tt) | Desktop, default page (P2 active), open demo drop-down | 9 options visible with phase + subStatus label. |
+| (tt) | Desktop, default page (P2 active), open demo drop-down | 10 options visible with phase + subStatus label. |
 | (uu) | Select "P1 — Application Submitted" | `application.currentPhase = 1`, page re-renders with P1 expanded on top, P2–P6 collapsed. |
 | (vv) | Select "P3 — Proof Uploaded" | `application.currentPhase = 3`, `p3Latest.status = 'proof_uploaded'`. P3 expanded showing proof-uploaded state. |
 | (ww) | Select "P6 — Enrolled" | `application.currentPhase = 6`, terminal enrolled banner renders. |

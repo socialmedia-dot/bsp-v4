@@ -19,6 +19,7 @@
               <option value="P2-AWAIT">P2 — Awaiting Confirmation</option>
               <option value="P2-PENDING">P2 — Pending (school scheduled)</option>
               <option value="P2-CONFIRMED">P2 — Confirmed</option>
+              <option value="P3-WAITING">P3 — Waiting for School</option>
               <option value="P3-AWAITING">P3 — Awaiting Deposit</option>
               <option value="P3-UPLOADED">P3 — Proof Uploaded</option>
               <option value="P4">P4 — Admission Documents</option>
@@ -889,6 +890,7 @@ const seedDefs = [
   { key: 'P2-AWAIT' },
   { key: 'P2-PENDING' },
   { key: 'P2-CONFIRMED' },
+  { key: 'P3-WAITING' },
   { key: 'P3-AWAITING' },
   { key: 'P3-UPLOADED' },
   { key: 'P4' },
@@ -954,6 +956,8 @@ function buildDemoSeedFields(seedKey) {
         },
         phase4Docs: [], phase5VisaGrantedDocument: null, phase5VisaGrantedAt: null
       }
+    case 'P3-WAITING':
+      return { ...base, currentPhase: 3, subStatus: 'Awaiting School', interview: null, phase4Docs: [], phase5VisaGrantedDocument: null, phase5VisaGrantedAt: null }
     case 'P3-AWAITING':
       return { ...base, currentPhase: 3, subStatus: 'sent_to_student', interview: null, phase4Docs: [], phase5VisaGrantedDocument: null, phase5VisaGrantedAt: null }
     case 'P3-UPLOADED':
