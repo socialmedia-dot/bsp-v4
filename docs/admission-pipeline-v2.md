@@ -1084,7 +1084,7 @@ The `action-desc` paragraphs under each h4 are unchanged (they already provide t
 
 | # | Section | CSS modifier class | Pill label | Pill color | Border accent | Purpose text |
 |---|---------|-------------------|------------|------------|---------------|--------------|
-| 1 | Files from School (read-only) | `p3-readonly-section` | `View only` | gray (#e2e8f0 / #475569) | gray (#94a3b8) | "These are documents the school has shared with you. Read-only — no action needed, just download or view." |
+| 1 | Files from School (read-only) | `p3-readonly-section` | `View only` | gray (#e2e8f0 / #475569) | gray (#94a3b8) | "These are documents the school has sent you. Please read them now." |
 | 2 | Files to School (multi-file upload) | `p3-action-section` | `Send files` | green (#d1fae5 / #065f46) | green (#10b981) | "Send signed forms, additional documents, or replies back to the school. PDF, JPG, or PNG, max 5MB each." |
 | 3 | Deposit Receipt (single-file upload) | `p3-action-section p3-payment-section` | `Pay deposit` (overrides `Send files`) | blue (#dbeafe / #1e3a8a) | blue (#3b82f6) | "Your bank transfer receipt — school will review and confirm." |
 
@@ -1106,6 +1106,24 @@ The `action-desc` paragraphs under each h4 are unchanged (they already provide t
 | (x) | Section 2 (multi-file) — student adds 1 PDF, clicks "Send to School" | Section 2's sent-files list grows (read-only audit trail, no delete button). Pill stays "Send files" green. Purpose text unchanged. |
 | (y) | Section 3 status transitions | `sent_to_student`: only static purpose line visible. `proof_uploaded`: purpose line + "⏳ Proof submitted, awaiting school confirmation." `confirmed`: purpose line + "✅ Deposit confirmed by the school." Pill stays "Pay deposit" blue throughout. |
 | (z) | Mobile (≤ 480px) | All three pills shrink to ~0.55rem font. Padding tightens. Border-left accent + pill color still distinguishable. Order unchanged. |
+
+**Purpose text refinement for Section 1 (2026-06-25, rev 3.9):**
+
+**Rule (rev 3.9):** KC feedback (2026-06-25, post rev 3.8 deploy): the rev 3.8 Section 1 purpose text "These are documents the school has shared with you. Read-only — no action needed, just download or view." was too passive. The "Read-only — no action needed" framing left students unsure whether they were meant to look at the files at all (the school DOES expect them to read the documents the school just sent). KC: 「呢個地方你應該係話學校send畀學生嘅文件，學生應該即刻睇」. rev 3.9 replaces Section 1's purpose text with an action-oriented nudge that tells the student **what the files are** (school-sent documents) and **what to do now** (read them).
+
+- **Old (rev 3.8):** "These are documents the school has shared with you. Read-only — no action needed, just download or view."
+- **New (rev 3.9):** "These are documents the school has sent you. Please read them now."
+
+Sections 2 and 3 purpose text are unchanged — KC confirmed the current wording is already clear: Section 2's "Send signed forms, additional documents, or replies back to the school. PDF, JPG, or PNG, max 5MB each." tells the student what to upload and the format constraints; Section 3's "Your bank transfer receipt — school will review and confirm." tells the student what to upload and what happens next.
+
+**Why the wording shift matters:** The old "Read-only — no action needed" framing was technically accurate (the student cannot mutate the school's files) but functionally misleading — the school DOES need the student to **read** the documents (e.g. an offer letter, deposit instructions, terms) before they can sensibly reply, pay, or sign. The new "Please read them now" line preserves the read-only affordance (the gray pill + border still signal "no action needed for editing") while adding an immediate behavioral cue. The pill label "View only" still anchors the affordance, so the new purpose text complements rather than contradicts the visual signal.
+
+**Click-test scenario (post-deploy, rev 3.9):**
+
+| # | Scenario | Expected |
+|---|----------|----------|
+| (aa) | Open P3 student page (active, 1 school file) | Section 1 shows the new purpose text "These are documents the school has sent you. Please read them now." — replacing the rev 3.8 "Read-only — no action needed..." wording. Gray pill, gray border, italic style all unchanged. The line reads as a friendly nudge ("please read") rather than a passive disclaimer. |
+| (ab) | Section 1 vs Section 2 vs Section 3 purpose text comparison | Section 1: "These are documents the school has sent you. Please read them now." (action: read). Section 2: "Send signed forms, additional documents, or replies back to the school. PDF, JPG, or PNG, max 5MB each." (action: upload + send). Section 3: "Your bank transfer receipt — school will review and confirm." (action: upload receipt). Each section's first verb ("read" / "send" / "Your") makes the action unambiguous. |
 
 **Sent files are read-only (2026-06-15 update):** Once a file is in `p3Latest.schoolFiles` (i.e. has been sent to the student via "Send to Student" or "Add to Student"), the school CANNOT delete it. The file row shows only the download link (`<a>` tag with the file name as anchor text), upload timestamp, and **NO remove button** — not before, not after student proof upload, not after confirmation.
 - This applies to ALL statuses: `sent_to_student`, `proof_uploaded`, and `confirmed`.

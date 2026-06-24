@@ -199,10 +199,10 @@
                   </div>
 
                   <template v-else>
-                  <!-- §16 Section 1 (top, rev 3.6, h4 rev 3.7, visual rev 3.8): Files from School — read-only mirror of schoolFiles. Student reads incoming context before deciding what to send back. -->
+                  <!-- §16 Section 1 (top, rev 3.6, h4 rev 3.7, visual rev 3.8, wording rev 3.9): Files from School — read-only mirror of schoolFiles. Student reads incoming context before deciding what to send back. -->
                   <div v-if="p3Latest && p3Latest.schoolFiles && p3Latest.schoolFiles.length" class="phase-subsection p3-readonly-section">
                     <h4>📄 Files from School <span class="p3-section-pill p3-section-pill-viewonly">View only</span></h4>
-                    <p class="p3-section-purpose">These are documents the school has shared with you. Read-only — no action needed, just download or view.</p>
+                    <p class="p3-section-purpose">These are documents the school has sent you. Please read them now.</p>
                     <div class="p3-files-list">
                       <div v-for="(f, i) in p3Latest.schoolFiles" :key="i" class="p3-file-row">
                         <span class="p3-file-icon">📄</span>
