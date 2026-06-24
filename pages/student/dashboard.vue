@@ -124,10 +124,10 @@
             <div class="quick-title">Browse Schools</div>
             <div class="quick-desc">Find and apply to new schools</div>
           </NuxtLink>
-          <NuxtLink to="/student/apply" class="quick-card">
+          <NuxtLink to="/schools" class="quick-card">
             <div class="quick-icon">📝</div>
             <div class="quick-title">Apply to a School</div>
-            <div class="quick-desc">Start a new application</div>
+            <div class="quick-desc">Browse schools and start a new application</div>
           </NuxtLink>
         </div>
       </section>
