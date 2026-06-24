@@ -1039,6 +1039,33 @@ The school page's UI is driven by **(1)**, but student actions land in **(2)**. 
   2. The student's uploaded proof display + "✅ Confirm Receipt" button (when `status !== 'sent_to_student'`). Enablement + helper text per §16.1.1 rev 2.1.
 - **Confirmed banner** (only when `p3Latest.status === 'confirmed'`).
 
+**Student P3 page section order (2026-06-25, rev 3.6):**
+
+**Rule (rev 3.6):** On the student P3 view (`pages/student/applications/[id].vue`), when `p3Latest` exists (school has sent deposit documents), the sub-sections below MUST be rendered in the following top-to-bottom order. This rule supersedes the historical layout where the "📤 Send Files to School" section sat above the "📎 Documents from School" section.
+
+| # | Sub-section | Direction | Purpose |
+|---|-------------|-----------|---------|
+| 1 | 📎 **Documents from School** (read-only, mirrors `schoolFiles`) | incoming (school → student) | Student sees what the school sent first. |
+| 2 | 📤 **Send Files to School** (`studentFiles` channel) | outgoing (student → school) | Student sends back signed forms / supplementary docs. |
+| 3 | 💳 **Upload Deposit Proof** (`proofFileName` single file) | outgoing (student → school) | Student submits the payment receipt that drives the status transition. |
+| 4 | 📄 **Document Checklist — Phase 3 (Offering)** (read-only) | meta | School-configured checklist of expected P3 items. |
+
+**Why this order:** the student reads incoming context (what the school sent) BEFORE deciding what to send back — a natural "read before write" flow. The general multi-file "Send Files to School" channel appears before the "Upload Deposit Proof" affordance because the proof is a single, status-changing action that comes AFTER the student has had a chance to review school documents and gather supplementary materials. The Document Checklist is meta — a reference list — so it sits at the bottom as a reference, not a primary action.
+
+**Implementation:**
+- The student P3 block in `pages/student/applications/[id].vue` wraps active content in `<template v-else>` (after the `v-if="!p3Latest"` entry state wrapper, see §16.2). Within that wrapper, the four sub-sections above are emitted in this order. The §16.2 entry state (`!p3Latest`) remains the topmost element above all four.
+- v-if guards on the sections are unchanged: section 1 is guarded by `p3Latest && p3Latest.schoolFiles && p3Latest.schoolFiles.length` (only shows when there are school files), section 2 is guarded by `p3Latest` (always visible when active), section 3 is guarded by `p3Latest` (always visible when active), section 4 is guarded by `application.phase3Templates && application.phase3Templates.length`.
+- The v-else branch ("School hasn't sent the deposit form yet...") at line ~274 remains as the empty-state placeholder for the proof upload between sections 3 and 4 — unchanged.
+
+**Click-test scenarios (post-deploy, rev 3.6):**
+
+| # | Scenario | Expected |
+|---|----------|----------|
+| (r) | Open P3 student page (status = `sent_to_student`, 1 school file) | Top-to-bottom: 📎 Documents from School (file visible) → 📤 Send Files to School (empty) → 💳 Upload Deposit Proof → 📄 Document Checklist. The school file appears BEFORE the student's send action. |
+| (s) | School has sent 2 files; student has sent 1 file | Section 1 shows 2 school files. Section 2 shows 1 student file + queue + send button. Section 3 shows proof upload. Section 4 shows checklist. |
+| (t) | Status = `confirmed` | All four sections still visible (per §16.1.1 always-open rule). Order unchanged. |
+| (u) | Mobile (≤ 480px) | Order unchanged. All sections stack vertically in the same top-to-bottom sequence. |
+
 **Sent files are read-only (2026-06-15 update):**
 - Once a file is in `p3Latest.schoolFiles` (i.e. has been sent to the student via "Send to Student" or "Add to Student"), the school CANNOT delete it. The file row shows only the download link (`<a>` tag with the file name as anchor text), upload timestamp, and **NO remove button** — not before, not after student proof upload, not after confirmation.
 - This applies to ALL statuses: `sent_to_student`, `proof_uploaded`, and `confirmed`.

@@ -184,7 +184,7 @@
                   </div>
                 </template>
 
-                <!-- ========== P3: Offering — Send Files + Deposit Proof + School docs + Doc Checklist ========== -->
+                <!-- ========== P3: Offering — School docs (top, §16 rev 3.6) + Send Files + Deposit Proof + Doc Checklist ========== -->
                 <template v-else-if="ph.phase === 3">
                   <!-- §16.2 P3 entry state — celebration banner + waiting state (see docs §16.2, rev 3.5, 2026-06-24) -->
                   <div v-if="!p3Latest" class="p3-entry-state">
@@ -199,7 +199,20 @@
                   </div>
 
                   <template v-else>
-                  <!-- §16.1 Send Files to School — student-side mirror of schoolFiles (see docs §16.1) -->
+                  <!-- §16 Section 1 (top, rev 3.6): Documents from School — read-only mirror of schoolFiles. Student reads incoming context before deciding what to send back. -->
+                  <div v-if="p3Latest && p3Latest.schoolFiles && p3Latest.schoolFiles.length" class="phase-subsection">
+                    <h4>📎 Documents from School</h4>
+                    <p class="action-desc">Documents the school has shared with you for the deposit payment.</p>
+                    <div class="p3-files-list">
+                      <div v-for="(f, i) in p3Latest.schoolFiles" :key="i" class="p3-file-row">
+                        <span class="p3-file-icon">📄</span>
+                        <a class="p3-file-name" :href="f.dataUrl" target="_blank" rel="noopener">{{ f.name }}</a>
+                        <span class="p3-file-meta">{{ formatDateTime(f.uploadedAt) }}</span>
+                      </div>
+                    </div>
+                  </div>
+
+                  <!-- §16.1 Section 2: Send Files to School — student-side mirror of schoolFiles (see docs §16.1) -->
                   <div class="phase-subsection">
                     <h4>📤 Send Files to School</h4>
                     <p class="action-desc">Send signed forms, additional documents, or attachments to the school. PDF, JPG, or PNG, max 5MB each.</p>
@@ -272,19 +285,6 @@
                     <p v-if="p3Latest.status === 'confirmed'" class="p3-status-confirmed">✅ School confirmed your deposit</p>
                   </div>
                   <p v-else class="phase-empty-state">School hasn't sent the deposit form yet. The proof upload will appear here once they do.</p>
-
-                  <!-- School's deposit docs (read-only mirror of schoolFiles) -->
-                  <div v-if="p3Latest && p3Latest.schoolFiles && p3Latest.schoolFiles.length" class="phase-subsection">
-                    <h4>📎 Deposit Form & Payment Instructions</h4>
-                    <p class="action-desc">Documents the school has shared with you for the deposit payment.</p>
-                    <div class="p3-files-list">
-                      <div v-for="(f, i) in p3Latest.schoolFiles" :key="i" class="p3-file-row">
-                        <span class="p3-file-icon">📄</span>
-                        <a class="p3-file-name" :href="f.dataUrl" target="_blank" rel="noopener">{{ f.name }}</a>
-                        <span class="p3-file-meta">{{ formatDateTime(f.uploadedAt) }}</span>
-                      </div>
-                    </div>
-                  </div>
 
                   <!-- Document Checklist P3 (read-only) -->
                   <div v-if="application.phase3Templates && application.phase3Templates.length" class="phase-subsection">
