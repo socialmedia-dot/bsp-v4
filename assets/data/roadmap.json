@@ -395,15 +395,9 @@
         },
         {
           "status": "done",
-          "label": "Student Registration",
-          "path": "/student/register",
-          "date": "2026-04"
-        },
-        {
-          "status": "done",
-          "label": "Apply to School",
-          "path": "/student/apply/:schoolId",
-          "date": "2026-04"
+          "label": "Student Profile",
+          "path": "/student/profile",
+          "date": "2026-06"
         },
         {
           "status": "done",
@@ -420,9 +414,15 @@
         },
         {
           "status": "done",
-          "label": "Student Profile",
-          "path": "/student/profile",
-          "date": "2026-06"
+          "label": "Apply to School",
+          "path": "/student/apply/:schoolId",
+          "date": "2026-04"
+        },
+        {
+          "status": "done",
+          "label": "Student Registration",
+          "path": "/student/register",
+          "date": "2026-04"
         }
       ]
     },
