@@ -199,10 +199,10 @@
                   </div>
 
                   <template v-else>
-                  <!-- §16 Section 1 (top, rev 3.6, h4 rev 3.7): Files from School — read-only mirror of schoolFiles. Student reads incoming context before deciding what to send back. -->
-                  <div v-if="p3Latest && p3Latest.schoolFiles && p3Latest.schoolFiles.length" class="phase-subsection">
-                    <h4>📄 Files from School</h4>
-                    <p class="action-desc">Documents the school has shared with you for the deposit payment.</p>
+                  <!-- §16 Section 1 (top, rev 3.6, h4 rev 3.7, visual rev 3.8): Files from School — read-only mirror of schoolFiles. Student reads incoming context before deciding what to send back. -->
+                  <div v-if="p3Latest && p3Latest.schoolFiles && p3Latest.schoolFiles.length" class="phase-subsection p3-readonly-section">
+                    <h4>📄 Files from School <span class="p3-section-pill p3-section-pill-viewonly">View only</span></h4>
+                    <p class="p3-section-purpose">These are documents the school has shared with you. Read-only — no action needed, just download or view.</p>
                     <div class="p3-files-list">
                       <div v-for="(f, i) in p3Latest.schoolFiles" :key="i" class="p3-file-row">
                         <span class="p3-file-icon">📄</span>
@@ -212,10 +212,10 @@
                     </div>
                   </div>
 
-                  <!-- §16.1 Section 2 (h4 rev 3.7): Files to School — student-side mirror of schoolFiles (see docs §16.1) -->
-                  <div class="phase-subsection">
-                    <h4>📤 Files to School</h4>
-                    <p class="action-desc">Send signed forms, additional documents, or attachments to the school. PDF, JPG, or PNG, max 5MB each.</p>
+                  <!-- §16.1 Section 2 (h4 rev 3.7, visual rev 3.8): Files to School — student-side mirror of schoolFiles (see docs §16.1) -->
+                  <div class="phase-subsection p3-action-section">
+                    <h4>📤 Files to School <span class="p3-section-pill p3-section-pill-action">Send files</span></h4>
+                    <p class="p3-section-purpose">Send signed forms, additional documents, or replies back to the school. PDF, JPG, or PNG, max 5MB each.</p>
 
                     <!-- Sent files (read-only — no delete per docs §16 spec, mirrors schoolFiles) -->
                     <div v-if="p3Latest && p3Latest.studentFiles && p3Latest.studentFiles.length" class="p3-files-list">
@@ -264,13 +264,13 @@
                     </div>
                   </div>
 
-                  <!-- §16 Deposit Proof upload (P3 main affordance) -->
-                  <div v-if="p3Latest" class="phase-subsection">
-                    <h4>💳 Deposit Receipt</h4>
+                  <!-- §16 Section 3 (visual rev 3.8): Deposit Proof upload (P3 main affordance) -->
+                  <div v-if="p3Latest" class="phase-subsection p3-action-section p3-payment-section">
+                    <h4>💳 Deposit Receipt <span class="p3-section-pill p3-section-pill-action p3-section-pill-payment">Pay deposit</span></h4>
+                    <p class="p3-section-purpose">Your bank transfer receipt — school will review and confirm.</p>
                     <p class="action-desc">
                       <span v-if="p3Latest.status === 'proof_uploaded'">Proof submitted, awaiting school confirmation.</span>
                       <span v-else-if="p3Latest.status === 'confirmed'">✅ Deposit confirmed by the school.</span>
-                      <span v-else>Upload your deposit payment receipt to confirm your place.</span>
                     </p>
                     <input id="student-p3-file-input" type="file" accept="application/pdf,image/jpeg,image/png" style="display:none" @change="onP3StudentFile" />
                     <div v-if="!p3StudentFile && p3Latest.status !== 'confirmed'" class="p3-add-file-row">
@@ -1242,6 +1242,17 @@ onUnmounted(() => {
 .phase-subsection { border-top: 1px solid #f1f5f9; margin-top: 14px; padding-top: 14px; }
 .phase-subsection:first-child { border-top: none; margin-top: 0; padding-top: 0; }
 .phase-subsection h4 { color: #1e293b; font-size: 0.9rem; margin: 0 0 12px; }
+
+/* §16 rev 3.8 — Visual hierarchy for P3 sub-sections (read-only vs action vs payment) */
+.phase-subsection.p3-readonly-section { background: #f8fafc; border: 1px solid #e2e8f0; border-left: 4px solid #94a3b8; border-radius: 6px; padding: 12px 14px; margin-top: 14px; }
+.phase-subsection.p3-readonly-section .p3-file-row { background: #ffffff; }
+.phase-subsection.p3-action-section { background: #ffffff; border: 1px solid #d1fae5; border-left: 4px solid #10b981; border-radius: 6px; padding: 12px 14px; }
+.phase-subsection.p3-action-section.p3-payment-section { border-color: #dbeafe; border-left-color: #3b82f6; }
+.p3-section-pill { display: inline-block; font-size: 0.62rem; font-weight: 700; padding: 2px 8px; border-radius: 10px; margin-left: 8px; vertical-align: middle; letter-spacing: 0.05em; text-transform: uppercase; }
+.p3-section-pill-viewonly { background: #e2e8f0; color: #475569; }
+.p3-section-pill-action { background: #d1fae5; color: #065f46; }
+.p3-section-pill-payment { background: #dbeafe; color: #1e3a8a; }
+.p3-section-purpose { font-size: 0.82rem; color: #475569; margin: -4px 0 12px; font-style: italic; }
 .phase-info-note { background: #f8fafc; border-left: 3px solid #cbd5e1; border-radius: 0 6px 6px 0; color: #475569; font-size: 0.82rem; line-height: 1.5; margin: 12px 0 0; padding: 8px 12px; }
 .phase-attachments { display: flex; flex-direction: column; gap: 8px; }
 .phase-empty-state { color: #888; font-size: 14px; font-style: italic; padding: 8px 0; margin: 0; }
@@ -1348,6 +1359,9 @@ onUnmounted(() => {
   .p3-waiting-state { padding: 0.7rem 0.9rem; }
   .p3-waiting-icon { font-size: 1.15rem; }
   .p3-waiting-text { font-size: 0.88rem; }
+  .p3-section-pill { font-size: 0.55rem; padding: 1.5px 6px; margin-left: 4px; }
+  .p3-section-purpose { font-size: 0.78rem; }
+  .phase-subsection.p3-readonly-section, .phase-subsection.p3-action-section { padding: 10px 12px; }
 }
 
 /* P4 admission documents (student read-only) */

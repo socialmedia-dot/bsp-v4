@@ -1078,6 +1078,35 @@ The school page's UI is driven by **(1)**, but student actions land in **(2)**. 
 
 The `action-desc` paragraphs under each h4 are unchanged (they already provide the necessary detail). The internal feature name (e.g. `studentFiles` channel, `proofFileName` field) is unchanged — only the user-facing label text was updated. Spec references throughout §4, §15, §16, §16.1, §16.1.1, §16.2, §17, §22 etc. that previously cited the old h4 text are updated to the new labels.
 
+**Visual hierarchy for P3 sub-sections (2026-06-25, rev 3.8):**
+
+**Rule (rev 3.8):** After the rev 3.7 h4 rename, KC observed the three P3 sub-sections were still visually indistinguishable from each other — all three rendered as plain `.phase-subsection` blocks with no signal of which one was read-only vs an action. KC feedback (2026-06-25): 「嗰三個唔同嘅上載同埋下載，而家個介面設計唔清晰」. rev 3.8 introduces three orthogonal signals — pill label, CSS modifier class, and a 1-line `p3-section-purpose` paragraph under each h4 — to make the read-only vs action distinction unambiguous at a glance.
+
+| # | Section | CSS modifier class | Pill label | Pill color | Border accent | Purpose text |
+|---|---------|-------------------|------------|------------|---------------|--------------|
+| 1 | Files from School (read-only) | `p3-readonly-section` | `View only` | gray (#e2e8f0 / #475569) | gray (#94a3b8) | "These are documents the school has shared with you. Read-only — no action needed, just download or view." |
+| 2 | Files to School (multi-file upload) | `p3-action-section` | `Send files` | green (#d1fae5 / #065f46) | green (#10b981) | "Send signed forms, additional documents, or replies back to the school. PDF, JPG, or PNG, max 5MB each." |
+| 3 | Deposit Receipt (single-file upload) | `p3-action-section p3-payment-section` | `Pay deposit` (overrides `Send files`) | blue (#dbeafe / #1e3a8a) | blue (#3b82f6) | "Your bank transfer receipt — school will review and confirm." |
+
+**Why three signals (pill + class + purpose):**
+- **Pill label** is the fastest at-a-glance cue: students see "View only" and know they don't have to do anything; "Send files" / "Pay deposit" tells them the action type.
+- **CSS modifier class** (`p3-readonly-section` vs `p3-action-section`) encodes the affordance distinction into the DOM, so any future agent inspecting the page (or building a feature flag) can read the intent directly. `p3-payment-section` further distinguishes the status-changing proof upload from the general file channel — they share `p3-action-section` because both require the student to act, but the payment sub-class flags that this one is the single canonical status driver.
+- **Purpose text** provides the plain-language explanation under each h4. The previous `action-desc` was repurposed into a `p3-section-purpose` paragraph with an italic style, freeing the previous `action-desc` (where it still exists in section 3) to be a dynamic status line (`proof_uploaded` / `confirmed` / `else`).
+
+**Section 3 status text behavior (rev 3.8):** The conditional text in the `<p class="action-desc">` block is retained but only renders the two post-upload cases (`proof_uploaded` and `confirmed`) — the `else` fallback text "Upload your deposit payment receipt to confirm your place." is REMOVED because it duplicates the new static `p3-section-purpose` line. When `p3Latest.status === 'sent_to_student'` (the pre-upload default), neither conditional span renders, and the static purpose is the only description — which is correct, the student has not yet uploaded.
+
+**Implementation file:** `pages/student/applications/[id].vue` — the three `.phase-subsection` blocks for active P3 (sections 1/2/3 above) get a modifier class, a `<span class="p3-section-pill ...">` appended to the h4, and a `<p class="p3-section-purpose">` paragraph inserted right after the h4 (before any other content). Section 3's `action-desc` no longer needs the `else` fallback branch. CSS for the new classes lives in the file's `<style>` block alongside the existing `.phase-subsection` rules; a mobile media query (`@media (max-width: 480px)`) shrinks the pill and tightens the padding so the three cards stay readable on small screens.
+
+**Click-test scenarios (post-deploy, rev 3.8):**
+
+| # | Scenario | Expected |
+|---|----------|----------|
+| (v) | Open P3 student page (active, 1 school file) | Section 1 has gray border + gray "View only" pill + italic purpose text. Section 2 has green border + green "Send files" pill + italic purpose text. Section 3 has blue border + blue "Pay deposit" pill + italic purpose text. The three cards are visually distinct: gray, green, blue — no longer looks like 3 identical sections. |
+| (w) | Hover the Section 1 pill (read-only) | Pill text "View only" — student reads and knows no action needed. No cursor pointer (no link/button inside Section 1's file rows). |
+| (x) | Section 2 (multi-file) — student adds 1 PDF, clicks "Send to School" | Section 2's sent-files list grows (read-only audit trail, no delete button). Pill stays "Send files" green. Purpose text unchanged. |
+| (y) | Section 3 status transitions | `sent_to_student`: only static purpose line visible. `proof_uploaded`: purpose line + "⏳ Proof submitted, awaiting school confirmation." `confirmed`: purpose line + "✅ Deposit confirmed by the school." Pill stays "Pay deposit" blue throughout. |
+| (z) | Mobile (≤ 480px) | All three pills shrink to ~0.55rem font. Padding tightens. Border-left accent + pill color still distinguishable. Order unchanged. |
+
 **Sent files are read-only (2026-06-15 update):** Once a file is in `p3Latest.schoolFiles` (i.e. has been sent to the student via "Send to Student" or "Add to Student"), the school CANNOT delete it. The file row shows only the download link (`<a>` tag with the file name as anchor text), upload timestamp, and **NO remove button** — not before, not after student proof upload, not after confirmation.
 - This applies to ALL statuses: `sent_to_student`, `proof_uploaded`, and `confirmed`.
 - Rationale: the student may have already seen / paid / acted on the file. Removing it would break the audit trail. If a wrong file was sent, the school should send a corrected file via "Add to Student" (the old one remains visible for both parties).
