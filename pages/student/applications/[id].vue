@@ -286,19 +286,7 @@
                   </div>
                   <p v-else class="phase-empty-state">School hasn't sent the deposit form yet. The proof upload will appear here once they do.</p>
 
-                  <!-- Document Checklist P3 (read-only) -->
-                  <div v-if="application.phase3Templates && application.phase3Templates.length" class="phase-subsection">
-                    <h4>📄 Document Checklist — Phase 3 (Offering)</h4>
-                    <div class="doc-checklist">
-                      <div v-for="(t, i) in application.phase3Templates" :key="i" class="doc-checklist-item">
-                        <span class="doc-check-icon">📋</span>
-                        <span class="doc-check-name">{{ t.name }}</span>
-                        <span class="doc-check-badge" :class="t.signed ? 'badge-signed' : 'badge-pending'">
-                          {{ t.signed ? '✅ Signed' : '⏳ Awaiting signature' }}
-                        </span>
-                      </div>
-                    </div>
-                  </div>
+                  <!-- rev 3.11: §17 Document Checklist deprecated — student sees actual sent files in the Files from School section above. -->
                   </template>
                 </template>
 
@@ -318,19 +306,7 @@
                     <p class="phase-info-note">📌 Need to send something back? Use the Chat panel on the right.</p>
                   </div>
 
-                  <!-- Document Checklist P4 (read-only) -->
-                  <div v-if="application.phase4Templates && application.phase4Templates.length" class="phase-subsection">
-                    <h4>📄 Document Checklist — Phase 4 (Admission Documents)</h4>
-                    <div class="doc-checklist">
-                      <div v-for="(t, i) in application.phase4Templates" :key="i" class="doc-checklist-item">
-                        <span class="doc-check-icon">📋</span>
-                        <span class="doc-check-name">{{ t.name }}</span>
-                        <span class="doc-check-badge" :class="t.signed ? 'badge-signed' : 'badge-pending'">
-                          {{ t.signed ? '✅ Signed' : '⏳ Awaiting signature' }}
-                        </span>
-                      </div>
-                    </div>
-                  </div>
+                  <!-- rev 3.11: §17 Document Checklist deprecated — student sees actual sent files in the Admission Documents section above. -->
                 </template>
 
                 <!-- ========== P5: Pre-Departure — Visa (conditional) + Travel (always) + Doc Checklist ========== -->
@@ -362,19 +338,19 @@
                     />
                   </div>
 
-                  <!-- Document Checklist P5 (read-only) -->
-                  <div v-if="application.phase5Templates && application.phase5Templates.length" class="phase-subsection">
-                    <h4>📄 Document Checklist — Phase 5 (Pre-Departure)</h4>
-                    <div class="doc-checklist">
-                      <div v-for="(t, i) in application.phase5Templates" :key="i" class="doc-checklist-item">
-                        <span class="doc-check-icon">📋</span>
-                        <span class="doc-check-name">{{ t.name }}</span>
-                        <span class="doc-check-badge" :class="t.signed ? 'badge-signed' : 'badge-pending'">
-                          {{ t.signed ? '✅ Signed' : '⏳ Awaiting signature' }}
-                        </span>
+                  <!-- rev 3.11: P5 "Files from School" — travel forms, welcome packets, pickup arrangements sent by school. -->
+                  <div v-if="application.phase5SchoolFiles && application.phase5SchoolFiles.length" class="phase-subsection">
+                    <h4>📎 Files from School</h4>
+                    <p class="action-desc">Travel forms, welcome packets, or pickup arrangements the school has sent you. Click to download each one.</p>
+                    <div class="p4-docs-list">
+                      <div v-for="(f, i) in application.phase5SchoolFiles" :key="i" class="p4-doc-row">
+                        <span class="p4-doc-icon">📄</span>
+                        <a class="p4-doc-name" :href="f.dataUrl" target="_blank" rel="noopener">{{ f.name }}</a>
                       </div>
                     </div>
                   </div>
+
+                  <!-- rev 3.11: §17 Document Checklist deprecated — student sees actual sent files in the Files from School section above. -->
                 </template>
 
                 <!-- ========== P6: Enrolled — terminal read-only banner ========== -->

@@ -1512,15 +1512,17 @@ After the click, the school's "✅ Confirm Receipt" button is enabled (per the r
 
 ---
 
-## 17. Document Template System (NEW in rev 3.0)
+## 17. Document Template System
 
-**Rule:** School settings configures a **default document template** per phase (P3, P4, P5). When an application enters a phase, the per-phase template **auto-populates** to both the school's application page and the student's application page. The student can **add or remove** individual documents (each application can deviate from the school default).
+**rev 3.11 (2026-06-25) — major redesign:** The previous rev 3.0 model treated templates as **checklist placeholders** (string names + required flags, no real file content). rev 3.11 upgrades templates to **carry the actual file content** uploaded by the school in settings. When an application enters a phase, the school's pre-uploaded files auto-pre-fill the file queue — school staff then **per-file check/uncheck** to decide which to send to the student, then send only the checked ones.
+
+**Rule:** School settings configures a **default document template per phase (P3, P4, P5)**. Each template carries a **real pre-uploaded file** (PDF/JPEG/PNG, base64-encoded data URL stored in the application record). When an application enters a phase, the school's pre-uploaded files **auto-pre-fill the file queue** on the school's application page — staff see them all listed with checkboxes (default ✅ checked). Staff uncheck any they want to skip, then click **Send to Student** to send only the checked files.
 
 **Configuration location:** `/school/settings/document-templates` (school admin) — global, applies to all applications in the school.
 
-**Per-phase display location:** `/school/applications/[ref]/` and `/student/applications/[ref]/` — auto-populated, per-application override allowed.
+**Per-phase display location:** `/school/applications/[ref]/` — auto-pre-fills the file queue on phase entry; school controls per-file send. Student's view (`/student/applications/[ref]/`) displays the **received files only** in §16.1 / §22 / §24; the original §17 placeholder checklist (rev 3.0) is **deprecated** in favor of the actual file display.
 
-### 17.1 DocumentTemplate shape
+### 17.1 DocumentTemplate shape (rev 3.11)
 
 ```ts
 interface DocumentTemplate {
@@ -1533,39 +1535,96 @@ interface DocumentTemplate {
   sampleUrl?: string               // optional link to a sample/template PDF
   displayOrder: number             // sort order in UI
   active: boolean                  // soft-delete: false = hidden but kept for audit
+  // rev 3.11: actual file content uploaded by school in settings.
+  // When present, this file auto-pre-fills the file queue on phase entry.
+  // The school can replace the file (re-upload) or remove it (fileDataUrl = null)
+  // — removing the file means the template will NOT auto-pre-fill for new applications.
+  fileDataUrl?: string             // base64 data URL of pre-uploaded file
+  fileName?: string                // original filename (e.g. "Offer-Letter-Template.pdf")
+  mimeType?: string                // e.g. "application/pdf", "image/jpeg", "image/png"
+  fileSize?: number                // bytes
+  uploadedAt?: string              // ISO timestamp of last upload
 }
 ```
 
-### 17.2 Default required documents (rev 3.0 baseline)
+**File constraints:**
+- Allowed types: `application/pdf`, `image/jpeg`, `image/png`
+- Max size: **5 MB per file** (matches existing P3 file upload limit at school application page)
+- Files stored as base64 data URL in the application record (localStorage). Larger files would bloat the record; if the school needs to send files > 5 MB, they should add a link (`sampleUrl`) instead.
+
+### 17.2 Default required documents (rev 3.11 baseline)
 
 | Phase | Required Doc | Category | Notes |
 |-------|--------------|----------|-------|
-| P3 (Offering) | **Offer Letter** | `admission` | School's conditional offer. Always required. |
+| P3 (Offering) | **Offer Letter** | `admission` | School's conditional offer. Always required. School uploads the template once in settings → all P3 applications auto-pre-fill with this file. |
 | P4 (Admission Documents) | **CAS Letter** | `admission` | Required only if `application.visaRequested === true`. School generates once student accepts. |
 | P4 (Admission Documents) | (extension point) | — | Future: Medical Form, Refund Agreement, Uniform Order Form, Parents Info Form |
 | P5 (Pre-Departure) | **Visa Granted PDF** | `identity` | Required only if `application.visaRequested === true`. Student uploads after visa issued. |
 | P5 (Pre-Departure) | (extension point) | — | Future: Flight Details Form, Arrival Info Form, Taxi Arrangement Form |
 
-**Amendments:** New required documents can be added in future revisions (rev 3.1, rev 3.2, etc.). The `DocumentTemplate` interface supports `active: false` for soft-deletion — old templates remain in the database for audit, hidden from new applications.
+**Amendments:** New required documents can be added in future revisions. The `DocumentTemplate` interface supports `active: false` for soft-deletion — old templates remain in the database for audit, hidden from new applications.
 
-### 17.3 Behavior
+### 17.3 Behavior (rev 3.11)
 
-- **Auto-populate:** When an application enters a phase, the school's default template for that phase is **copied** into the application record (`phase3_templates / phase4_templates / phase5_templates`). The copy is a snapshot — future school-wide template edits do NOT retroactively change existing applications.
-- **Per-app override:** School staff or student can:
-  - **Add** a custom doc (e.g. "School-specific medical form for athletics")
-  - **Remove** an auto-populated doc (e.g. "Refund Agreement not needed for this applicant")
-  - **Mark as required / not required** (advisory only — does not block submit)
-- **Required flag enforcement:** Display ⚠️ "Required doc missing" hint for any required doc that has no uploaded file. **Advisory only** — does NOT block phase advance. School makes the final human judgment.
+**School settings (`/school/settings/document-templates`):**
+- For each phase tab (P3, P4, P5), school sees a list of templates.
+- Each template card has all the rev 3.0 fields (name, description, category, required, display order, active toggle) **plus a file upload field**:
+  - **Upload file** button → opens file picker → on select, file is read as base64 and stored in `tpl.fileDataUrl / fileName / mimeType / fileSize / uploadedAt`.
+  - If a file is already uploaded, show: filename + file size + MIME type + **"Replace file"** button + **"Remove file"** button.
+  - Removing a file sets all file fields to `null/undefined` — the template name remains, but the template will not auto-pre-fill for future phase entries.
+- **Save Defaults** persists the templates (including all uploaded files) to the school-wide store.
+- **Reset** reverts to factory defaults (empty templates with no files).
 
-### 17.4 Click-test scenarios
+**School application page (`/school/applications/[ref]/`):**
+
+On **phase entry** (e.g. application moves from P2 → P3, OR school first opens a P3 application with templates already populated but queue empty), the school's pre-uploaded templates with `fileDataUrl` are **auto-pre-filled** into the file queue. Each queued item carries:
+- `name` = `tpl.fileName`
+- `dataUrl` = `tpl.fileDataUrl`
+- `sourceTemplateId` = `tpl.id` (for tracking which template it came from)
+- `checked` = `true` (default — school will uncheck to skip)
+- `prefilled` = `true` (UI hint to distinguish from manually added)
+
+**Per-file checkbox UI:** Each row in the file queue shows:
+- A **checkbox** on the left (default ✅ checked, label "Send this to student")
+- File name (or template name + filename in muted style if pre-filled)
+- A small **"📋 from template"** badge if pre-filled (helps school identify which templates ended up here)
+- A **remove** ✕ button (existing) to drop the file from the queue entirely
+
+**Send logic:**
+- **Send to Student** / **Upload Documents** / **Upload Visa Docs** button sends only files where `checked === true`.
+- Unchecked files remain in the queue (school can still re-check before next send).
+- Removed files are gone from the queue.
+- After successful send, the queue clears (existing behavior).
+
+**Auto-pre-fill guard rails:**
+- Auto-pre-fill only triggers when:
+  - The phase's templates exist (length > 0)
+  - At least one template has a `fileDataUrl` (so the queue has something to show)
+  - The queue is currently empty (school hasn't already manually added files)
+- If school manually uploads files first (e.g. by clicking the file picker), those are added with `prefilled: false` — auto-pre-fill won't overwrite.
+- Auto-pre-fill runs once per phase entry, not on every render (guarded by a `phase{N}QueuePrefilled` flag in component state).
+
+**Student application page (`/student/applications/[ref]/`):**
+- Student view is **unchanged** in rev 3.11 — they continue to see the actual received files in §16.1 / §22 / §24 (from the school's `Send to Student` action).
+- The rev 3.0 Document Checklist (read-only list of template names with signed/pending badges) is **deprecated**. The actual files sent by the school now serve as the checklist — no separate UI needed.
+
+**Per-app override:** The school's pre-uploaded templates are **snapshotted** to the application record on phase entry (per rev 3.0 behavior). Editing the school-wide defaults later does not affect this application. School staff can still add custom files via the file picker (these will be `prefilled: false`).
+
+### 17.4 Click-test scenarios (rev 3.11)
 
 | # | Scenario | Expected |
 |---|----------|----------|
-| (a) School admin opens `/school/settings/document-templates` | Page lists default templates for P3, P4, P5 grouped by phase. School can add/edit/remove. |
-| (b) New application enters P3 | Application's P3 section auto-populates with school's default P3 templates (e.g. "Offer Letter" required). |
-| (c) Student opens P3 | Student's P3 section shows auto-populated docs with checkboxes / upload slots. Can add custom doc, can mark auto-populated doc as not-applicable. |
-| (d) School admin edits school-default template (e.g. adds "Medical Form" to P4) | New applications going forward inherit the new template. Existing applications unaffected (snapshot). |
-| (e) Student does not upload a required doc | UI shows ⚠️ hint next to the missing doc. Submit still allowed. School receives the application with the missing-doc warning. |
+| (a) School admin opens `/school/settings/document-templates`, P3 tab | Sees "Offer Letter" template card with **Upload file** button (no file yet). |
+| (b) School admin clicks Upload file, selects `Offer-Letter-2026.pdf` | File is read, template card now shows filename + size + "Replace file" / "Remove file" buttons. **Save Defaults** persists it. |
+| (c) New application enters P3, school opens `/school/applications/[ref]/` | P3 §16.0.2 Section 1 (Files to Student) auto-fills the file queue with the "Offer Letter" PDF, checkbox ✅ checked, "📋 from template" badge visible. |
+| (d) School wants to skip the offer letter for this particular applicant | School unchecks the checkbox (file stays in queue, but won't be sent). |
+| (e) School wants to add an extra document (e.g. scholarship letter) | School clicks the file picker, selects a file → appears in queue with `prefilled: false` (no template badge), checkbox ✅ checked by default. |
+| (f) School clicks **Send to Student** | Only the checked files are sent to student; unchecked stays in queue. |
+| (g) Application already sent (p3Latest.status === 'confirmed'), school wants to add a late doc | School opens file picker, adds a new file (auto-pre-fill won't trigger because queue is empty + p3Latest exists, so manual-only), clicks **Add to Student** (existing flow). |
+| (h) School admin removes a file from a template in settings (fileDataUrl = null) | Existing applications with that template's file are unaffected (snapshot). New applications entering the phase will NOT auto-pre-fill that template. |
+| (i) Same flow applied to P4 (Admission Documents) and P5 (Pre-Departure) | Identical pattern — P4 templates (e.g. CAS Letter) auto-pre-fill P4 Section 1, P5 templates (e.g. Visa Granted PDF) auto-pre-fill P5 Section 1. |
+| (j) Student opens P3 | Student sees only the actual files the school sent (e.g. Offer Letter PDF) in §16.1 — no separate checklist section. |
+| (k) School has 0 templates uploaded for a phase | Phase section renders normally with empty queue + "Upload files" file picker. No auto-pre-fill triggers. |
 
 ---
 

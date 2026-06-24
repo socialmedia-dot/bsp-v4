@@ -128,6 +128,40 @@
             </span>
             <span v-else class="dte-field-value dte-muted">—</span>
           </div>
+
+          <!-- rev 3.11: Pre-uploaded file (auto-pre-fills school application page queue) -->
+          <div class="dte-field dte-field-full">
+            <label class="dte-field-label">
+              Pre-uploaded File
+              <span class="dte-hint">— sends automatically when school enters this phase</span>
+            </label>
+            <div v-if="tpl.fileDataUrl" class="dte-file-uploaded">
+              <div class="dte-file-info">
+                <span class="dte-file-icon">📄</span>
+                <div class="dte-file-meta">
+                  <span class="dte-file-name">{{ tpl.fileName }}</span>
+                  <span class="dte-file-sub">{{ formatFileSize(tpl.fileSize) }} · {{ tpl.mimeType }} · uploaded {{ formatDate(tpl.uploadedAt) }}</span>
+                </div>
+              </div>
+              <div class="dte-file-actions" v-if="!readonly">
+                <label :for="`tpl-file-${tpl.id}`" class="btn btn-secondary btn-sm">Replace file</label>
+                <button type="button" class="btn btn-secondary btn-sm" @click="removeTemplateFile(idx)">Remove file</button>
+              </div>
+            </div>
+            <div v-else-if="!readonly" class="dte-file-empty">
+              <label :for="`tpl-file-${tpl.id}`" class="btn btn-primary btn-sm">📤 Upload file</label>
+              <span class="dte-hint dte-muted">PDF / JPEG / PNG, max 5 MB</span>
+            </div>
+            <div v-else class="dte-field-value dte-muted">No file attached</div>
+            <input
+              v-if="!readonly"
+              :id="`tpl-file-${tpl.id}`"
+              type="file"
+              accept="application/pdf,image/jpeg,image/png"
+              style="display:none"
+              @change="onTemplateFile($event, idx)"
+            />
+          </div>
         </div>
       </div>
       <!-- /.dte-card -->
@@ -186,6 +220,76 @@ function capitalize(s: string) {
 
 function uid() {
   return `tpl-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 8)}`
+}
+
+const MAX_FILE_SIZE = 5 * 1024 * 1024 // 5 MB
+const ALLOWED_TYPES = ['application/pdf', 'image/jpeg', 'image/png']
+
+function formatFileSize(bytes?: number) {
+  if (!bytes && bytes !== 0) return '—'
+  if (bytes < 1024) return `${bytes} B`
+  if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`
+  return `${(bytes / 1024 / 1024).toFixed(2)} MB`
+}
+
+function formatDate(iso?: string) {
+  if (!iso) return '—'
+  try {
+    const d = new Date(iso)
+    return d.toLocaleDateString('en-GB', { year: 'numeric', month: 'short', day: 'numeric' })
+  } catch {
+    return '—'
+  }
+}
+
+function onTemplateFile(event: Event, idx: number) {
+  const input = event.target as HTMLInputElement
+  const file = input.files?.[0]
+  if (!file) return
+
+  // Validate type
+  if (!ALLOWED_TYPES.includes(file.type)) {
+    alert(`File type "${file.type || 'unknown'}" not allowed. Please use PDF, JPEG, or PNG.`)
+    input.value = ''
+    return
+  }
+  // Validate size
+  if (file.size > MAX_FILE_SIZE) {
+    alert(`File too large (${formatFileSize(file.size)}). Max 5 MB.`)
+    input.value = ''
+    return
+  }
+
+  const reader = new FileReader()
+  reader.onload = () => {
+    const dataUrl = reader.result as string
+    const tpl = editedTemplates.value[idx]
+    if (!tpl) return
+    tpl.fileDataUrl = dataUrl
+    tpl.fileName = file.name
+    tpl.mimeType = file.type
+    tpl.fileSize = file.size
+    tpl.uploadedAt = new Date().toISOString()
+    emitChange()
+  }
+  reader.onerror = () => {
+    alert('Failed to read file. Please try again.')
+  }
+  reader.readAsDataURL(file)
+  // Reset input so the same file can be re-uploaded later if needed
+  input.value = ''
+}
+
+function removeTemplateFile(idx: number) {
+  const tpl = editedTemplates.value[idx]
+  if (!tpl) return
+  if (!confirm(`Remove pre-uploaded file from "${tpl.name}"? Future phase entries will not auto-pre-fill this template.`)) return
+  tpl.fileDataUrl = undefined
+  tpl.fileName = undefined
+  tpl.mimeType = undefined
+  tpl.fileSize = undefined
+  tpl.uploadedAt = undefined
+  emitChange()
 }
 
 // ── Actions ──────────────────────────────────────────────────────────────────
@@ -459,5 +563,95 @@ function removeTemplate(idx: number) {
 .dte-add-btn {
   align-self: flex-start;
   margin-top: 0.25rem;
+}
+
+/* ── rev 3.11: Pre-uploaded file field ───────────────────── */
+.dte-hint {
+  font-weight: 400;
+  text-transform: none;
+  letter-spacing: 0;
+  color: #94a3b8;
+  font-size: 0.7rem;
+  margin-left: 0.3rem;
+}
+
+.dte-file-uploaded {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  padding: 0.6rem 0.75rem;
+  background: #f0f9ff;
+  border: 1px solid #bae6fd;
+  border-radius: 0.4rem;
+}
+
+.dte-file-info {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  flex: 1;
+  min-width: 0;
+}
+
+.dte-file-icon {
+  font-size: 1.5rem;
+  flex-shrink: 0;
+}
+
+.dte-file-meta {
+  display: flex;
+  flex-direction: column;
+  gap: 0.1rem;
+  min-width: 0;
+}
+
+.dte-file-name {
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: #0c4a6e;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.dte-file-sub {
+  font-size: 0.7rem;
+  color: #64748b;
+}
+
+.dte-file-actions {
+  display: flex;
+  gap: 0.4rem;
+  flex-shrink: 0;
+}
+
+.btn-sm {
+  padding: 0.3rem 0.65rem;
+  font-size: 0.75rem;
+}
+
+.dte-file-empty {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+}
+
+@media (max-width: 480px) {
+  .dte-file-uploaded {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0.5rem;
+  }
+  .dte-file-actions {
+    width: 100%;
+    justify-content: flex-end;
+  }
+  .dte-file-empty {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0.4rem;
+  }
 }
 </style>

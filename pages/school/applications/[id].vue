@@ -490,19 +490,8 @@
 
                   <div v-if="p3Toast" class="p2-toast">✅ {{ p3Toast }}</div>
 
-                  <!-- §17 Document Checklist (P3 Offering) -->
-                  <div v-if="application.phase3Templates && application.phase3Templates.length" class="doc-templates-section">
-                    <h4 class="subsection-header">📄 Document Checklist — P3 Offering</h4>
-                    <ul class="doc-templates-list">
-                      <li v-for="tpl in application.phase3Templates" :key="tpl.id" class="doc-template-item">
-                        <span class="doc-template-icon">{{ tpl.required ? '⚠️' : '📄' }}</span>
-                        <span class="doc-template-name">{{ tpl.name }}</span>
-                        <span class="doc-template-category">{{ tpl.category }}</span>
-                      </li>
-                    </ul>
-                  </div>
-
                   <!-- §16.0.2 Section 1 (rev 3.10): Files to Student — primary action, multi-file upload. Mirror of student §2 (active affordance, green pill + border). -->
+                  <!-- rev 3.11: §17 Document Checklist is deprecated — the auto-pre-filled queue below now serves as the visible checklist. -->
                   <div class="phase-subsection p3-action-section">
                     <h4>📎 Files to Student <span class="p3-section-pill p3-section-pill-action">Send files</span></h4>
                     <p class="p3-section-purpose">Upload deposit form, payment instructions, or documents the student needs. PDF, JPG, or PNG, max 5MB each.</p>
@@ -523,12 +512,16 @@
                     </div>
                     <p v-else class="p3-empty">No documents sent yet. Add the first one below.</p>
 
-                    <!-- Pending files queue -->
+                    <!-- rev 3.11: Pending files queue with per-file checkbox (default ✅ checked). Auto-pre-fills from phase3Templates on first open. -->
                     <div v-if="p3NewFiles.length" class="p3-files-list">
                       <div v-for="(f, i) in p3NewFiles" :key="`new-${i}`" class="p3-file-row p3-file-row-pending">
+                        <label class="p3-file-checkbox" :title="f.checked ? 'Will be sent to student' : 'Skipped — will not be sent'">
+                          <input type="checkbox" v-model="f.checked" />
+                          <span class="p3-file-checkbox-label">{{ f.checked ? 'Send' : 'Skip' }}</span>
+                        </label>
                         <span class="p3-file-icon">📎</span>
                         <span class="p3-file-name">{{ f.name }}</span>
-                        <span class="p3-file-meta">pending</span>
+                        <span v-if="f.prefilled" class="p3-file-template-badge" title="Auto-pre-filled from your document template">📋 from template</span>
                         <button class="p3-file-remove" @click="removeP3NewFile(i)" title="Remove">✕</button>
                       </div>
                     </div>
@@ -536,8 +529,8 @@
                     <!-- File input + Send/Add button (always available — even after `confirmed`, for late submissions / follow-ups. See docs §16.1.1 rev 2.) -->
                     <div class="p3-add-file-row">
                       <input id="p3-school-file-input" type="file" multiple accept="application/pdf,image/jpeg,image/png" @change="onP3NewFiles" />
-                      <button v-if="!p3Latest" class="btn-primary" :disabled="!p3NewFiles.length" @click="onP3Send" title="Send the queued documents to the student and create the deposit record">📤 Send to Student</button>
-                      <button v-else class="btn-secondary" :disabled="!p3NewFiles.length" @click="onP3AddFiles" :title="p3Latest.status === 'confirmed' ? 'Append a follow-up document to the existing deposit record (late submission support)' : 'Append the queued documents to the existing deposit record'">📎 Add to Student</button>
+                      <button v-if="!p3Latest" class="btn-primary" :disabled="!p3NewFiles.length || !p3NewFiles.some(f => f.checked)" @click="onP3Send" title="Send the checked documents to the student and create the deposit record">📤 Send to Student</button>
+                      <button v-else class="btn-secondary" :disabled="!p3NewFiles.length || !p3NewFiles.some(f => f.checked)" @click="onP3AddFiles" :title="p3Latest.status === 'confirmed' ? 'Append the checked documents to the existing deposit record (late submission support)' : 'Append the checked documents to the existing deposit record'">📎 Add to Student</button>
                     </div>
                   </div>
 
@@ -652,18 +645,7 @@
                       <div class="action-title">Admission Documents</div>
                       <div class="action-desc">Prepare and upload admission documents</div>
 
-                      <!-- §17 Document Checklist (P4 Admission Documents) -->
-                      <div v-if="application.phase4Templates && application.phase4Templates.length" class="doc-templates-section">
-                        <h4 class="subsection-header">📄 Document Checklist — P4 Admission Documents</h4>
-                        <ul class="doc-templates-list">
-                          <li v-for="tpl in application.phase4Templates" :key="tpl.id" class="doc-template-item">
-                            <span class="doc-template-icon">{{ tpl.required ? '⚠️' : '📄' }}</span>
-                            <span class="doc-template-name">{{ tpl.name }}</span>
-                            <span class="doc-template-category">{{ tpl.category }}</span>
-                          </li>
-                        </ul>
-                      </div>
-
+                      <!-- rev 3.11: §17 Document Checklist is deprecated — the auto-pre-filled queue below now serves as the visible checklist. -->
                       <!-- §22 P4 File Upload (school side) — multi-file pending queue + Upload/Add buttons -->
                       <div class="p4-section">
                         <div class="p4-section-title">📎 Admission Documents</div>
@@ -679,12 +661,16 @@
                         </div>
                         <p v-else class="p4-empty">No documents uploaded yet. Add the first one below.</p>
 
-                        <!-- Pending files queue (not yet uploaded) — per §22 trial scope -->
+                        <!-- rev 3.11: Pending files queue with per-file checkbox (default ✅ checked). Auto-pre-fills from phase4Templates on first open. -->
                         <div v-if="p4NewFiles.length" class="p4-docs-list">
                           <div v-for="(f, i) in p4NewFiles" :key="`new-${i}`" class="p4-doc-row p4-doc-row-pending">
+                            <label class="p4-doc-checkbox" :title="f.checked ? 'Will be uploaded' : 'Skipped — will not be uploaded'">
+                              <input type="checkbox" v-model="f.checked" />
+                              <span class="p4-doc-checkbox-label">{{ f.checked ? 'Send' : 'Skip' }}</span>
+                            </label>
                             <span class="p4-doc-icon">📎</span>
                             <span class="p4-doc-name">{{ f.name }}</span>
-                            <span class="p4-doc-meta">pending</span>
+                            <span v-if="f.prefilled" class="p4-doc-template-badge" title="Auto-pre-filled from your document template">📋 from template</span>
                             <button class="p4-doc-remove" @click="removeP4NewFile(i)" title="Remove">✕</button>
                           </div>
                         </div>
@@ -692,8 +678,8 @@
                         <!-- File input + Upload/Add button (always available during P4) -->
                         <div class="p4-add-file-row">
                           <input id="p4-school-file-input" type="file" multiple accept="application/pdf,image/jpeg,image/png" @change="onP4NewFiles" />
-                          <button v-if="!application.phase4Docs?.length" class="btn-primary" :disabled="!p4NewFiles.length" @click="onP4Upload" title="Upload the queued documents to the system">📤 Upload Documents</button>
-                          <button v-else class="btn-secondary" :disabled="!p4NewFiles.length" @click="onP4AddFiles" title="Append the queued documents to the existing admission documents list">📎 Add Documents</button>
+                          <button v-if="!application.phase4Docs?.length" class="btn-primary" :disabled="!p4NewFiles.length || !p4NewFiles.some(f => f.checked)" @click="onP4Upload" title="Upload the checked documents to the system">📤 Upload Documents</button>
+                          <button v-else class="btn-secondary" :disabled="!p4NewFiles.length || !p4NewFiles.some(f => f.checked)" @click="onP4AddFiles" title="Append the checked documents to the existing admission documents list">📎 Add Documents</button>
                         </div>
 
                         <!-- Mark Documents Ready — only after first upload (per §22) -->
@@ -718,16 +704,42 @@
                         <span v-else>Travel arrangements</span>
                       </div>
 
-                      <!-- §17 Document Checklist (P5 Pre-Departure) -->
-                      <div v-if="application.phase5Templates && application.phase5Templates.length" class="doc-templates-section">
-                        <h4 class="subsection-header">📄 Document Checklist — P5 Pre-Departure</h4>
-                        <ul class="doc-templates-list">
-                          <li v-for="tpl in application.phase5Templates" :key="tpl.id" class="doc-template-item">
-                            <span class="doc-template-icon">{{ tpl.required ? '⚠️' : '📄' }}</span>
-                            <span class="doc-template-name">{{ tpl.name }}</span>
-                            <span class="doc-template-category">{{ tpl.category }}</span>
-                          </li>
-                        </ul>
+                      <!-- rev 3.11: §17 Document Checklist is deprecated — auto-pre-filled queue below now serves as the visible checklist. -->
+                      <!-- rev 3.11: New "Files to Student" section — auto-pre-fills from phase5Templates. Used for travel forms, welcome packets, pickup arrangements. -->
+                      <div class="p5-section">
+                        <div class="p5-section-title">📎 Files to Student <span class="p5-section-pill p5-section-pill-action">Send files</span></div>
+                        <div class="action-desc">Send travel forms, welcome packets, or pickup arrangements. Auto-pre-fills from your document templates. PDF/JPG/PNG, max 5MB each.</div>
+
+                        <!-- Sent files list (read-only) -->
+                        <div v-if="p5SentFiles.length" class="p5-docs-list">
+                          <div v-for="(f, i) in p5SentFiles" :key="i" class="p5-doc-row">
+                            <span class="p5-doc-icon">📄</span>
+                            <a class="p5-doc-name" :href="f.dataUrl" target="_blank" rel="noopener">{{ f.name }}</a>
+                            <span class="p5-doc-meta">{{ formatDateTime(f.uploadedAt) }}</span>
+                          </div>
+                        </div>
+                        <p v-else class="p5-empty">No travel / welcome documents sent yet. Add the first one below.</p>
+
+                        <!-- Pending files queue with per-file checkbox (default ✅ checked). Auto-pre-fills from phase5Templates on first open. -->
+                        <div v-if="p5NewFiles.length" class="p5-docs-list">
+                          <div v-for="(f, i) in p5NewFiles" :key="`new-${i}`" class="p5-doc-row p5-doc-row-pending">
+                            <label class="p5-doc-checkbox" :title="f.checked ? 'Will be sent' : 'Skipped — will not be sent'">
+                              <input type="checkbox" v-model="f.checked" />
+                              <span class="p5-doc-checkbox-label">{{ f.checked ? 'Send' : 'Skip' }}</span>
+                            </label>
+                            <span class="p5-doc-icon">📎</span>
+                            <span class="p5-doc-name">{{ f.name }}</span>
+                            <span v-if="f.prefilled" class="p5-doc-template-badge" title="Auto-pre-filled from your document template">📋 from template</span>
+                            <button class="p5-doc-remove" @click="removeP5NewFile(i)" title="Remove">✕</button>
+                          </div>
+                        </div>
+
+                        <!-- File input + Send/Add button -->
+                        <div class="p5-add-file-row">
+                          <input id="p5-school-file-input" type="file" multiple accept="application/pdf,image/jpeg,image/png" @change="onP5NewFiles" />
+                          <button v-if="!p5SentFiles.length" class="btn-primary" :disabled="!p5NewFiles.length || !p5NewFiles.some(f => f.checked)" @click="onP5Send" title="Send the checked travel / welcome documents to the student">📤 Send to Student</button>
+                          <button v-else class="btn-secondary" :disabled="!p5NewFiles.length || !p5NewFiles.some(f => f.checked)" @click="onP5AddFiles" title="Append the checked documents to the sent list">📎 Add Documents</button>
+                        </div>
                       </div>
 
                       <!-- 🔬 §23 DEV stub (collapsed by default) — see docs §23 (dev note) -->
@@ -1082,6 +1094,7 @@ const enrolledMock = {
   phase4Templates: [],
   phase4Docs: [],                  // §22 P4 file upload — back-filled in loadState() for old records
   phase5Templates: [],
+  phase5SchoolFiles: [],            // rev 3.11 P5 Files-to-Student — back-filled in loadState() for old records
   phase5VisaGrantedDocument: null,
   phase5VisaGrantedAt: null,
   // §24 P5 Travel Arrangements — primary data lives in `bsp:travel:${id}`
@@ -1147,6 +1160,7 @@ const defaultMock = {
   phase4Templates: [],
   phase4Docs: [],                  // §22 P4 file upload — back-filled in loadState() for old records
   phase5Templates: [],
+  phase5SchoolFiles: [],            // rev 3.11 P5 Files-to-Student — back-filled in loadState() for old records
   phase5VisaGrantedDocument: null,
   phase5VisaGrantedAt: null,
   // §24 P5 Travel Arrangements — primary data lives in `bsp:travel:${id}`
@@ -1262,6 +1276,10 @@ onMounted(() => {
   // §22: back-fill phase4Docs for old localStorage records missing the field
   if (!application.value.phase4Docs) {
     application.value.phase4Docs = []
+  }
+  // rev 3.11: back-fill phase5SchoolFiles for old localStorage records missing the field
+  if (!application.value.phase5SchoolFiles) {
+    application.value.phase5SchoolFiles = []
   }
   // Load shared interview state (school ↔ student cross-portal sync)
   const sharedInterview = loadInterviewState()
@@ -1490,7 +1508,27 @@ function scheduleInterview() {
 }
 
 // §22 P4 File Upload helpers (school side) — mirror of §16 P3 pattern
-const p4NewFiles = ref([])   // queued, not yet uploaded
+const p4NewFiles = ref([])   // queued, not yet uploaded. rev 3.11: each row = { name, dataUrl, checked, prefilled, sourceTemplateId? }
+// rev 3.11: auto-pre-fill p4NewFiles from application's phase4Templates on phase enter.
+let p4QueuePrefilled = false
+watch(
+  () => application.value?.phase4Templates,
+  (tpls) => {
+    if (!tpls || p4QueuePrefilled) return
+    if (p4NewFiles.value.length > 0) return
+    const withFiles = (tpls || []).filter(t => t.active && t.fileDataUrl && t.fileName)
+    if (!withFiles.length) return
+    p4NewFiles.value = withFiles.map(t => ({
+      name: t.fileName,
+      dataUrl: t.fileDataUrl,
+      checked: true,
+      prefilled: true,
+      sourceTemplateId: t.id,
+    }))
+    p4QueuePrefilled = true
+  },
+  { immediate: true, deep: true }
+)
 
 function onP4NewFiles(e) {
   const files = Array.from(e.target.files || [])
@@ -1502,7 +1540,8 @@ function onP4NewFiles(e) {
     }
     const reader = new FileReader()
     reader.onload = ((f) => () => {
-      p4NewFiles.value.push({ name: f.name, dataUrl: reader.result })
+      // rev 3.11: manually-added files start checked, marked as not-prefilled
+      p4NewFiles.value.push({ name: f.name, dataUrl: reader.result, checked: true, prefilled: false })
     })(file)
     reader.readAsDataURL(file)
   }
@@ -1515,10 +1554,17 @@ function removeP4NewFile(index) {
 
 function onP4Upload() {
   if (!p4NewFiles.value.length) return
+  // rev 3.11: only upload checked files
+  const toSend = p4NewFiles.value.filter(f => f.checked)
+  if (!toSend.length) {
+    alert('No files are checked. Tick at least one file to upload, or remove the unchecked ones.')
+    return
+  }
   if (!application.value.phase4Docs) application.value.phase4Docs = []
-  const files = p4NewFiles.value.map(f => ({ name: f.name, dataUrl: f.dataUrl, uploadedAt: new Date().toISOString(), uploadedBy: 'school-admin' }))
+  const files = toSend.map(f => ({ name: f.name, dataUrl: f.dataUrl, uploadedAt: new Date().toISOString(), uploadedBy: 'school-admin' }))
   application.value.phase4Docs.push(...files)
-  p4NewFiles.value = []
+  // rev 3.11: keep unchecked files in the queue, drop only the sent ones
+  p4NewFiles.value = p4NewFiles.value.filter(f => !f.checked)
   saveState()
 }
 
@@ -1899,8 +1945,97 @@ function formatDateTime(iso) {
 const p3store = useP3Store()
 const p3gate = useP3Gate(() => id)
 const p3Latest = computed(() => p3store.getLatest(id).value)
-const p3NewFiles = ref([])   // queued, not yet sent
+// rev 3.11: P5 "Files to Student" — auto-pre-fills from phase5Templates. Used for travel forms, welcome packets, etc.
+const p5NewFiles = ref([])   // queued, not yet sent. rev 3.11: each row = { name, dataUrl, checked, prefilled, sourceTemplateId? }
+const p5SentFiles = computed(() => application.value?.phase5SchoolFiles || [])
+let p5QueuePrefilled = false
+watch(
+  () => application.value?.phase5Templates,
+  (tpls) => {
+    if (!tpls || p5QueuePrefilled) return
+    if (p5NewFiles.value.length > 0) return
+    const withFiles = (tpls || []).filter(t => t.active && t.fileDataUrl && t.fileName)
+    if (!withFiles.length) return
+    p5NewFiles.value = withFiles.map(t => ({
+      name: t.fileName,
+      dataUrl: t.fileDataUrl,
+      checked: true,
+      prefilled: true,
+      sourceTemplateId: t.id,
+    }))
+    p5QueuePrefilled = true
+  },
+  { immediate: true, deep: true }
+)
+
+function onP5NewFiles(e) {
+  const files = Array.from(e.target.files || [])
+  if (!files.length) return
+  for (const file of files) {
+    if (file.size > 5 * 1024 * 1024) {
+      alert(`${file.name} is too large (max 5MB)`)
+      continue
+    }
+    const reader = new FileReader()
+    reader.onload = ((f) => () => {
+      p5NewFiles.value.push({ name: f.name, dataUrl: reader.result, checked: true, prefilled: false })
+    })(file)
+    reader.readAsDataURL(file)
+  }
+  e.target.value = ''
+}
+
+function removeP5NewFile(index) {
+  p5NewFiles.value.splice(index, 1)
+}
+
+function onP5Send() {
+  if (!p5NewFiles.value.length) {
+    alert('Please upload at least one document first')
+    return
+  }
+  const toSend = p5NewFiles.value.filter(f => f.checked)
+  if (!toSend.length) {
+    alert('No files are checked. Tick at least one file to send, or remove the unchecked ones.')
+    return
+  }
+  if (!application.value.phase5SchoolFiles) application.value.phase5SchoolFiles = []
+  const files = toSend.map(f => ({ name: f.name, dataUrl: f.dataUrl, uploadedAt: new Date().toISOString(), uploadedBy: 'school-admin' }))
+  application.value.phase5SchoolFiles.push(...files)
+  p5NewFiles.value = p5NewFiles.value.filter(f => !f.checked)
+  saveState()
+  p3Toast.value = '✅ Travel / welcome documents sent to student'
+  setTimeout(() => { p3Toast.value = '' }, 3000)
+}
+
+function onP5AddFiles() {
+  // Same as onP5Send — appends to existing list
+  onP5Send()
+}
+
+const p3NewFiles = ref([])   // queued, not yet sent. rev 3.11: each row = { name, dataUrl, checked, prefilled, sourceTemplateId? }
 const p3Toast = ref('')
+// rev 3.11: auto-pre-fill p3NewFiles from application's phase3Templates on phase enter.
+// Triggers once when templates have files attached AND queue is empty (don't overwrite manual uploads).
+let p3QueuePrefilled = false
+watch(
+  () => application.value?.phase3Templates,
+  (tpls) => {
+    if (!tpls || p3QueuePrefilled) return
+    if (p3NewFiles.value.length > 0) return  // school has already added files manually
+    const withFiles = (tpls || []).filter(t => t.active && t.fileDataUrl && t.fileName)
+    if (!withFiles.length) return
+    p3NewFiles.value = withFiles.map(t => ({
+      name: t.fileName,
+      dataUrl: t.fileDataUrl,
+      checked: true,
+      prefilled: true,
+      sourceTemplateId: t.id,
+    }))
+    p3QueuePrefilled = true
+  },
+  { immediate: true, deep: true }
+)
 const showStudentFiles = ref(false)   // legacy initial; rev 2.4 rule overrides below — see docs §16.1.4
 // rev 2.4: open the toggle by default when the Confirm Receipt action is actually enabled
 // (status === 'proof_uploaded' AND studentFiles.length >= 1). Otherwise keep collapsed.
@@ -1997,7 +2132,6 @@ function p3StatusLabel(status) {
 function onP3NewFiles(e) {
   const files = Array.from(e.target.files || [])
   if (!files.length) return
-  const valid = []
   for (const file of files) {
     if (file.size > 5 * 1024 * 1024) {
       alert(`${file.name} is too large (max 5MB)`)
@@ -2005,7 +2139,8 @@ function onP3NewFiles(e) {
     }
     const reader = new FileReader()
     reader.onload = ((f) => () => {
-      p3NewFiles.value.push({ name: f.name, dataUrl: reader.result })
+      // rev 3.11: manually-added files start checked (default send), marked as not-prefilled
+      p3NewFiles.value.push({ name: f.name, dataUrl: reader.result, checked: true, prefilled: false })
     })(file)
     reader.readAsDataURL(file)
   }
@@ -2022,11 +2157,18 @@ function onP3AddFiles() {
     return
   }
   if (!p3NewFiles.value.length) return
-  const files = p3NewFiles.value.map(f => ({ name: f.name, dataUrl: f.dataUrl, uploadedAt: new Date().toISOString(), uploadedBy: 'school-admin' }))
+  // rev 3.11: only send the files the school has explicitly checked
+  const toSend = p3NewFiles.value.filter(f => f.checked)
+  if (!toSend.length) {
+    alert('No files are checked. Tick at least one file to send, or remove the unchecked ones.')
+    return
+  }
+  const files = toSend.map(f => ({ name: f.name, dataUrl: f.dataUrl, uploadedAt: new Date().toISOString(), uploadedBy: 'school-admin' }))
   try {
     p3store.addSchoolFile(id, files[0]) // store adds one at a time; loop manually below
     for (let i = 1; i < files.length; i++) p3store.addSchoolFile(id, files[i])
-    p3NewFiles.value = []
+    // rev 3.11: remove only the sent files from the queue — unchecked files stay for the school to consider
+    p3NewFiles.value = p3NewFiles.value.filter(f => !f.checked)
     p3Toast.value = `✅ ${files.length} document${files.length > 1 ? 's' : ''} added for student`
     setTimeout(() => { p3Toast.value = '' }, 3000)
   } catch (err) {
@@ -2046,9 +2188,16 @@ function onP3Send() {
     alert('Please upload at least one document first')
     return
   }
-  const files = p3NewFiles.value.map(f => ({ name: f.name, dataUrl: f.dataUrl, uploadedAt: new Date().toISOString(), uploadedBy: 'school-admin' }))
+  // rev 3.11: only send the files the school has explicitly checked
+  const toSend = p3NewFiles.value.filter(f => f.checked)
+  if (!toSend.length) {
+    alert('No files are checked. Tick at least one file to send, or remove the unchecked ones.')
+    return
+  }
+  const files = toSend.map(f => ({ name: f.name, dataUrl: f.dataUrl, uploadedAt: new Date().toISOString(), uploadedBy: 'school-admin' }))
   p3store.sendDepositForm(id, {}, files)  // bankInfo: {} — bank details live on the uploaded PDF
-  p3NewFiles.value = []
+  // rev 3.11: remove only the sent files from the queue — unchecked files stay for the school to consider
+  p3NewFiles.value = p3NewFiles.value.filter(f => !f.checked)
   p3Toast.value = '✅ Deposit form sent to student'
   setTimeout(() => { p3Toast.value = '' }, 3000)
 }
@@ -3316,7 +3465,7 @@ function devRestart() {
 .p3-ready-banner { margin-top: 0.75rem; padding: 0.75rem 1rem; background: #eff6ff; border: 1px solid #93c5fd; border-radius: 6px; color: #1e40af; font-weight: 600; display: flex; align-items: center; gap: 0.5rem; flex-wrap: wrap; }
 .p3-ready-banner-secondary { background: transparent; color: #1e40af; border: 1px solid #93c5fd; padding: 0.25rem 0.65rem; border-radius: 6px; font-size: 0.85rem; cursor: pointer; font-weight: 500; }
 .p3-ready-banner-secondary:hover { background: #dbeafe; }
-.p3-file-row { display: grid; grid-template-columns: auto 1fr auto auto; gap: 0.75rem; align-items: center; padding: 0.5rem 0.75rem; background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 6px; }
+.p3-file-row { display: grid; grid-template-columns: auto auto 1fr auto auto; gap: 0.5rem; align-items: center; padding: 0.5rem 0.75rem; background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 6px; }
 .p3-file-row-pending { background: #fffbeb; border-color: #fcd34d; }
 .p3-file-icon { font-size: 1rem; }
 .p3-file-name { color: #1e40af; text-decoration: none; font-weight: 500; font-size: 0.9rem; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
@@ -3328,11 +3477,17 @@ function devRestart() {
 .p3-add-file-row input[type="file"] { flex: 1; min-width: 200px; font-size: 0.85rem; }
 .p3-empty { color: #64748b; font-size: 0.85rem; font-style: italic; margin: 0.5rem 0; }
 
+/* rev 3.11: per-file checkbox + template badge */
+.p3-file-checkbox { display: inline-flex; align-items: center; gap: 0.3rem; cursor: pointer; font-size: 0.72rem; font-weight: 600; color: #475569; user-select: none; padding: 0.15rem 0.45rem; border-radius: 4px; background: #fff; border: 1px solid #e2e8f0; }
+.p3-file-checkbox input[type="checkbox"] { width: 14px; height: 14px; accent-color: #16a34a; cursor: pointer; margin: 0; }
+.p3-file-checkbox-label { white-space: nowrap; }
+.p3-file-template-badge { display: inline-flex; align-items: center; gap: 0.2rem; padding: 0.15rem 0.5rem; background: #dbeafe; color: #1e40af; border-radius: 99px; font-size: 0.7rem; font-weight: 600; white-space: nowrap; }
+
 /* §22 P4 File Upload (school side) — mirrors P3 styling */
 .p4-section { background: #fff; border: 1px solid #e2e8f0; border-radius: 6px; padding: 1rem; margin-top: 0.75rem; }
 .p4-section-title { font-weight: 700; font-size: 0.95rem; margin-bottom: 0.75rem; color: #1e293b; }
 .p4-docs-list { display: flex; flex-direction: column; gap: 0.5rem; margin: 0.75rem 0; }
-.p4-doc-row { display: grid; grid-template-columns: auto 1fr auto auto; gap: 0.75rem; align-items: center; padding: 0.5rem 0.75rem; background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 6px; }
+.p4-doc-row { display: grid; grid-template-columns: auto auto 1fr auto auto; gap: 0.5rem; align-items: center; padding: 0.5rem 0.75rem; background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 6px; }
 .p4-doc-row-pending { background: #fffbeb; border-color: #fcd34d; }
 .p4-doc-icon { font-size: 1rem; }
 .p4-doc-name { color: #2563eb; text-decoration: none; word-break: break-all; }
@@ -3344,6 +3499,34 @@ function devRestart() {
 .p4-add-file-row input[type="file"] { flex: 1; min-width: 200px; font-size: 0.85rem; }
 .p4-empty { color: #64748b; font-size: 0.85rem; font-style: italic; margin: 0.5rem 0; }
 .p4-mark-ready-row { margin-top: 1rem; padding-top: 0.75rem; border-top: 1px dashed #cbd5e1; }
+
+/* rev 3.11: per-file checkbox + template badge */
+.p4-doc-checkbox { display: inline-flex; align-items: center; gap: 0.3rem; cursor: pointer; font-size: 0.72rem; font-weight: 600; color: #475569; user-select: none; padding: 0.15rem 0.45rem; border-radius: 4px; background: #fff; border: 1px solid #e2e8f0; }
+.p4-doc-checkbox input[type="checkbox"] { width: 14px; height: 14px; accent-color: #16a34a; cursor: pointer; margin: 0; }
+.p4-doc-checkbox-label { white-space: nowrap; }
+.p4-doc-template-badge { display: inline-flex; align-items: center; gap: 0.2rem; padding: 0.15rem 0.5rem; background: #dbeafe; color: #1e40af; border-radius: 99px; font-size: 0.7rem; font-weight: 600; white-space: nowrap; }
+
+/* rev 3.11: P5 Files to Student section (mirrors P3/P4 structure) */
+.p5-section { background: #fff; border: 1px solid #e2e8f0; border-radius: 6px; padding: 1rem; margin-top: 0.75rem; }
+.p5-section-title { font-weight: 700; font-size: 0.95rem; margin-bottom: 0.5rem; color: #1e293b; display: flex; align-items: center; gap: 0.5rem; flex-wrap: wrap; }
+.p5-section-pill { display: inline-flex; align-items: center; padding: 0.15rem 0.55rem; border-radius: 99px; font-size: 0.65rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.04em; }
+.p5-section-pill-action { background: #d1fae5; color: #065f46; border: 1px solid #6ee7b7; }
+.p5-docs-list { display: flex; flex-direction: column; gap: 0.5rem; margin: 0.75rem 0; }
+.p5-doc-row { display: grid; grid-template-columns: auto auto 1fr auto auto; gap: 0.5rem; align-items: center; padding: 0.5rem 0.75rem; background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 6px; }
+.p5-doc-row-pending { background: #fffbeb; border-color: #fcd34d; }
+.p5-doc-icon { font-size: 1rem; }
+.p5-doc-name { color: #2563eb; text-decoration: none; word-break: break-all; }
+.p5-doc-row-pending .p5-doc-name { color: #92400e; }
+.p5-doc-meta { font-size: 0.75rem; color: #64748b; }
+.p5-doc-remove { background: transparent; border: none; color: #ef4444; cursor: pointer; font-size: 1rem; padding: 0 0.25rem; line-height: 1; }
+.p5-doc-remove:hover { color: #b91c1c; }
+.p5-add-file-row { display: flex; gap: 0.5rem; align-items: center; margin-top: 0.5rem; flex-wrap: wrap; }
+.p5-add-file-row input[type="file"] { flex: 1; min-width: 200px; font-size: 0.85rem; }
+.p5-empty { color: #64748b; font-size: 0.85rem; font-style: italic; margin: 0.5rem 0; }
+.p5-doc-checkbox { display: inline-flex; align-items: center; gap: 0.3rem; cursor: pointer; font-size: 0.72rem; font-weight: 600; color: #475569; user-select: none; padding: 0.15rem 0.45rem; border-radius: 4px; background: #fff; border: 1px solid #e2e8f0; }
+.p5-doc-checkbox input[type="checkbox"] { width: 14px; height: 14px; accent-color: #16a34a; cursor: pointer; margin: 0; }
+.p5-doc-checkbox-label { white-space: nowrap; }
+.p5-doc-template-badge { display: inline-flex; align-items: center; gap: 0.2rem; padding: 0.15rem 0.5rem; background: #dbeafe; color: #1e40af; border-radius: 99px; font-size: 0.7rem; font-weight: 600; white-space: nowrap; }
 
 .p2-next-action {
   align-items: flex-start;

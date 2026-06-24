@@ -20,6 +20,13 @@ export interface DocumentTemplate {
   sampleUrl?: string
   displayOrder: number
   active: boolean
+  // rev 3.11 — pre-uploaded file content (school settings). When present,
+  // this file auto-pre-fills the school application page's file queue on phase entry.
+  fileDataUrl?: string
+  fileName?: string
+  mimeType?: string
+  fileSize?: number
+  uploadedAt?: string
 }
 
 export interface P2Interview {
@@ -93,6 +100,8 @@ export interface P2Application {
   phase3Templates: DocumentTemplate[]
   phase4Templates: DocumentTemplate[]
   phase5Templates: DocumentTemplate[]
+  // rev 3.11: P5 Files to Student storage (mirrors application.phase4Docs for P4). Used by §17.3 P5 auto-pre-fill.
+  phase5SchoolFiles: { name: string; dataUrl: string; uploadedAt: string; uploadedBy: string }[]
   // rev 3.0 — see §18 (P5 Visa Step Detail). Set when student confirms visa granted.
   phase5VisaGrantedDocument: { name: string; dataUrl: string; uploadedAt: string } | null
   phase5VisaGrantedAt: string | null  // ISO
