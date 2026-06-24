@@ -152,7 +152,7 @@ All P2 interview date / time fields and displays are marked as UK time (Europe/L
 | **School** | Full (info + edit student snapshot + reject) | Full (A schedule, B current, C past, D decision) | Full (upload deposit docs, confirm receipt) | Full (upload admission docs, mark ready) | Full (visa status, travel arrangement, confirm arrival) | Read-only + view student record |
 | **Consultant (assigned)** | Read-only (P2 + P1 editable per §11 lock rule) | Sections A, B, C only (no Section D) | Read-only | Read-only | Read-only | Read-only |
 | **Consultant (not assigned)** | Zero access | Zero access | Zero access | Zero access | Zero access | Zero access |
-| **Student** | Read application info (snapshot). Sees school corrections via §17.3 auto-populate. | **Confirm Attendance** / **Suggest Change** (own actions); read interview details | **Send Files to School** (§16.1), **Upload Deposit Proof** (§16); read school's deposit docs list | Read-only: school's `phase4Docs` list (mirror §22, **student-side file upload deferred**) | **Confirm Visa Granted** (§18.2 mandatory if visaRequested), joint-edit **Travel Arrangements** (§24) | Read-only status banner ("Welcome, you're enrolled") |
+| **Student** | Read application info (snapshot). Sees school corrections via §17.3 auto-populate. | **Confirm Attendance** / **Suggest Change** (own actions); read interview details | **Files to School** (§16.1), **Deposit Receipt** (§16); read school's deposit docs list | Read-only: school's `phase4Docs` list (mirror §22, **student-side file upload deferred**) | **Confirm Visa Granted** (§18.2 mandatory if visaRequested), joint-edit **Travel Arrangements** (§24) | Read-only status banner ("Welcome, you're enrolled") |
 | **BSP Staff** | Full read, write only when assigned | Full read, write only when assigned | Full read, write only when assigned | Full read, write only when assigned | Full read, write only when assigned | Full read |
 
 ### 4.2 Student-specific actions — what the student CAN do (per phase)
@@ -163,9 +163,9 @@ This list enumerates the student-facing affordances that do NOT appear on the sc
 |-------|----------------|--------------|----------------|
 | P2 | ✅ **Confirm Attendance** (interview) | §15 P2 student view | No — informational only |
 | P2 | 🔄 **Suggest Change** (interview) | §15 P2 student view | Sets interview `status = 'change-requested'` |
-| P3 | 📤 **Send Files to School** (general multi-file, status-agnostic) | §16.1, §16.1.1 rev 2.1 | No — side channel |
+| P3 | 📤 **Files to School** (general multi-file, status-agnostic) | §16.1, §16.1.1 rev 2.1 | No — side channel |
 | P3 | ✅ **I've uploaded everything** (advisory) | §16.1.1 | Sets `studentReadyForReview` (advisory, not a gate) |
-| P3 | 💳 **Upload Deposit Proof** (single status-changing file) | §16 | **YES** — drives `sent_to_student → proof_uploaded` |
+| P3 | 💳 **Deposit Receipt** (single status-changing file) | §16 | **YES** — drives `sent_to_student → proof_uploaded` |
 | P5 | 🛂 **Upload Visa Granted PDF** | §18.2 | No — must be paired with Confirm |
 | P5 | ✅ **Confirm Visa Granted** (mandatory if visaRequested) | §18.2 | **YES** — sets `subStatus = visa_granted` |
 | P5 | ✈️ **Edit Flight** info (optional, joint-edit) | §24.1 | No |
@@ -186,9 +186,9 @@ This list enumerates the student-facing affordances that do NOT appear on the sc
 - **P1** card body: read-only Application Details + Student Info (no school-side edit button; students cannot edit after submit per §19.4).
 - **P2** card body: Interview card (date/time/location/agenda) + the 2 student actions above (§15) — **replaces** the school's Schedule form (Section A).
 - **P3** card body: 4 sections in order:
-  1. Documents from School (read-only list of `schoolFiles`)
-  2. Send Files to School (§16.1) — multi-file input + pending queue + Send button
-  3. Upload Deposit Proof (§16) — single-file input + Upload button
+  1. Files from School (read-only list of `schoolFiles`)
+  2. Files to School (§16.1) — multi-file input + pending queue + Send button
+  3. Deposit Receipt (§16) — single-file input + Upload button
   4. ✅ I've uploaded everything + ↩️ Mark as not ready (advisory)
 - **P4** card body: read-only list of school's `phase4Docs` (download links + timestamps). No upload affordance on the student side per §22 ("Student-side mirror deferred").
 - **P5** card body: conditional sub-steps (§18):
@@ -1041,16 +1041,16 @@ The school page's UI is driven by **(1)**, but student actions land in **(2)**. 
 
 **Student P3 page section order (2026-06-25, rev 3.6):**
 
-**Rule (rev 3.6):** On the student P3 view (`pages/student/applications/[id].vue`), when `p3Latest` exists (school has sent deposit documents), the sub-sections below MUST be rendered in the following top-to-bottom order. This rule supersedes the historical layout where the "📤 Send Files to School" section sat above the "📎 Documents from School" section.
+**Rule (rev 3.6):** On the student P3 view (`pages/student/applications/[id].vue`), when `p3Latest` exists (school has sent deposit documents), the sub-sections below MUST be rendered in the following top-to-bottom order. This rule supersedes the historical layout where the "📤 Files to School" section sat above the "📎 Files from School" section.
 
 | # | Sub-section | Direction | Purpose |
 |---|-------------|-----------|---------|
-| 1 | 📎 **Documents from School** (read-only, mirrors `schoolFiles`) | incoming (school → student) | Student sees what the school sent first. |
-| 2 | 📤 **Send Files to School** (`studentFiles` channel) | outgoing (student → school) | Student sends back signed forms / supplementary docs. |
-| 3 | 💳 **Upload Deposit Proof** (`proofFileName` single file) | outgoing (student → school) | Student submits the payment receipt that drives the status transition. |
+| 1 | 📎 **Files from School** (read-only, mirrors `schoolFiles`) | incoming (school → student) | Student sees what the school sent first. |
+| 2 | 📤 **Files to School** (`studentFiles` channel) | outgoing (student → school) | Student sends back signed forms / supplementary docs. |
+| 3 | 💳 **Deposit Receipt** (`proofFileName` single file) | outgoing (student → school) | Student submits the payment receipt that drives the status transition. |
 | 4 | 📄 **Document Checklist — Phase 3 (Offering)** (read-only) | meta | School-configured checklist of expected P3 items. |
 
-**Why this order:** the student reads incoming context (what the school sent) BEFORE deciding what to send back — a natural "read before write" flow. The general multi-file "Send Files to School" channel appears before the "Upload Deposit Proof" affordance because the proof is a single, status-changing action that comes AFTER the student has had a chance to review school documents and gather supplementary materials. The Document Checklist is meta — a reference list — so it sits at the bottom as a reference, not a primary action.
+**Why this order:** the student reads incoming context (what the school sent) BEFORE deciding what to send back — a natural "read before write" flow. The general multi-file "Files to School" channel appears before the "Deposit Receipt" affordance because the proof is a single, status-changing action that comes AFTER the student has had a chance to review school documents and gather supplementary materials. The Document Checklist is meta — a reference list — so it sits at the bottom as a reference, not a primary action.
 
 **Implementation:**
 - The student P3 block in `pages/student/applications/[id].vue` wraps active content in `<template v-else>` (after the `v-if="!p3Latest"` entry state wrapper, see §16.2). Within that wrapper, the four sub-sections above are emitted in this order. The §16.2 entry state (`!p3Latest`) remains the topmost element above all four.
@@ -1061,13 +1061,24 @@ The school page's UI is driven by **(1)**, but student actions land in **(2)**. 
 
 | # | Scenario | Expected |
 |---|----------|----------|
-| (r) | Open P3 student page (status = `sent_to_student`, 1 school file) | Top-to-bottom: 📎 Documents from School (file visible) → 📤 Send Files to School (empty) → 💳 Upload Deposit Proof → 📄 Document Checklist. The school file appears BEFORE the student's send action. |
+| (r) | Open P3 student page (status = `sent_to_student`, 1 school file) | Top-to-bottom: 📎 Files from School (file visible) → 📤 Files to School (empty) → 💳 Deposit Receipt → 📄 Document Checklist. The school file appears BEFORE the student's send action. |
 | (s) | School has sent 2 files; student has sent 1 file | Section 1 shows 2 school files. Section 2 shows 1 student file + queue + send button. Section 3 shows proof upload. Section 4 shows checklist. |
 | (t) | Status = `confirmed` | All four sections still visible (per §16.1.1 always-open rule). Order unchanged. |
 | (u) | Mobile (≤ 480px) | Order unchanged. All sections stack vertically in the same top-to-bottom sequence. |
 
-**Sent files are read-only (2026-06-15 update):**
-- Once a file is in `p3Latest.schoolFiles` (i.e. has been sent to the student via "Send to Student" or "Add to Student"), the school CANNOT delete it. The file row shows only the download link (`<a>` tag with the file name as anchor text), upload timestamp, and **NO remove button** — not before, not after student proof upload, not after confirmation.
+**h4 label rename (2026-06-25, rev 3.7):**
+
+**Rule (rev 3.7):** The three active P3 sub-section h4 labels are renamed for plain-language clarity. KC observed (2026-06-25) that the original labels ("📎 Documents from School" / "📤 Send Files to School" / "💳 Upload Deposit Proof") were too formal and used overlapping words ("Documents/Files/Proof" + "School/School/Proof"), making the three sub-sections visually similar and directionally ambiguous to students. Renamed as:
+
+| # | Old h4 | New h4 (rev 3.7) | Reason |
+|---|--------|-------------------|--------|
+| 1 | 📎 Documents from School | 📄 **Files from School** | "Files" is more colloquial than "Documents"; 📎→📄 icon swap. |
+| 2 | 📤 Send Files to School | 📤 **Files to School** | Symmetric with section 1 (from/to). Student can tell direction at a glance. |
+| 3 | 💳 Upload Deposit Proof | 💳 **Deposit Receipt** | "Receipt" is more concrete than "Proof" — a payment receipt is everyday vocabulary. |
+
+The `action-desc` paragraphs under each h4 are unchanged (they already provide the necessary detail). The internal feature name (e.g. `studentFiles` channel, `proofFileName` field) is unchanged — only the user-facing label text was updated. Spec references throughout §4, §15, §16, §16.1, §16.1.1, §16.2, §17, §22 etc. that previously cited the old h4 text are updated to the new labels.
+
+**Sent files are read-only (2026-06-15 update):** Once a file is in `p3Latest.schoolFiles` (i.e. has been sent to the student via "Send to Student" or "Add to Student"), the school CANNOT delete it. The file row shows only the download link (`<a>` tag with the file name as anchor text), upload timestamp, and **NO remove button** — not before, not after student proof upload, not after confirmation.
 - This applies to ALL statuses: `sent_to_student`, `proof_uploaded`, and `confirmed`.
 - Rationale: the student may have already seen / paid / acted on the file. Removing it would break the audit trail. If a wrong file was sent, the school should send a corrected file via "Add to Student" (the old one remains visible for both parties).
 - Pending files in the queue (`p3NewFiles`, not yet sent) CAN be removed via the queue's remove button. This is local state — only becomes a sent file when the user clicks "Send to Student" or "Add to Student".
@@ -1076,7 +1087,7 @@ The school page's UI is driven by **(1)**, but student actions land in **(2)**. 
 
 ### 16.1 Student-to-school file exchange (2026-06-15 update)
 
-**Rule:** Asymmetric to the school's `schoolFiles` mechanism, the student can now also send **multiple** files to the school via a new "📤 Send Files to School" section on the student P3 view. Once sent, files are read-only on the student side (mirror of the school's read-only rule above). The school sees them in a new "📥 Files from Student" section, also read-only (audit trail).
+**Rule:** Asymmetric to the school's `schoolFiles` mechanism, the student can now also send **multiple** files to the school via a new "📤 Files to School" section on the student P3 view. Once sent, files are read-only on the student side (mirror of the school's read-only rule above). The school sees them in a new "📥 Files from Student" section, also read-only (audit trail).
 
 **Why this exists:** The school's `schoolFiles` already supports N files. The student's contribution was limited to a **single** deposit proof (`proofFileName/proofFileData/proofUploadedAt`) which doubles as a status-changing action. KC needs a general-purpose multi-file channel for the student to send back signed forms, additional supporting documents, replies to school questions, etc. — without conflating those exchanges with the canonical "I have paid" proof.
 
@@ -1096,7 +1107,7 @@ interface P3Deposit {
 **Distinction from deposit proof (do not conflate):**
 - The existing `proofFileName / proofFileData / proofUploadedAt` fields stay as-is. They represent the **single** payment proof that drives the `sent_to_student → proof_uploaded` status transition.
 - The new `studentFiles` is **general-purpose, multi-file, and does NOT change P3 status**. Uploading files to `studentFiles` is a side-channel for attachments only.
-- The student page keeps two completely separate UI surfaces: (1) the "💳 Upload Deposit Proof" action button (existing — drives status), and (2) the "📤 Send Files to School" section (new — general attachments). The two flows MUST NOT collide: use `p3StudentNewFiles` (plural) and `p3StudentFileInput` ref for the new flow, leaving `p3StudentFile` (singular) and `student-p3-file-input` for the existing proof flow.
+- The student page keeps two completely separate UI surfaces: (1) the "💳 Deposit Receipt" action button (existing — drives status), and (2) the "📤 Files to School" section (new — general attachments). The two flows MUST NOT collide: use `p3StudentNewFiles` (plural) and `p3StudentFileInput` ref for the new flow, leaving `p3StudentFile` (singular) and `student-p3-file-input` for the existing proof flow.
 
 **Status rules:**
 - Student can send files in any non-terminal P3 status: `sent_to_student`, `proof_uploaded`. (Mirror of schoolFiles: cannot add once `confirmed`.)
@@ -1116,18 +1127,18 @@ interface P3Deposit {
 
 | Scenario | Expected |
 |----------|----------|
-| (a) Open P3 student page (status = `sent_to_student`) | "📤 Send Files to School" section visible, file input + "➕ Add File" button. No sent files yet → "No files sent yet" empty state. |
+| (a) Open P3 student page (status = `sent_to_student`) | "📤 Files to School" section visible, file input + "➕ Add File" button. No sent files yet → "No files sent yet" empty state. |
 | (b) Student adds 1 PDF, then clicks "📤 Send to School" | Section shows PDF in sent list (read-only, no delete). Pending queue empty. New "📥 Files from Student" section appears on school page with same PDF. |
 | (c) School refreshes P3 page | New "📥 Files from Student" section visible with the PDF, download link works. |
 | (d) Student adds 2nd PDF after sending 1st | First PDF still in sent list (read-only). Second PDF appears in pending queue with ✕ button. Send it → both PDFs in sent list. |
-| (e) Status = `confirmed` | Student page: "📤 Send Files to School" section STILL VISIBLE (file input + send button remain open for late submissions / follow-ups). School page: "📎 Documents for Student" file input + "Add to Student" button STILL VISIBLE. The "📥 Files from Student" section remains visible (read-only audit trail). See §16.1.1 (rev 2). |
+| (e) Status = `confirmed` | Student page: "📤 Files to School" section STILL VISIBLE (file input + send button remain open for late submissions / follow-ups). School page: "📎 Documents for Student" file input + "Add to Student" button STILL VISIBLE. The "📥 Files from Student" section remains visible (read-only audit trail). See §16.1.1 (rev 2). |
 | (f) Open browser console, check `localStorage['bsp-v4-deposits']` | Each P3 record has both `schoolFiles: [...]` and `studentFiles: [...]`. Audit log has `add-student-file` entries. |
 
 ### 16.1.1 School unilateral confirmation + always-open P3 file exchange (2026-06-15, rev 2.1)
 
 **Rule (rev 2.1, supersedes rev 2):** The P3 → P4 advance is controlled by the school **unilaterally** once BOTH:
 - `status === 'proof_uploaded'` (student has uploaded the deposit payment proof)
-- `studentFiles.length >= 1` (student has sent at least 1 file through the 📤 Send Files to School general file channel)
+- `studentFiles.length >= 1` (student has sent at least 1 file through the 📤 Files to School general file channel)
 
 The school's "✅ Confirm Receipt" button is enabled when both conditions hold. The student's "✅ I've uploaded everything" button is retained as an **advisory notification** (school sees a ✅ indicator on the "📥 Student Submitted Files" toggle) but is **not a prerequisite** for the school to advance.
 
@@ -1151,9 +1162,9 @@ The school's "✅ Confirm Receipt" button is enabled when both conditions hold. 
 **UI changes (rev 2.1):**
 
 Student page (`pages/student/applications/[id].vue`):
-- "📤 Send Files to School" section — **always visible** when `p3Latest` exists. File input + queue + send button all stay open.
+- "📤 Files to School" section — **always visible** when `p3Latest` exists. File input + queue + send button all stay open.
 - "✅ I've uploaded everything" + "↩️ Mark as not ready" buttons — **always visible** when `p3Latest` exists. They continue to set/clear `studentReadyForReview` for the advisory indicator, but the indicator now has no gate function.
-- Hint text on the "I've uploaded everything" button: explains it's a courtesy signal AND reminds the student to use the 📤 Send Files to School channel for any documents the school needs to see.
+- Hint text on the "I've uploaded everything" button: explains it's a courtesy signal AND reminds the student to use the 📤 Files to School channel for any documents the school needs to see.
 
 School page (`pages/school/applications/[id].vue`):
 - "📎 Documents for Student" file input row — **always visible** when `p3Latest` exists. "📤 Send to Student" / "📎 Add to Student" button stays open. After `confirmed` it stays as "📎 Add to Student" (appendable).
@@ -1168,7 +1179,7 @@ School page (`pages/school/applications/[id].vue`):
   >✅ Confirm Receipt</button>
   ```
   Helper text variants (replaces the rev 2 hints — three cases now):
-  - `studentFiles.length === 0` (gate not met): `⏳ Waiting for student to send at least 1 file through "📤 Send Files to School". Proof alone is not enough — the school needs at least one supplementary document (signed form, refund agreement, etc.).`
+  - `studentFiles.length === 0` (gate not met): `⏳ Waiting for student to send at least 1 file through "📤 Files to School". Proof alone is not enough — the school needs at least one supplementary document (signed form, refund agreement, etc.).`
   - `studentFiles.length >= 1 && studentReadyForReview === true`: `✅ Student has indicated they're done — you can confirm anytime.`
   - `studentFiles.length >= 1 && studentReadyForReview === false`: `ℹ️ Student hasn't clicked "✅ I've uploaded everything" — but you can confirm anytime if you have what you need.`
 - "📥 Student Submitted Files" toggle button — `✅` indicator behavior unchanged (reflects `studentReadyForReview`), but is now informational only.
@@ -1187,7 +1198,7 @@ School page (`pages/school/applications/[id].vue`):
 
 | # | Scenario | Expected |
 |---|----------|----------|
-| (g) Student uploaded proof, has NOT sent any file through file exchange | School's "Confirm Receipt" button **DISABLED** (new in rev 2.1). Helper text: "⏳ Waiting for student to send at least 1 file through '📤 Send Files to School'. Proof alone is not enough." |
+| (g) Student uploaded proof, has NOT sent any file through file exchange | School's "Confirm Receipt" button **DISABLED** (new in rev 2.1). Helper text: "⏳ Waiting for student to send at least 1 file through '📤 Files to School'. Proof alone is not enough." |
 | (h) Student uploaded proof, sent 1 PDF through file exchange, has NOT clicked "I've uploaded everything" | School's "Confirm Receipt" button **ENABLED** (gate met because `studentFiles.length >= 1`). Helper text: "ℹ️ Student hasn't clicked '✅ I've uploaded everything' — but you can confirm anytime if you have what you need." |
 | (i) Student uploaded proof, sent 1 PDF, then clicked "✅ I've uploaded everything" | School's "Confirm Receipt" button **ENABLED**. Toggle shows ✅ indicator. Helper text: "✅ Student has indicated they're done — you can confirm anytime." |
 | (j) After (i), student adds another file (e.g. supplementary receipt) | `studentReadyForReview` auto-resets to `false`. **Confirm Receipt still enabled** (gate still met, no impact on `studentReadyForReview`). |
@@ -1195,8 +1206,8 @@ School page (`pages/school/applications/[id].vue`):
 | (l) Student clicks `↩️ Mark as not ready` after (i) | `studentReadyForReview = false`. **Confirm Receipt still enabled** (no impact on gate). |
 | (m) School clicks `✅ Confirm Receipt` | status → `confirmed`, currentPhase → 4, P4 phase card auto-expands. Toast: "✅ Deposit confirmed. P3 complete." |
 | (n) `localStorage['bsp-v4-deposits']` after (m) | Deposit has `studentFiles.length >= 1` (gate was met). Audit log has `confirm-deposit` event. |
-| **(o) NEW** | After (m), on school page, "📎 Documents for Student" file input + "📎 Add to Student" button **STILL VISIBLE**. School picks a follow-up PDF, clicks Add → file appended to `schoolFiles`. Audit log has new `add-school-file` entry. Student page sees the new file in "📎 Documents from School" section (read-only). |
-| **(p) NEW** | After (m), on student page, "📤 Send Files to School" section **STILL VISIBLE**. Student picks a late supplementary doc, clicks Send → file appended to `studentFiles`. School's "📥 Student Submitted Files" section shows the new file. Audit log has new `add-student-file` entry. |
+| **(o) NEW** | After (m), on school page, "📎 Documents for Student" file input + "📎 Add to Student" button **STILL VISIBLE**. School picks a follow-up PDF, clicks Add → file appended to `schoolFiles`. Audit log has new `add-school-file` entry. Student page sees the new file in "📎 Files from School" section (read-only). |
+| **(p) NEW** | After (m), on student page, "📤 Files to School" section **STILL VISIBLE**. Student picks a late supplementary doc, clicks Send → file appended to `studentFiles`. School's "📥 Student Submitted Files" section shows the new file. Audit log has new `add-student-file` entry. |
 | **(q) NEW** | After (m), student clicks `✅ I've uploaded everything` again → `studentReadyForReview = true`. School sees `✅` indicator. Click `↩️ Mark as not ready` → indicator disappears. Indicator behavior unchanged, just no longer functional as a gate. |
 
 **Defensive note (rev 2.1):** The `confirmDeposit` store method does NOT re-check `studentFiles.length` (mirroring the rev 1 pattern of not checking `studentReadyForReview`). The school page's `onP3Confirm` is the only caller and the button is the only gate, so the store primitive stays open. A future strict mode could re-enable the check via a config flag.
@@ -1332,7 +1343,7 @@ School page (`pages/school/applications/[id].vue`):
 
 **Rule (terminal state):** When `p3Latest.status === 'confirmed'`, the regular P3 affordance set remains visible (per §16.1.1 — file channel stays open for late submissions), and a "✅ Confirmed" success indicator is shown in place of the upload prompt.
 
-**Why this exists (KC 2026-06-24):** Previously, the student P3 card body showed the "📤 Send Files to School" section + a fallback "School hasn't sent the deposit form yet" line as soon as the student entered P3. This was confusing: the student had just passed the interview and was dropped into a "send files" interface before any files existed to send, with no clear "you've passed, the school is preparing things" acknowledgement. The new entry state:
+**Why this exists (KC 2026-06-24):** Previously, the student P3 card body showed the "📤 Files to School" section + a fallback "School hasn't sent the deposit form yet" line as soon as the student entered P3. This was confusing: the student had just passed the interview and was dropped into a "send files" interface before any files existed to send, with no clear "you've passed, the school is preparing things" acknowledgement. The new entry state:
 
 - Reinforces the win (passing the interview is a milestone worth celebrating).
 - Sets the right expectation (student is waiting on school, not the other way around).
@@ -1354,7 +1365,7 @@ School page (`pages/school/applications/[id].vue`):
 
 **Layout (student page, P3 active state — `p3Latest` exists):**
 
-Existing §16.1 affordance set renders in order: 📤 Send Files to School → 💳 Upload Deposit Proof → 📎 Deposit Form & Payment Instructions → 📄 Document Checklist.
+Existing §16.1 affordance set renders in order: 📤 Files to School → 💳 Deposit Receipt → 📎 Files from School → 📄 Document Checklist. (Superseded by §16 rev 3.6 order rule: 📄 Files from School → 📤 Files to School → 💳 Deposit Receipt → 📄 Document Checklist.)
 
 **File changes (rev 3.5, 2026-06-24):**
 
@@ -1369,8 +1380,8 @@ Existing §16.1 affordance set renders in order: 📤 Send Files to School → �
 | # | Scenario | Expected |
 |---|----------|----------|
 | (gg) | Student opens P3 (`!p3Latest`) | Celebration banner "🎉 Congratulations on passing your interview!" + waiting state "⏳ School is preparing your admission documents. We'll let you know when they're ready." No upload sections, no document checklist visible. |
-| (hh) | School clicks "📤 Send to Student" with 1 file queued | Student refreshes P3 page → celebration banner GONE, replaced by full §16.1 affordance set with the school file visible in "📎 Deposit Form & Payment Instructions". |
-| (ii) | Student refreshes P3 again later (still `sent_to_student`, no proof uploaded) | Celebration banner does NOT re-appear. Affordance set stays. Upload Deposit Proof prompt still shows "Upload your deposit payment receipt to confirm your place." |
+| (hh) | School clicks "📤 Send to Student" with 1 file queued | Student refreshes P3 page → celebration banner GONE, replaced by full §16.1 affordance set with the school file visible in "📎 Files from School". |
+| (ii) | Student refreshes P3 again later (still `sent_to_student`, no proof uploaded) | Celebration banner does NOT re-appear. Affordance set stays. Deposit Receipt prompt still shows "Upload your deposit payment receipt to confirm your place." |
 | (jj) | School opens P3 first time (`!p3Latest`) | New entry message visible above the "📎 Documents for Student" section: "Phase 3 starts here. Upload your deposit form / payment instructions and click Send to Student to begin." |
 | (kk) | School sends document, refreshes P3 (`p3Latest` now exists) | Entry message gone; existing affordance set is unchanged from before. |
 

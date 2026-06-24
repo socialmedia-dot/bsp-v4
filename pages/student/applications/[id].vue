@@ -199,9 +199,9 @@
                   </div>
 
                   <template v-else>
-                  <!-- §16 Section 1 (top, rev 3.6): Documents from School — read-only mirror of schoolFiles. Student reads incoming context before deciding what to send back. -->
+                  <!-- §16 Section 1 (top, rev 3.6, h4 rev 3.7): Files from School — read-only mirror of schoolFiles. Student reads incoming context before deciding what to send back. -->
                   <div v-if="p3Latest && p3Latest.schoolFiles && p3Latest.schoolFiles.length" class="phase-subsection">
-                    <h4>📎 Documents from School</h4>
+                    <h4>📄 Files from School</h4>
                     <p class="action-desc">Documents the school has shared with you for the deposit payment.</p>
                     <div class="p3-files-list">
                       <div v-for="(f, i) in p3Latest.schoolFiles" :key="i" class="p3-file-row">
@@ -212,9 +212,9 @@
                     </div>
                   </div>
 
-                  <!-- §16.1 Section 2: Send Files to School — student-side mirror of schoolFiles (see docs §16.1) -->
+                  <!-- §16.1 Section 2 (h4 rev 3.7): Files to School — student-side mirror of schoolFiles (see docs §16.1) -->
                   <div class="phase-subsection">
-                    <h4>📤 Send Files to School</h4>
+                    <h4>📤 Files to School</h4>
                     <p class="action-desc">Send signed forms, additional documents, or attachments to the school. PDF, JPG, or PNG, max 5MB each.</p>
 
                     <!-- Sent files (read-only — no delete per docs §16 spec, mirrors schoolFiles) -->
@@ -266,7 +266,7 @@
 
                   <!-- §16 Deposit Proof upload (P3 main affordance) -->
                   <div v-if="p3Latest" class="phase-subsection">
-                    <h4>💳 Upload Deposit Proof</h4>
+                    <h4>💳 Deposit Receipt</h4>
                     <p class="action-desc">
                       <span v-if="p3Latest.status === 'proof_uploaded'">Proof submitted, awaiting school confirmation.</span>
                       <span v-else-if="p3Latest.status === 'confirmed'">✅ Deposit confirmed by the school.</span>
