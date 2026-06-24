@@ -1,9 +1,9 @@
 {
   "meta": {
     "version": "v4",
-    "updated": "2026-06-22",
+    "updated": "2026-06-25",
     "deployedUrl": "https://bsp-v4.pages.dev",
-    "totalVueFiles": 62,
+    "totalVueFiles": 78,
     "portals": [
       "Public",
       "Auth",
@@ -20,6 +20,14 @@
     "trialStatus": "BSP v4 needs 11 critical pages built before school pilot (Q3 2026). Auth / Intake / Review = transaction core (must build). Communicate = trust layer (can be skipped for trial). 2 school application pages just shipped (rev 3.0+)."
   },
   "recentUpdates": [
+    {
+      "date": "2026-06-25",
+      "text": "Document Template System rev 3.11 (§17) — schools now upload real PDF/image files to /school/settings/document-templates. On P3/P4/P5 phase enter, queue auto-pre-fills from templates (blue '📋 from template' badge). Per-file checkbox 'Send to student?' gates the Send/Add/Upload action."
+    },
+    {
+      "date": "2026-06-25",
+      "text": "P3 visual hierarchy mirror (rev 3.8-3.10, §16.0.1 + §16.0.2) — both student and school P3 now use 3-card visual hierarchy (readonly gray / upload green / gated blue) with action-oriented purpose text. Pills: 🟢 upload, ⚪ read, 🔵 action, 🟡 payment."
+    },
     {
       "date": "2026-06-24",
       "text": "P3 entry state — student sees 🎉 celebration + ⏳ waiting banner when school hasn't sent documents yet (rev 3.5, §16.2). School sees entry hint before sending."
@@ -161,7 +169,7 @@
           "reviewed": true,
           "trial": true,
           "criticality": "high",
-          "note": "Full P1-P5 phase UI — 11 commits since 2026-06-15. School can advance through phases, view timeline, manage interview/deposit/travel/visa. Most action buttons are real now (no more alert())."
+          "note": "Full P1-P5 phase UI — 16+ commits since 2026-06-15. School can advance through phases, view timeline, manage interview/deposit/travel/visa. Most action buttons are real now. Latest: rev 3.10 school P3 visual hierarchy mirror + rev 3.11 §17 Document Template System (per-file checkbox gate)."
         },
         {
           "status": "draft",
@@ -619,10 +627,11 @@
         },
         {
           "status": "done",
-          "label": "Document Templates",
+          "label": "Document Templates (rev 3.11 — pre-upload + auto-pre-fill)",
           "path": "/school/settings/document-templates",
-          "date": "2026-06",
-          "reviewed": true
+          "date": "2026-06-25",
+          "reviewed": true,
+          "note": "Schools upload real PDF/JPG/PNG files per template (5MB limit). On P3/P4/P5 phase enter, the school's Files-to-Student queue auto-pre-fills from these templates. Each row has a per-file checkbox 'Send to student?' (default ✅ checked). Schools can untick to skip per-student."
         }
       ]
     },
@@ -752,6 +761,11 @@
     }
   ],
   "milestones": [
+    {
+      "date": "2026-06-25",
+      "label": "Document Template System rev 3.11",
+      "desc": "Schools pre-upload real files to /school/settings/document-templates. P3/P4/P5 phase queues auto-pre-fill from templates; per-file 'Send to student?' checkbox gates the actual send action. Replaces the rev 3.0 placeholder-only checklist model."
+    },
     {
       "date": "2026-06-22",
       "label": "P5 Travel Arrangements Two-Section Refactor",
